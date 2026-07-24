@@ -35,6 +35,17 @@ export type PlantWriteData = {
   shippable: boolean;
 };
 
+// ── Cart ──────────────────────────────────────────────────────────────────────
+
+export type CartItem = {
+  plant_id: string;
+  name: string;
+  price: number;
+  qty: number;
+  photo?: string;
+  slug?: string;
+};
+
 // ── Order ─────────────────────────────────────────────────────────────────────
 
 export type OrderItem = {

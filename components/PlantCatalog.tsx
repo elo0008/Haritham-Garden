@@ -5,6 +5,8 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Plant, PlantCategory } from "@/lib/types";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
+import { CartDrawer } from "./CartDrawer";
+import { useCart } from "@/context/CartContext";
 
 interface PlantCatalogProps {
   plants: Plant[];
@@ -24,6 +26,8 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
+
+  const { totalItems, openCart, addItem } = useCart();
 
   const [selectedCategory, setSelectedCategory] = useState<PlantCategory | "all">("all");
   const [activePlant, setActivePlant] = useState<Plant | null>(null);
@@ -47,7 +51,6 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
 
   const handleOpenPlant = (plant: Plant) => {
     setActivePlant(plant);
-    // Update URL with ?plant=slug without full page reload
     const params = new URLSearchParams(searchParams.toString());
     params.set("plant", plant.slug);
     window.history.pushState(null, "", `${pathname}?${params.toString()}`);
@@ -55,7 +58,6 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
 
   const handleClosePlant = () => {
     setActivePlant(null);
-    // Remove plant query parameter from URL
     const params = new URLSearchParams(searchParams.toString());
     params.delete("plant");
     const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
@@ -63,7 +65,7 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
   };
 
   const handleAddToCart = (plant: Plant, qty: number) => {
-    console.log(`Add to cart: ${qty} x ${plant.name} (₹${plant.price * qty})`);
+    addItem(plant, qty);
   };
 
   return (
@@ -82,10 +84,11 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
               </p>
             </div>
 
-            {/* Cart Icon Placeholder */}
+            {/* Cart Icon */}
             <div className="relative">
               <button
                 type="button"
+                onClick={openCart}
                 className="relative flex h-10 w-10 items-center justify-center rounded-full bg-stone-200/50 text-stone-700 hover:bg-stone-200 transition-colors"
                 aria-label="Shopping Cart"
               >
@@ -101,10 +104,17 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
                     d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                   />
                 </svg>
-                {/* Cart Badge Placeholder */}
-                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#C1662F] text-[11px] font-bold text-white shadow-xs">
-                  0
-                </span>
+
+                {/* Cart Badge */}
+                {totalItems > 0 ? (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#C1662F] text-[11px] font-bold text-white shadow-xs animate-in zoom-in-50 duration-200">
+                    {totalItems > 99 ? "99+" : totalItems}
+                  </span>
+                ) : (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-stone-300 text-[11px] font-bold text-stone-600">
+                    0
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -168,6 +178,9 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
         onClose={handleClosePlant}
         onAddToCart={handleAddToCart}
       />
+
+      {/* Cart Drawer */}
+      <CartDrawer />
     </div>
   );
 }
