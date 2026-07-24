@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { Plant, PlantCategory } from "@/lib/types";
 import { PlantCard } from "./PlantCard";
+import { PlantBottomSheet } from "./PlantBottomSheet";
 
 interface PlantCatalogProps {
   plants: Plant[];
+  initialPlantSlug?: string;
 }
 
 const CATEGORY_CHIPS: { label: string; value: PlantCategory | "all" }[] = [
@@ -17,16 +20,50 @@ const CATEGORY_CHIPS: { label: string; value: PlantCategory | "all" }[] = [
   { label: "Other", value: "other" },
 ];
 
-export function PlantCatalog({ plants }: PlantCatalogProps) {
+export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [selectedCategory, setSelectedCategory] = useState<PlantCategory | "all">("all");
+  const [activePlant, setActivePlant] = useState<Plant | null>(null);
+
+  // Sync active plant from URL search params or initial prop
+  useEffect(() => {
+    const slugParam = searchParams.get("plant") || initialPlantSlug;
+    if (slugParam) {
+      const match = plants.find((p) => p.slug === slugParam || p.id === slugParam);
+      if (match) {
+        setActivePlant(match);
+      }
+    } else {
+      setActivePlant(null);
+    }
+  }, [searchParams, initialPlantSlug, plants]);
 
   const filteredPlants = selectedCategory === "all"
     ? plants
     : plants.filter((plant) => plant.category === selectedCategory);
 
-  const handleCardClick = (plant: Plant) => {
-    // Placeholder for Milestone 6 bottom sheet quick-view
-    console.log("Plant clicked:", plant.name);
+  const handleOpenPlant = (plant: Plant) => {
+    setActivePlant(plant);
+    // Update URL with ?plant=slug without full page reload
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("plant", plant.slug);
+    window.history.pushState(null, "", `${pathname}?${params.toString()}`);
+  };
+
+  const handleClosePlant = () => {
+    setActivePlant(null);
+    // Remove plant query parameter from URL
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("plant");
+    const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    window.history.pushState(null, "", newUrl);
+  };
+
+  const handleAddToCart = (plant: Plant, qty: number) => {
+    console.log(`Add to cart: ${qty} x ${plant.name} (₹${plant.price * qty})`);
   };
 
   return (
@@ -118,12 +155,19 @@ export function PlantCatalog({ plants }: PlantCatalogProps) {
               <PlantCard
                 key={plant.id}
                 plant={plant}
-                onSelect={handleCardClick}
+                onSelect={handleOpenPlant}
               />
             ))}
           </div>
         )}
       </main>
+
+      {/* Bottom Sheet Quick-View */}
+      <PlantBottomSheet
+        plant={activePlant}
+        onClose={handleClosePlant}
+        onAddToCart={handleAddToCart}
+      />
     </div>
   );
 }

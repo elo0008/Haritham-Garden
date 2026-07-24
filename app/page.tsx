@@ -1,8 +1,14 @@
+import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { PlantCatalog } from "@/components/PlantCatalog";
 import type { Plant } from "@/lib/types";
 
-export default async function HomePage() {
+interface PageProps {
+  searchParams?: Promise<{ plant?: string }>;
+}
+
+export default async function HomePage({ searchParams }: PageProps) {
+  const resolvedParams = searchParams ? await searchParams : {};
   const supabase = await createClient();
   const { data: plants, error } = await supabase
     .from("plants")
@@ -13,5 +19,12 @@ export default async function HomePage() {
     console.error("Error fetching plants:", error.message);
   }
 
-  return <PlantCatalog plants={(plants as Plant[]) || []} />;
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
+      <PlantCatalog
+        plants={(plants as Plant[]) || []}
+        initialPlantSlug={resolvedParams.plant}
+      />
+    </Suspense>
+  );
 }
