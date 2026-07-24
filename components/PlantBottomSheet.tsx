@@ -77,11 +77,11 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
         {/* Top Handle Bar for Touch */}
         <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-stone-300/80 sm:hidden" />
 
-        {/* Close Button */}
+        {/* Close Button (Min 44x44px tap target) */}
         <button
           onClick={onClose}
           type="button"
-          className="absolute top-4 right-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-stone-900/40 text-white hover:bg-stone-900/70 backdrop-blur-md transition-colors"
+          className="absolute top-4 right-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-stone-900/40 text-white hover:bg-stone-900/70 backdrop-blur-md transition-colors"
           aria-label="Close details"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,7 +90,7 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
         </button>
 
         {/* Photo Gallery Carousel */}
-        <div className="relative mb-5 aspect-[4/3] w-full overflow-hidden rounded-2xl bg-stone-200/60">
+        <div className="relative mb-5 aspect-[4/3] w-full overflow-hidden rounded-2xl bg-stone-200/60 shadow-2xs">
           {photos.length > 0 ? (
             <img
               src={photos[activePhotoIndex]}
@@ -107,15 +107,15 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
 
           {/* Photo Dots / Nav if multiple photos */}
           {photos.length > 1 && (
-            <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 z-10">
+            <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-2 z-10">
               {photos.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActivePhotoIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${
+                  className={`h-2.5 rounded-full transition-all min-w-[20px] ${
                     idx === activePhotoIndex
                       ? "w-6 bg-[#C1662F]"
-                      : "w-2 bg-white/70 hover:bg-white"
+                      : "w-2.5 bg-white/80 hover:bg-white"
                   }`}
                   aria-label={`Go to photo ${idx + 1}`}
                 />
@@ -128,7 +128,7 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
         <div className="mb-4">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 id="bottom-sheet-title" className="text-xl font-bold text-stone-900 sm:text-2xl">
+              <h2 id="bottom-sheet-title" className="text-xl font-bold text-[#24211E] sm:text-2xl">
                 {plant.name}
               </h2>
               {plant.local_name && (
@@ -136,7 +136,7 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
               )}
             </div>
             <div className="text-right">
-              <span className="text-xl font-bold text-stone-900">
+              <span className="text-xl font-bold text-[#24211E]">
                 {formatINR(plant.price)}
               </span>
             </div>
@@ -145,15 +145,15 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
 
         {/* Plant Attribute Badges (Sunlight & Water) */}
         <div className="mb-5 flex flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1 text-xs font-medium text-stone-700">
+          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1.5 text-xs font-medium text-stone-700">
             <span>☀️</span>
             <span>{SUNLIGHT_LABELS[plant.sunlight] || plant.sunlight}</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1 text-xs font-medium text-stone-700">
+          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1.5 text-xs font-medium text-stone-700">
             <span>💧</span>
             <span>{WATERING_LABELS[plant.watering] || plant.watering}</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1 text-xs font-medium text-stone-700 capitalize">
+          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1.5 text-xs font-medium text-stone-700 capitalize">
             <span>🪴</span>
             <span>{plant.category}</span>
           </div>
@@ -173,7 +173,7 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
 
         {/* Toast Alert */}
         {addedToast && (
-          <div className="mb-3 rounded-xl bg-emerald-800 text-white px-4 py-2 text-xs font-medium text-center shadow-xs animate-in fade-in duration-200">
+          <div className="mb-3 rounded-xl bg-emerald-800 text-white px-4 py-2.5 text-xs font-medium text-center shadow-xs animate-in fade-in duration-200">
             Added {quantity} x {plant.name} to cart!
           </div>
         )}
@@ -181,40 +181,40 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
         {/* Action Bar (Stepper + Add to Cart or Unavailable Note) */}
         <div className="border-t border-stone-200/70 pt-4">
           {isUnavailable ? (
-            <div className="rounded-xl bg-stone-200/60 py-3 text-center text-sm font-medium text-stone-600">
+            <div className="rounded-xl bg-stone-200/60 py-3.5 text-center text-sm font-medium text-stone-600">
               Currently unavailable
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              {/* Stepper */}
+              {/* Stepper (Min 44x44px buttons) */}
               <div className="flex items-center rounded-xl bg-stone-200/60 p-1">
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-stone-100 text-stone-700 hover:bg-white active:bg-stone-200 font-bold transition-colors disabled:opacity-40"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#24211E] hover:bg-stone-100 active:bg-stone-200 font-bold text-base transition-colors disabled:opacity-40"
                   disabled={quantity <= 1}
                   aria-label="Decrease quantity"
                 >
                   -
                 </button>
-                <span className="w-8 text-center text-sm font-bold text-stone-900">
+                <span className="w-9 text-center text-sm font-bold text-[#24211E]">
                   {quantity}
                 </span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-stone-100 text-stone-700 hover:bg-white active:bg-stone-200 font-bold transition-colors"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg bg-white text-[#24211E] hover:bg-stone-100 active:bg-stone-200 font-bold text-base transition-colors"
                   aria-label="Increase quantity"
                 >
                   +
                 </button>
               </div>
 
-              {/* Add to Cart Button */}
+              {/* Add to Cart Button (Min 48px height) */}
               <button
                 type="button"
                 onClick={handleAddToCart}
-                className="flex-1 rounded-xl bg-[#C1662F] py-3 px-4 text-center text-sm font-semibold text-white shadow-xs hover:bg-[#a85524] active:bg-[#92481e] transition-colors"
+                className="flex-1 min-h-[48px] rounded-xl bg-[#C1662F] py-3.5 px-4 text-center text-sm font-semibold text-white shadow-xs hover:bg-[#A85524] active:bg-[#92481e] transition-colors"
               >
                 Add to Cart — {formatINR(plant.price * quantity)}
               </button>

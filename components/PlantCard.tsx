@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import type { Plant } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 
@@ -17,12 +16,20 @@ export function PlantCard({ plant, onSelect }: PlantCardProps) {
   return (
     <div
       onClick={() => onSelect?.(plant)}
-      className={`group cursor-pointer flex flex-col transition-all duration-200 ${
-        isUnavailable ? "opacity-60" : "hover:-translate-y-1"
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect?.(plant);
+        }
+      }}
+      className={`group cursor-pointer flex flex-col transition-all duration-200 min-h-[44px] ${
+        isUnavailable ? "opacity-60" : "hover:-translate-y-1 active:translate-y-0"
       }`}
     >
-      {/* Image Container */}
-      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-stone-200/60 shadow-xs">
+      {/* Image Container — Photo-led Hero */}
+      <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-stone-200/50 shadow-2xs">
         {firstPhoto ? (
           <img
             src={firstPhoto}
@@ -48,10 +55,10 @@ export function PlantCard({ plant, onSelect }: PlantCardProps) {
           </div>
         )}
 
-        {/* Badges */}
+        {/* Status Badges */}
         {isUnavailable && (
-          <div className="absolute inset-0 flex items-center justify-center bg-stone-900/40 backdrop-blur-[2px]">
-            <span className="rounded-full bg-stone-900/80 px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-xs">
+          <div className="absolute inset-0 flex items-center justify-center bg-stone-900/40 backdrop-blur-xs">
+            <span className="rounded-full bg-stone-900/85 px-3 py-1 text-xs font-semibold tracking-wide text-white shadow-xs">
               Unavailable
             </span>
           </div>
@@ -66,17 +73,17 @@ export function PlantCard({ plant, onSelect }: PlantCardProps) {
         )}
       </div>
 
-      {/* Info Container */}
+      {/* Info Container — Quiet, Minimal */}
       <div className="mt-2.5 flex flex-col px-0.5">
-        <h3 className="line-clamp-1 text-sm font-medium text-stone-900 sm:text-base">
+        <h3 className="line-clamp-1 text-sm font-medium text-[#24211E] sm:text-base group-hover:text-[#C1662F] transition-colors">
           {plant.name}
         </h3>
         {plant.local_name && (
-          <p className="line-clamp-1 text-xs text-stone-500">
+          <p className="line-clamp-1 text-xs text-stone-500 font-normal">
             {plant.local_name}
           </p>
         )}
-        <p className="mt-1 text-sm font-semibold text-stone-900">
+        <p className="mt-1 text-sm font-semibold text-[#24211E]">
           {formatINR(plant.price)}
         </p>
       </div>

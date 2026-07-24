@@ -4,12 +4,15 @@
   --background: #FAF8F5;
   --foreground: #24211E;
   --terracotta: #C1662F;
+  --terracotta-hover: #A85524;
+  --card-bg: #FFFFFF;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Hide scrollbar for category filter bar while maintaining scroll functionality */
@@ -19,4 +22,9 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* Ensure smooth touch scrolling on iOS */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
 }

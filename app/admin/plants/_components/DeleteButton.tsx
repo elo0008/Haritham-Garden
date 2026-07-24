@@ -32,9 +32,10 @@ export function DeleteButton({ plantId, plantName, photoUrls }: Props) {
 
   return (
     <button
+      type="button"
       onClick={handleDelete}
       disabled={isPending}
-      className="text-sm text-red-600 hover:text-red-800 font-medium
+      className="min-h-[44px] flex items-center text-xs text-red-600 hover:text-red-800 font-medium
                  disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
       {isPending ? "Deleting…" : "Delete"}

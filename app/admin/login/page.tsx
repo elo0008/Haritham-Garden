@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { signIn } from "./actions";
+import { Logo } from "@/components/Logo";
 
 export const metadata: Metadata = {
   title: "Admin Login — Haritham Garden",
@@ -13,24 +14,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error } = await searchParams;
 
   return (
-    <main className="min-h-screen bg-green-950 flex items-center justify-center px-4">
+    <main className="min-h-screen bg-[#FAF8F5] text-[#24211E] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm">
-        {/* Brand */}
-        <div className="text-center mb-8">
-          <span className="text-4xl" aria-hidden="true">🌿</span>
-          <h1 className="mt-3 text-2xl font-semibold text-white tracking-tight">
-            Haritham Garden
-          </h1>
-          <p className="mt-1 text-sm text-green-400">Admin panel</p>
+        {/* Brand Header */}
+        <div className="text-center mb-8 flex flex-col items-center">
+          <Logo showTagline={false} />
+          <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-stone-500 bg-stone-200/60 px-2.5 py-0.5 rounded-md">
+            Admin Panel
+          </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm shadow-2xl">
+        {/* Login Card */}
+        <div className="bg-white border border-stone-200/80 rounded-3xl p-8 shadow-xl">
           <form action={signIn} className="space-y-5">
             {/* Error banner */}
             {error && (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3">
-                <p className="text-sm text-red-400">{decodeURIComponent(error)}</p>
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+                <p className="text-sm text-red-700">{decodeURIComponent(error)}</p>
               </div>
             )}
 
@@ -38,7 +38,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div>
               <label
                 htmlFor="email"
-                className="block text-sm font-medium text-green-200 mb-1.5"
+                className="block text-sm font-medium text-stone-700 mb-1.5"
               >
                 Email
               </label>
@@ -49,9 +49,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 autoComplete="email"
                 required
                 placeholder="you@example.com"
-                className="w-full rounded-lg bg-white/10 border border-white/15 px-4 py-2.5
-                           text-white placeholder-white/30 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
+                className="w-full rounded-xl bg-stone-50 border border-stone-300 px-4 py-3
+                           text-[#24211E] placeholder-stone-400 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent
                            transition"
               />
             </div>
@@ -60,7 +60,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <div>
               <label
                 htmlFor="password"
-                className="block text-sm font-medium text-green-200 mb-1.5"
+                className="block text-sm font-medium text-stone-700 mb-1.5"
               >
                 Password
               </label>
@@ -71,23 +71,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 autoComplete="current-password"
                 required
                 placeholder="••••••••"
-                className="w-full rounded-lg bg-white/10 border border-white/15 px-4 py-2.5
-                           text-white placeholder-white/30 text-sm
-                           focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent
+                className="w-full rounded-xl bg-stone-50 border border-stone-300 px-4 py-3
+                           text-[#24211E] placeholder-stone-400 text-sm
+                           focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent
                            transition"
               />
             </div>
 
-            {/* Submit */}
+            {/* Submit Button (Min 48px height, Terracotta theme) */}
             <button
               type="submit"
               id="login-submit"
-              className="w-full mt-2 rounded-lg bg-green-500 hover:bg-green-400 active:bg-green-600
-                         text-white font-semibold text-sm py-2.5
-                         focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-green-950
+              className="w-full mt-2 min-h-[48px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e]
+                         text-white font-semibold text-sm py-3 px-4 shadow-xs
+                         focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:ring-offset-2
                          transition-colors"
             >
-              Sign in
+              Sign in to Dashboard
             </button>
           </form>
         </div>

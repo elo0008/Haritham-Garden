@@ -12,8 +12,8 @@ const LABELS: Record<PlantAvailability, string> = {
 };
 
 const STYLES: Record<PlantAvailability, string> = {
-  available: "border-green-300 bg-green-50 text-green-800",
-  limited: "border-yellow-300 bg-yellow-50 text-yellow-800",
+  available: "border-emerald-300 bg-emerald-50 text-emerald-800",
+  limited: "border-amber-300 bg-amber-50 text-amber-800",
   unavailable: "border-red-300 bg-red-50 text-red-700",
 };
 
@@ -45,8 +45,8 @@ export function AvailabilitySelect({ plantId, current }: Props) {
       value={value}
       onChange={handleChange}
       disabled={isPending}
-      className={`text-xs font-medium rounded-md border px-2 py-1
-                  focus:outline-none focus:ring-2 focus:ring-green-500
+      className={`text-xs font-semibold rounded-xl border px-3 py-2 min-h-[38px] sm:min-h-[44px]
+                  focus:outline-none focus:ring-2 focus:ring-[#C1662F]
                   disabled:opacity-60 cursor-pointer transition-colors
                   ${STYLES[value]}`}
     >

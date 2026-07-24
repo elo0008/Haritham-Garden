@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import type { Plant, PlantCategory } from "@/lib/types";
+import { Logo } from "./Logo";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
 import { CartDrawer } from "./CartDrawer";
@@ -24,7 +25,6 @@ const CATEGORY_CHIPS: { label: string; value: PlantCategory | "all" }[] = [
 
 export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const { totalItems, openCart, addItem } = useCart();
@@ -70,27 +70,20 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#24211E]">
-      {/* Sticky Top Bar / Header */}
-      <header className="sticky top-0 z-20 border-b border-stone-200/70 bg-[#FAF8F5]/90 backdrop-blur-md">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-20 border-b border-stone-200/60 bg-[#FAF8F5]/90 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
-            {/* Wordmark & Tagline */}
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-[#24211E] sm:text-2xl">
-                Haritham Garden
-              </h1>
-              <p className="text-xs text-stone-500 sm:text-sm">
-                Fresh plants & greens for your home
-              </p>
-            </div>
+            {/* Logo Component */}
+            <Logo showTagline={true} />
 
-            {/* Cart Icon */}
+            {/* Cart Icon Button (Min 44px tap target) */}
             <div className="relative">
               <button
                 type="button"
                 onClick={openCart}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full bg-stone-200/50 text-stone-700 hover:bg-stone-200 transition-colors"
-                aria-label="Shopping Cart"
+                className="relative flex h-11 w-11 items-center justify-center rounded-full bg-stone-200/50 text-[#24211E] hover:bg-stone-200 active:scale-95 transition-all"
+                aria-label={`Shopping Cart with ${totalItems} items`}
               >
                 <svg
                   className="h-5 w-5 fill-none stroke-current"
@@ -120,20 +113,20 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
           </div>
         </div>
 
-        {/* Filter Chips Bar */}
+        {/* Category Filter Chips Bar (Min 44px height tap targets) */}
         <div className="border-t border-stone-200/40">
           <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
-            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+            <div className="no-scrollbar touch-scroll flex items-center gap-2 overflow-x-auto">
               {CATEGORY_CHIPS.map((chip) => {
                 const isActive = selectedCategory === chip.value;
                 return (
                   <button
                     key={chip.value}
                     onClick={() => setSelectedCategory(chip.value)}
-                    className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-medium transition-all sm:text-sm ${
+                    className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
                       isActive
                         ? "bg-[#C1662F] text-white shadow-xs"
-                        : "bg-stone-200/60 text-stone-700 hover:bg-stone-200"
+                        : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
                     }`}
                   >
                     {chip.label}
@@ -145,7 +138,7 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Plant Grid */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         {filteredPlants.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -172,7 +165,7 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
         )}
       </main>
 
-      {/* Bottom Sheet Quick-View */}
+      {/* Quick-View Bottom Sheet */}
       <PlantBottomSheet
         plant={activePlant}
         onClose={handleClosePlant}

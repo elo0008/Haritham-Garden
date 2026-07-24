@@ -23,130 +23,128 @@ export default async function AdminPlantsPage() {
 
   if (error) {
     return (
-      <p className="text-sm text-red-600">
+      <div className="rounded-xl bg-red-50 p-4 text-sm text-red-700">
         Failed to load plants: {error.message}
-      </p>
+      </div>
     );
   }
 
   return (
-    <div>
-      {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-5xl">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Plants</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin"
+              className="text-xs text-stone-500 hover:text-stone-900 transition-colors"
+            >
+              ← Admin
+            </Link>
+          </div>
+          <h1 className="text-xl font-bold text-[#24211E] mt-1">Plants Catalogue</h1>
+          <p className="text-xs text-stone-500 mt-0.5">
             {plants.length} plant{plants.length !== 1 ? "s" : ""} in catalogue
           </p>
         </div>
         <Link
           href="/admin/plants/new"
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2
-                     rounded-lg text-sm font-medium transition-colors"
+          className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-4 py-2.5
+                     rounded-xl text-xs font-semibold shadow-xs min-h-[44px] flex items-center transition-colors"
         >
           + Add Plant
         </Link>
       </div>
 
-      {/* ── Empty state ─────────────────────────────────────────────────── */}
+      {/* Empty state */}
       {plants.length === 0 && (
-        <div className="text-center py-16 text-gray-400">
-          <p className="text-4xl mb-3">🌱</p>
-          <p className="text-sm">No plants yet. Add your first one!</p>
+        <div className="rounded-2xl border border-dashed border-stone-300/80 p-12 text-center text-stone-400 bg-white">
+          <div className="text-3xl mb-2">🌱</div>
+          <p className="text-sm font-medium text-stone-700">No plants yet</p>
+          <p className="text-xs text-stone-400 mt-1">Add your first plant to display it on the website.</p>
         </div>
       )}
 
-      {/* ── Table ───────────────────────────────────────────────────────── */}
+      {/* Table */}
       {plants.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-500 w-14">
-                  Photo
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">
-                  Name
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">
-                  Category
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">
-                  Price
-                </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-500">
-                  Availability
-                </th>
-                <th className="text-right px-4 py-3 font-medium text-gray-500">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {(plants as Plant[]).map((plant) => (
-                <tr key={plant.id} className="hover:bg-gray-50/50">
-                  {/* Thumbnail */}
-                  <td className="px-4 py-3">
-                    {plant.photos[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={plant.photos[0]}
-                        alt={plant.name}
-                        className="w-10 h-10 object-cover rounded-lg border border-gray-100"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-lg">
-                        🌿
-                      </div>
-                    )}
-                  </td>
-
-                  {/* Name */}
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{plant.name}</div>
-                    {plant.local_name && (
-                      <div className="text-xs text-gray-400">{plant.local_name}</div>
-                    )}
-                  </td>
-
-                  {/* Category */}
-                  <td className="px-4 py-3 text-gray-600">
-                    {CATEGORY_LABEL[plant.category] ?? plant.category}
-                  </td>
-
-                  {/* Price */}
-                  <td className="px-4 py-3 text-gray-700 font-medium">
-                    ₹{plant.price.toLocaleString("en-IN")}
-                  </td>
-
-                  {/* Availability — inline editable */}
-                  <td className="px-4 py-3">
-                    <AvailabilitySelect
-                      plantId={plant.id}
-                      current={plant.availability}
-                    />
-                  </td>
-
-                  {/* Actions */}
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-3">
-                      <Link
-                        href={`/admin/plants/${plant.id}/edit`}
-                        className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
-                      >
-                        Edit
-                      </Link>
-                      <DeleteButton
-                        plantId={plant.id}
-                        plantName={plant.name}
-                        photoUrls={plant.photos}
-                      />
-                    </div>
-                  </td>
+        <div className="bg-white rounded-2xl border border-stone-200/80 overflow-hidden shadow-2xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-stone-100/70 border-b border-stone-200/80 text-xs font-semibold uppercase tracking-wider text-stone-500">
+                <tr>
+                  <th className="px-4 py-3.5 w-16">Photo</th>
+                  <th className="px-4 py-3.5">Name</th>
+                  <th className="px-4 py-3.5">Category</th>
+                  <th className="px-4 py-3.5">Price</th>
+                  <th className="px-4 py-3.5">Availability</th>
+                  <th className="px-4 py-3.5 text-right">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-stone-100 text-stone-800">
+                {(plants as Plant[]).map((plant) => (
+                  <tr key={plant.id} className="hover:bg-stone-50/60 transition-colors">
+                    {/* Thumbnail */}
+                    <td className="px-4 py-3">
+                      {plant.photos[0] ? (
+                        <img
+                          src={plant.photos[0]}
+                          alt={plant.name}
+                          className="w-10 h-10 object-cover rounded-xl border border-stone-200/80"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-xl bg-stone-100 flex items-center justify-center text-lg">
+                          🌿
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Name */}
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-[#24211E]">{plant.name}</div>
+                      {plant.local_name && (
+                        <div className="text-xs text-stone-400">{plant.local_name}</div>
+                      )}
+                    </td>
+
+                    {/* Category */}
+                    <td className="px-4 py-3 text-stone-600 text-xs capitalize">
+                      {CATEGORY_LABEL[plant.category] ?? plant.category}
+                    </td>
+
+                    {/* Price */}
+                    <td className="px-4 py-3 text-[#24211E] font-semibold">
+                      ₹{plant.price.toLocaleString("en-IN")}
+                    </td>
+
+                    {/* Availability — inline editable */}
+                    <td className="px-4 py-3">
+                      <AvailabilitySelect
+                        plantId={plant.id}
+                        current={plant.availability}
+                      />
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-end gap-3">
+                        <Link
+                          href={`/admin/plants/${plant.id}/edit`}
+                          className="min-h-[44px] flex items-center text-xs font-semibold text-stone-700 hover:text-[#C1662F] transition-colors"
+                        >
+                          Edit
+                        </Link>
+                        <DeleteButton
+                          plantId={plant.id}
+                          plantName={plant.name}
+                          photoUrls={plant.photos}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

@@ -24,15 +24,15 @@ const CATEGORY_OPTIONS: { value: PlantCategory; label: string }[] = [
 ];
 
 const SUNLIGHT_OPTIONS: { value: PlantSunlight; label: string }[] = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low Light" },
+  { value: "medium", label: "Medium Light" },
   { value: "full_sun", label: "Full Sun" },
 ];
 
 const WATERING_OPTIONS: { value: PlantWatering; label: string }[] = [
-  { value: "low", label: "Low" },
-  { value: "medium", label: "Medium" },
-  { value: "high", label: "High" },
+  { value: "low", label: "Low Water" },
+  { value: "medium", label: "Medium Water" },
+  { value: "high", label: "High Water" },
 ];
 
 const AVAILABILITY_OPTIONS: { value: PlantAvailability; label: string }[] = [
@@ -44,9 +44,9 @@ const AVAILABILITY_OPTIONS: { value: PlantAvailability; label: string }[] = [
 // ── Shared input class ────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm " +
-  "focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent " +
-  "disabled:bg-gray-50 disabled:text-gray-500";
+  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-[#24211E] " +
+  "focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent " +
+  "disabled:bg-stone-100 disabled:text-stone-400 min-h-[44px]";
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
@@ -104,7 +104,7 @@ export function PlantForm({ initialData }: Props) {
       preview: URL.createObjectURL(file),
     }));
     setNewFiles((prev) => [...prev, ...items]);
-    e.target.value = ""; // reset so same file can be re-selected
+    e.target.value = "";
   }
 
   function removeExistingPhoto(url: string) {
@@ -138,7 +138,7 @@ export function PlantForm({ initialData }: Props) {
     setSaving(true);
 
     try {
-      // 1. Upload new photos client-side using the browser Supabase client
+      // 1. Upload new photos client-side using browser Supabase client
       const supabase = createClient();
       const uploadedUrls: string[] = [];
 
@@ -195,18 +195,18 @@ export function PlantForm({ initialData }: Props) {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl bg-white border border-stone-200/80 rounded-2xl p-6 shadow-2xs">
       {/* Error banner */}
       {error && (
-        <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
           {error}
         </div>
       )}
 
       {/* ── Row 1: Name + Local Name ─────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Name <span className="text-red-500">*</span>
           </label>
           <input
@@ -219,9 +219,9 @@ export function PlantForm({ initialData }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Local Name{" "}
-            <span className="font-normal text-gray-400">(optional)</span>
+            <span className="font-normal text-stone-400">(optional)</span>
           </label>
           <input
             type="text"
@@ -235,9 +235,9 @@ export function PlantForm({ initialData }: Props) {
       </div>
 
       {/* ── Row 2: Category + Price ──────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Category <span className="text-red-500">*</span>
           </label>
           <select
@@ -257,7 +257,7 @@ export function PlantForm({ initialData }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Price (₹) <span className="text-red-500">*</span>
           </label>
           <input
@@ -274,9 +274,9 @@ export function PlantForm({ initialData }: Props) {
       </div>
 
       {/* ── Row 3: Sunlight + Watering ───────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Sunlight
           </label>
           <select
@@ -293,7 +293,7 @@ export function PlantForm({ initialData }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Watering
           </label>
           <select
@@ -312,9 +312,9 @@ export function PlantForm({ initialData }: Props) {
       </div>
 
       {/* ── Row 4: Availability + Shippable ─────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
             Availability
           </label>
           <select
@@ -332,19 +332,19 @@ export function PlantForm({ initialData }: Props) {
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-2 pb-2">
+        <div className="flex items-center gap-2.5 pb-2.5 min-h-[44px]">
           <input
             id="shippable"
             type="checkbox"
             checked={shippable}
             onChange={(e) => setShippable(e.target.checked)}
             disabled={saving}
-            className="w-4 h-4 rounded border-gray-300 text-green-600
-                       focus:ring-green-500 cursor-pointer"
+            className="w-4 h-4 rounded border-stone-300 text-[#C1662F]
+                       focus:ring-[#C1662F] cursor-pointer"
           />
           <label
             htmlFor="shippable"
-            className="text-sm font-medium text-gray-700 cursor-pointer"
+            className="text-xs font-semibold text-stone-700 cursor-pointer"
           >
             Available for shipping
           </label>
@@ -353,9 +353,9 @@ export function PlantForm({ initialData }: Props) {
 
       {/* ── Description ─────────────────────────────────────────────────── */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-xs font-semibold text-stone-700 mb-1.5">
           Description{" "}
-          <span className="font-normal text-gray-400">(1–2 sentences)</span>
+          <span className="font-normal text-stone-400">(1–2 sentences)</span>
         </label>
         <textarea
           value={description}
@@ -363,13 +363,13 @@ export function PlantForm({ initialData }: Props) {
           rows={3}
           placeholder="Brief description of the plant…"
           disabled={saving}
-          className={inputCls + " resize-none"}
+          className="w-full rounded-xl border border-stone-300 bg-white p-3 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent resize-none"
         />
       </div>
 
       {/* ── Photos ──────────────────────────────────────────────────────── */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-xs font-semibold text-stone-700 mb-2">
           Photos
         </label>
 
@@ -378,16 +378,15 @@ export function PlantForm({ initialData }: Props) {
           <div className="flex flex-wrap gap-3 mb-3">
             {existingPhotos.map((url) => (
               <div key={url} className="relative group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={url}
                   alt=""
-                  className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                  className="w-20 h-20 object-cover rounded-xl border border-stone-200"
                 />
                 <button
                   type="button"
                   onClick={() => removeExistingPhoto(url)}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
                              text-white rounded-full text-xs flex items-center justify-center
                              shadow transition-colors"
                   title="Remove photo"
@@ -398,20 +397,19 @@ export function PlantForm({ initialData }: Props) {
             ))}
             {newFiles.map((item) => (
               <div key={item.id} className="relative group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.preview}
                   alt=""
-                  className="w-20 h-20 object-cover rounded-lg border border-blue-200"
+                  className="w-20 h-20 object-cover rounded-xl border border-[#C1662F]"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-blue-500/70 text-white
-                                text-[10px] text-center rounded-b-lg py-0.5">
+                <div className="absolute bottom-0 left-0 right-0 bg-[#C1662F]/80 text-white
+                                text-[10px] text-center rounded-b-xl py-0.5">
                   new
                 </div>
                 <button
                   type="button"
                   onClick={() => removeNewFile(item.id)}
-                  className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
                              text-white rounded-full text-xs flex items-center justify-center
                              shadow transition-colors"
                   title="Remove photo"
@@ -435,28 +433,28 @@ export function PlantForm({ initialData }: Props) {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={saving}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-2
-                     hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px]
+                     hover:bg-stone-50 disabled:opacity-50 transition-colors"
         >
           + Add Photos
         </button>
-        <p className="mt-1.5 text-xs text-gray-400">
-          Photos are uploaded on save. New photos are marked in blue.
+        <p className="mt-1.5 text-xs text-stone-400">
+          Photos are uploaded on save. New photos are marked in terracotta.
         </p>
       </div>
 
       {/* ── Slug note ────────────────────────────────────────────────────── */}
-      <p className="text-xs text-gray-400">
+      <p className="text-xs text-stone-400">
         The URL slug is auto-generated from the plant name when you save.
       </p>
 
       {/* ── Submit / Cancel ──────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+      <div className="flex items-center gap-3 pt-3 border-t border-stone-100">
         <button
           type="submit"
           disabled={saving}
-          className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg
-                     text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed
+          className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-5 py-3 rounded-xl
+                     text-xs font-semibold min-h-[44px] shadow-xs disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors"
         >
           {saving
@@ -469,7 +467,7 @@ export function PlantForm({ initialData }: Props) {
           type="button"
           onClick={() => router.back()}
           disabled={saving}
-          className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 transition-colors"
+          className="text-xs font-medium text-stone-500 hover:text-stone-800 px-4 py-3 min-h-[44px] transition-colors"
         >
           Cancel
         </button>
