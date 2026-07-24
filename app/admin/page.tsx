@@ -2,32 +2,38 @@ import Link from "next/link";
 
 export default function AdminPage() {
   return (
-    <div>
-      <h1 className="text-xl font-semibold text-gray-900 mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl">
+    <div className="max-w-2xl">
+      <h1 className="text-xl font-semibold text-gray-900 mb-6">Admin Panel</h1>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Plants Tile */}
         <Link
           href="/admin/plants"
-          className="flex items-center gap-3 p-4 bg-white border border-gray-200
-                     rounded-xl hover:border-green-300 hover:bg-green-50 transition-colors group"
+          className="flex items-center gap-4 p-5 bg-white border border-gray-200
+                     rounded-2xl hover:border-green-400 hover:shadow-md transition-all group"
         >
-          <span className="text-2xl">🌿</span>
+          <span className="text-3xl p-3 bg-green-50 rounded-xl">🌿</span>
           <div>
-            <div className="font-medium text-gray-900 group-hover:text-green-700">
+            <div className="text-base font-semibold text-gray-900 group-hover:text-green-700">
               Plants
             </div>
-            <div className="text-xs text-gray-400">Manage catalogue</div>
+            <div className="text-xs text-gray-500 mt-0.5">Manage catalogue & photos</div>
           </div>
         </Link>
-        <div
-          className="flex items-center gap-3 p-4 bg-gray-50 border border-dashed
-                     border-gray-200 rounded-xl opacity-50 cursor-not-allowed"
+
+        {/* Orders Tile */}
+        <Link
+          href="/admin/orders"
+          className="flex items-center gap-4 p-5 bg-white border border-gray-200
+                     rounded-2xl hover:border-amber-400 hover:shadow-md transition-all group"
         >
-          <span className="text-2xl">📦</span>
+          <span className="text-3xl p-3 bg-amber-50 rounded-xl">📦</span>
           <div>
-            <div className="font-medium text-gray-500">Orders</div>
-            <div className="text-xs text-gray-400">Coming soon</div>
+            <div className="text-base font-semibold text-gray-900 group-hover:text-amber-700">
+              Orders
+            </div>
+            <div className="text-xs text-gray-500 mt-0.5">View & handle customer orders</div>
           </div>
-        </div>
+        </Link>
       </div>
     </div>
   );
