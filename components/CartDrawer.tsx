@@ -1,15 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatINR } from "@/lib/utils";
+import { createCustomerOrder } from "@/app/actions/orders";
+import {
+  buildCartOrderMessage,
+  buildWhatsAppUrl,
+  DEFAULT_WHATSAPP_NUMBER,
+} from "@/lib/whatsapp";
 
-interface CartDrawerProps {
-  onSendOrder?: () => void;
-}
+export function CartDrawer() {
+  const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, subtotal, totalItems } =
+    useCart();
 
-export function CartDrawer({ onSendOrder }: CartDrawerProps) {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, subtotal, totalItems } = useCart();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [orderSentRef, setOrderSentRef] = useState<string | null>(null);
 
   // Close on ESC key
   useEffect(() => {
@@ -24,14 +31,53 @@ export function CartDrawer({ onSendOrder }: CartDrawerProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, closeCart]);
 
+  // Reset error/success states when drawer is closed/opened
+  useEffect(() => {
+    if (!isOpen) {
+      setErrorMsg(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
+
+  const handleSendOrder = async () => {
+    if (items.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setErrorMsg(null);
+
+    // 1. Create order record in Supabase
+    const result = await createCustomerOrder(items, subtotal);
+
+    if (!result.success || !result.orderRef) {
+      setErrorMsg(result.error || "Failed to create order. Please try again.");
+      setIsSubmitting(false);
+      return; // Do NOT open WhatsApp if order creation failed
+    }
+
+    // 2. Build WhatsApp deep link message
+    const message = buildCartOrderMessage(items, subtotal, result.orderRef);
+    const whatsappUrl = buildWhatsAppUrl(DEFAULT_WHATSAPP_NUMBER, message);
+
+    // 3. Clear cart and set confirmation state
+    const orderRef = result.orderRef;
+    clearCart();
+    setOrderSentRef(orderRef);
+    setIsSubmitting(false);
+
+    // 4. Open WhatsApp
+    window.open(whatsappUrl, "_blank");
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-        onClick={closeCart}
+        onClick={() => {
+          setOrderSentRef(null);
+          closeCart();
+        }}
         aria-hidden="true"
       />
 
@@ -56,7 +102,10 @@ export function CartDrawer({ onSendOrder }: CartDrawerProps) {
           </div>
 
           <button
-            onClick={closeCart}
+            onClick={() => {
+              setOrderSentRef(null);
+              closeCart();
+            }}
             type="button"
             className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-200/60 text-stone-600 hover:bg-stone-200 hover:text-stone-900 transition-colors"
             aria-label="Close cart"
@@ -67,9 +116,44 @@ export function CartDrawer({ onSendOrder }: CartDrawerProps) {
           </button>
         </div>
 
+        {/* Error Banner */}
+        {errorMsg && (
+          <div className="mx-5 mt-4 rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-700">
+            <div className="font-semibold mb-0.5">Order Error</div>
+            {errorMsg}
+          </div>
+        )}
+
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto p-5">
-          {items.length === 0 ? (
+          {orderSentRef ? (
+            /* Confirmation State */
+            <div className="flex h-full flex-col items-center justify-center text-center py-10">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-3xl">
+                ✓
+              </div>
+              <span className="rounded-full bg-stone-200/80 px-3 py-1 text-xs font-bold text-stone-800 mb-2">
+                Ref: {orderSentRef}
+              </span>
+              <h3 className="text-lg font-bold text-stone-900 mb-2">
+                Order Request Sent!
+              </h3>
+              <p className="text-xs text-stone-600 max-w-xs leading-relaxed mb-6">
+                Your order request has been sent! We&apos;ll confirm details with you on WhatsApp.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setOrderSentRef(null);
+                  closeCart();
+                }}
+                className="rounded-xl bg-stone-900 px-6 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition-colors"
+              >
+                Continue Browsing
+              </button>
+            </div>
+          ) : items.length === 0 ? (
+            /* Empty State */
             <div className="flex h-full flex-col items-center justify-center text-center py-12">
               <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-stone-200/50 text-3xl">
                 🛒
@@ -89,6 +173,7 @@ export function CartDrawer({ onSendOrder }: CartDrawerProps) {
               </button>
             </div>
           ) : (
+            /* Item List */
             <div className="space-y-4">
               {items.map((item) => (
                 <div
@@ -170,7 +255,7 @@ export function CartDrawer({ onSendOrder }: CartDrawerProps) {
         </div>
 
         {/* Drawer Footer */}
-        {items.length > 0 && (
+        {!orderSentRef && items.length > 0 && (
           <div className="border-t border-stone-200/80 bg-white p-5 shadow-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-stone-600">Subtotal</span>
@@ -185,19 +270,20 @@ export function CartDrawer({ onSendOrder }: CartDrawerProps) {
 
             <button
               type="button"
-              onClick={() => {
-                if (onSendOrder) {
-                  onSendOrder();
-                } else {
-                  console.log("Send Order via WhatsApp triggered");
-                }
-              }}
-              className="w-full rounded-xl bg-[#C1662F] py-3.5 px-4 text-center text-sm font-semibold text-white shadow-xs hover:bg-[#a85524] active:bg-[#92481e] transition-colors flex items-center justify-center gap-2"
+              onClick={handleSendOrder}
+              disabled={isSubmitting}
+              className="w-full rounded-xl bg-[#C1662F] py-3.5 px-4 text-center text-sm font-semibold text-white shadow-xs hover:bg-[#a85524] active:bg-[#92481e] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span>Send Order via WhatsApp</span>
-              <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
-              </svg>
+              {isSubmitting ? (
+                <span>Creating order...</span>
+              ) : (
+                <>
+                  <span>Send Order via WhatsApp</span>
+                  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
+                  </svg>
+                </>
+              )}
             </button>
           </div>
         )}
