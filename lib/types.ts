@@ -98,6 +98,10 @@ export interface SiteSettings {
   business_name: string;
   tagline: string;
   whatsapp_number: string;
+  location_text?: string | null;
+  service_area_text?: string | null;
+  instagram_url?: string | null;
+  contact_phone?: string | null;
   updated_at: string;
 }
 

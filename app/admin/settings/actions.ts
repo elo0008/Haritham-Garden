@@ -8,6 +8,10 @@ interface SettingsUpdate {
   business_name: string;
   tagline: string;
   whatsapp_number: string;
+  location_text: string | null;
+  service_area_text: string | null;
+  instagram_url: string | null;
+  contact_phone: string | null;
 }
 
 export async function updateSiteSettings(data: SettingsUpdate): Promise<void> {
@@ -37,6 +41,10 @@ export async function updateSiteSettings(data: SettingsUpdate): Promise<void> {
       business_name: data.business_name.trim() || "Haritham Garden",
       tagline: data.tagline.trim() || "Fresh plants & greens for your home",
       whatsapp_number: cleanPhone,
+      location_text: data.location_text?.trim() || null,
+      service_area_text: data.service_area_text?.trim() || null,
+      instagram_url: data.instagram_url?.trim() || null,
+      contact_phone: data.contact_phone?.trim() || null,
     })
     .eq("id", existing.id);
 

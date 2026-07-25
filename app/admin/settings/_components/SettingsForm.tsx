@@ -19,10 +19,17 @@ export function SettingsForm({ settings }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Branding fields
   const [businessName, setBusinessName] = useState(settings.business_name ?? "Haritham Garden");
   const [tagline, setTagline] = useState(settings.tagline ?? "Fresh plants & greens for your home");
   const [whatsappNumber, setWhatsappNumber] = useState(settings.whatsapp_number ?? "919876543210");
   const [logoUrl, setLogoUrl] = useState<string | null>(settings.logo_url ?? null);
+
+  // Shop Info / Footer fields
+  const [locationText, setLocationText] = useState(settings.location_text ?? "");
+  const [serviceAreaText, setServiceAreaText] = useState(settings.service_area_text ?? "");
+  const [instagramUrl, setInstagramUrl] = useState(settings.instagram_url ?? "");
+  const [contactPhone, setContactPhone] = useState(settings.contact_phone ?? "");
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -76,6 +83,10 @@ export function SettingsForm({ settings }: Props) {
         business_name: businessName,
         tagline: tagline,
         whatsapp_number: whatsappNumber,
+        location_text: locationText,
+        service_area_text: serviceAreaText,
+        instagram_url: instagramUrl,
+        contact_phone: contactPhone,
       });
       setSuccess(true);
       router.refresh();
@@ -101,104 +112,182 @@ export function SettingsForm({ settings }: Props) {
         </div>
       )}
 
-      {/* ── Logo Upload ───────────────────────────────────────────────────── */}
+      {/* ── Section 1: Header & Branding ──────────────────────────────────── */}
       <div>
-        <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-          Header Logo Image{" "}
-          <span className="font-normal text-stone-400">(optional)</span>
-        </label>
-        <p className="text-xs text-stone-500 mb-3">
-          If uploaded, this image will replace the default text wordmark in the header. If left empty, it safely falls back to text.
-        </p>
+        <h2 className="text-sm font-bold text-[#24211E] uppercase tracking-wider text-stone-400 mb-4 pb-2 border-b border-stone-100">
+          Branding & Header
+        </h2>
 
-        {logoUrl && (
-          <div className="relative mb-3 inline-block">
-            <img
-              src={logoUrl}
-              alt="Site Logo"
-              className="h-14 w-auto rounded-xl border border-stone-200 object-contain p-1.5 bg-stone-50"
+        <div className="space-y-5">
+          {/* Logo Upload */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Header Logo Image{" "}
+              <span className="font-normal text-stone-400">(optional)</span>
+            </label>
+            <p className="text-xs text-stone-500 mb-3">
+              If uploaded, this image will replace the default text wordmark in the header. If left empty, it safely falls back to text.
+            </p>
+
+            {logoUrl && (
+              <div className="relative mb-3 inline-block">
+                <img
+                  src={logoUrl}
+                  alt="Site Logo"
+                  className="h-14 w-auto rounded-xl border border-stone-200 object-contain p-1.5 bg-stone-50"
+                />
+                <button
+                  type="button"
+                  onClick={() => setLogoUrl(null)}
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
+                             text-white rounded-full text-xs flex items-center justify-center
+                             shadow transition-colors"
+                  title="Remove logo image"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
             />
-            <button
-              type="button"
-              onClick={() => setLogoUrl(null)}
-              className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
-                         text-white rounded-full text-xs flex items-center justify-center
-                         shadow transition-colors"
-              title="Remove logo image"
-            >
-              ×
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={saving || uploading}
+                className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px]
+                           hover:bg-stone-50 disabled:opacity-50 transition-colors"
+              >
+                {uploading ? "Uploading…" : logoUrl ? "Replace Logo Image" : "+ Upload Logo Image"}
+              </button>
+            </div>
           </div>
-        )}
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleLogoUpload}
-        />
-        <div>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={saving || uploading}
-            className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px]
-                       hover:bg-stone-50 disabled:opacity-50 transition-colors"
-          >
-            {uploading ? "Uploading…" : logoUrl ? "Replace Logo Image" : "+ Upload Logo Image"}
-          </button>
+          {/* Business Name */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Business Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={businessName}
+              onChange={(e) => setBusinessName(e.target.value)}
+              placeholder="e.g. Haritham Garden"
+              required
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+
+          {/* Tagline */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Tagline <span className="font-normal text-stone-400">(shown under name in header)</span>
+            </label>
+            <input
+              type="text"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="e.g. Fresh plants & greens for your home"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+
+          {/* WhatsApp Number */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              WhatsApp Order Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={whatsappNumber}
+              onChange={(e) => setWhatsappNumber(e.target.value)}
+              placeholder="e.g. 919876543210"
+              required
+              disabled={saving}
+              className={inputCls}
+            />
+            <p className="mt-1.5 text-xs text-stone-500 leading-relaxed">
+              <span className="font-semibold text-stone-700">Format note:</span> Include country code without any <code className="bg-stone-100 px-1 py-0.5 rounded text-stone-800">+</code> or spaces (e.g. <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-stone-800">919876543210</code> for India). Customer WhatsApp order messages will be sent to this number.
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* ── Business Name ─────────────────────────────────────────────────── */}
-      <div>
-        <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-          Business Name <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={businessName}
-          onChange={(e) => setBusinessName(e.target.value)}
-          placeholder="e.g. Haritham Garden"
-          required
-          disabled={saving}
-          className={inputCls}
-        />
-      </div>
+      {/* ── Section 2: Shop Info & Footer ─────────────────────────────────── */}
+      <div className="pt-4">
+        <h2 className="text-sm font-bold text-[#24211E] uppercase tracking-wider text-stone-400 mb-4 pb-2 border-b border-stone-100">
+          Shop Info & Footer
+        </h2>
 
-      {/* ── Tagline ───────────────────────────────────────────────────────── */}
-      <div>
-        <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-          Tagline <span className="font-normal text-stone-400">(shown under name in header)</span>
-        </label>
-        <input
-          type="text"
-          value={tagline}
-          onChange={(e) => setTagline(e.target.value)}
-          placeholder="e.g. Fresh plants & greens for your home"
-          disabled={saving}
-          className={inputCls}
-        />
-      </div>
+        <div className="space-y-4">
+          {/* Location Text */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Location / Town <span className="font-normal text-stone-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={locationText}
+              onChange={(e) => setLocationText(e.target.value)}
+              placeholder="e.g. Based in Thrissur, Kerala"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
 
-      {/* ── WhatsApp Number ───────────────────────────────────────────────── */}
-      <div>
-        <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-          WhatsApp Order Number <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="text"
-          value={whatsappNumber}
-          onChange={(e) => setWhatsappNumber(e.target.value)}
-          placeholder="e.g. 919876543210"
-          required
-          disabled={saving}
-          className={inputCls}
-        />
-        <p className="mt-1.5 text-xs text-stone-500 leading-relaxed">
-          <span className="font-semibold text-stone-700">Format note:</span> Include country code without any <code className="bg-stone-100 px-1 py-0.5 rounded text-stone-800">+</code> or spaces (e.g. <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-stone-800">919876543210</code> for India). Customer WhatsApp order messages will be sent to this number.
-        </p>
+          {/* Service Area / Shipping Text */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Service Area / Delivery Info <span className="font-normal text-stone-400">(optional)</span>
+            </label>
+            <input
+              type="text"
+              value={serviceAreaText}
+              onChange={(e) => setServiceAreaText(e.target.value)}
+              placeholder="e.g. Delivering across Kerala via DTDC & speed post"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+
+          {/* Instagram URL */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Instagram Profile URL <span className="font-normal text-stone-400">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={instagramUrl}
+              onChange={(e) => setInstagramUrl(e.target.value)}
+              placeholder="e.g. https://instagram.com/harithamgarden"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+
+          {/* Contact Phone */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Contact Phone / Call Number <span className="font-normal text-stone-400">(optional, if different from WhatsApp)</span>
+            </label>
+            <input
+              type="text"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="e.g. +91 98765 43210"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+        </div>
       </div>
 
       {/* ── Submit ────────────────────────────────────────────────────────── */}

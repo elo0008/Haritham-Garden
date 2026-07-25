@@ -7,6 +7,7 @@ import { Logo } from "./Logo";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
 import { HeroBannerDisplay } from "./HeroBannerDisplay";
+import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 
@@ -233,6 +234,9 @@ export function PlantCatalog({
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <Footer settings={siteSettings} />
 
       {/* Quick-View Bottom Sheet */}
       <PlantBottomSheet
