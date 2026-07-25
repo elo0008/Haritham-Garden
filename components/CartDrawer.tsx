@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatINR } from "@/lib/utils";
 import { createCustomerOrder } from "@/app/actions/orders";
@@ -33,6 +33,9 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const [lastOrderMessage, setLastOrderMessage] = useState<string>("");
   const [copied, setCopied] = useState(false);
 
+  // Synchronous ref guard to prevent double-tap race conditions
+  const submittingRef = useRef(false);
+
   const targetNumber = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
 
   // Close on ESC key
@@ -52,39 +55,49 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   useEffect(() => {
     if (!isOpen) {
       setErrorMsg(null);
+      submittingRef.current = false;
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSendOrder = async () => {
-    if (items.length === 0 || isSubmitting) return;
+    // Double-check synchronous guard to stop rapid double-taps immediately
+    if (items.length === 0 || submittingRef.current || isSubmitting) return;
 
+    submittingRef.current = true;
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    // 1. Create order record in Supabase
-    const result = await createCustomerOrder(items, subtotal);
+    try {
+      // 1. Create order record in Supabase
+      const result = await createCustomerOrder(items, subtotal);
 
-    if (!result.success || !result.orderRef) {
-      setErrorMsg(result.error || "Failed to create order. Please try again.");
+      if (!result.success || !result.orderRef) {
+        setErrorMsg(result.error || "Failed to create order. Please try again.");
+        submittingRef.current = false;
+        setIsSubmitting(false);
+        return; // Do NOT open WhatsApp if order creation failed
+      }
+
+      // 2. Build WhatsApp deep link message using number from settings
+      const message = buildCartOrderMessage(items, subtotal, result.orderRef);
+      const whatsappUrl = buildWhatsAppUrl(targetNumber, message);
+
+      // 3. Clear cart and set confirmation state
+      const orderRef = result.orderRef;
+      setLastOrderMessage(message);
+      clearCart();
+      setOrderSentRef(orderRef);
+
+      // 4. Open WhatsApp
+      window.open(whatsappUrl, "_blank");
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
+    } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
-      return; // Do NOT open WhatsApp if order creation failed
     }
-
-    // 2. Build WhatsApp deep link message using number from settings
-    const message = buildCartOrderMessage(items, subtotal, result.orderRef);
-    const whatsappUrl = buildWhatsAppUrl(targetNumber, message);
-
-    // 3. Clear cart and set confirmation state
-    const orderRef = result.orderRef;
-    setLastOrderMessage(message);
-    clearCart();
-    setOrderSentRef(orderRef);
-    setIsSubmitting(false);
-
-    // 4. Open WhatsApp
-    window.open(whatsappUrl, "_blank");
   };
 
   const handleCopyMessage = () => {
@@ -356,7 +369,13 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
               className="w-full rounded-xl bg-[#C1662F] py-3.5 px-4 text-center text-sm font-semibold text-white shadow-xs hover:bg-[#a85524] active:bg-[#92481e] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
-                <span>Creating order...</span>
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span>Sending Order...</span>
+                </span>
               ) : (
                 <>
                   <span>Send Order via WhatsApp</span>
