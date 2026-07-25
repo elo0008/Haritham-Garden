@@ -14,6 +14,15 @@ interface CartDrawerProps {
   whatsappNumber?: string;
 }
 
+function formatPhoneDisplay(phone: string): string {
+  const digits = phone.replace(/[^0-9]/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("91") && digits.length === 12) {
+    return `+91 ${digits.slice(2, 7)} ${digits.slice(7)}`;
+  }
+  return `+${digits}`;
+}
+
 export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, subtotal, totalItems } =
     useCart();
@@ -21,6 +30,10 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [orderSentRef, setOrderSentRef] = useState<string | null>(null);
+  const [lastOrderMessage, setLastOrderMessage] = useState<string>("");
+  const [copied, setCopied] = useState(false);
+
+  const targetNumber = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
 
   // Close on ESC key
   useEffect(() => {
@@ -60,18 +73,25 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
     }
 
     // 2. Build WhatsApp deep link message using number from settings
-    const targetNumber = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
     const message = buildCartOrderMessage(items, subtotal, result.orderRef);
     const whatsappUrl = buildWhatsAppUrl(targetNumber, message);
 
     // 3. Clear cart and set confirmation state
     const orderRef = result.orderRef;
+    setLastOrderMessage(message);
     clearCart();
     setOrderSentRef(orderRef);
     setIsSubmitting(false);
 
     // 4. Open WhatsApp
     window.open(whatsappUrl, "_blank");
+  };
+
+  const handleCopyMessage = () => {
+    if (!lastOrderMessage) return;
+    navigator.clipboard.writeText(lastOrderMessage);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   return (
@@ -81,6 +101,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
         className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={() => {
           setOrderSentRef(null);
+          setLastOrderMessage("");
           closeCart();
         }}
         aria-hidden="true"
@@ -109,6 +130,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
           <button
             onClick={() => {
               setOrderSentRef(null);
+              setLastOrderMessage("");
               closeCart();
             }}
             type="button"
@@ -132,27 +154,81 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
         {/* Drawer Body */}
         <div className="flex-1 overflow-y-auto p-5">
           {orderSentRef ? (
-            /* Confirmation State */
-            <div className="flex h-full flex-col items-center justify-center text-center py-10">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-3xl">
-                ✓
+            /* Confirmation State with Fallback Safety Net */
+            <div className="flex flex-col items-center text-center py-4 space-y-4">
+              <div className="flex flex-col items-center">
+                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-2xl">
+                  ✓
+                </div>
+                <span className="rounded-full bg-stone-200/80 px-3 py-1 text-xs font-bold text-stone-800 mb-1">
+                  Order Ref: {orderSentRef}
+                </span>
+                <h3 className="text-lg font-bold text-stone-900 mb-1">
+                  Order Saved!
+                </h3>
+                <p className="text-xs text-stone-600 max-w-xs leading-relaxed">
+                  Your order has been recorded in our system.
+                </p>
               </div>
-              <span className="rounded-full bg-stone-200/80 px-3 py-1 text-xs font-bold text-stone-800 mb-2">
-                Ref: {orderSentRef}
-              </span>
-              <h3 className="text-lg font-bold text-stone-900 mb-2">
-                Order Request Sent!
-              </h3>
-              <p className="text-xs text-stone-600 max-w-xs leading-relaxed mb-6">
-                Your order request has been sent! We&apos;ll confirm details with you on WhatsApp.
-              </p>
+
+              {/* Fallback Safety Net Container */}
+              <div className="w-full rounded-2xl bg-amber-50/90 border border-amber-200/80 p-4 text-left space-y-3">
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 mb-0.5">
+                    <span>💬</span> Didn&apos;t open in WhatsApp?
+                  </div>
+                  <p className="text-[11px] text-stone-600 leading-normal">
+                    If WhatsApp didn&apos;t open automatically, tap below to copy your order message and send it manually.
+                  </p>
+                </div>
+
+                {/* Target Number Display */}
+                <div className="flex items-center justify-between rounded-xl bg-white/90 px-3 py-2 border border-stone-200/60 text-xs">
+                  <span className="text-stone-500 font-medium">Send to:</span>
+                  <span className="font-mono font-bold text-stone-900">
+                    {formatPhoneDisplay(targetNumber)}
+                  </span>
+                </div>
+
+                {/* Copy Button */}
+                <button
+                  type="button"
+                  onClick={handleCopyMessage}
+                  className="w-full rounded-xl bg-[#C1662F] hover:bg-[#a85524] active:bg-[#92481e] text-white py-2.5 px-3 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  {copied ? (
+                    <>
+                      <span>✓</span>
+                      <span>Copied to Clipboard!</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>📋</span>
+                      <span>Copy Order Message</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Direct link retry */}
+                <a
+                  href={buildWhatsAppUrl(targetNumber, lastOrderMessage)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center text-[11px] font-semibold text-amber-800 hover:text-amber-950 transition-colors"
+                >
+                  Tap here to retry opening WhatsApp →
+                </a>
+              </div>
+
+              {/* Continue Browsing */}
               <button
                 type="button"
                 onClick={() => {
                   setOrderSentRef(null);
+                  setLastOrderMessage("");
                   closeCart();
                 }}
-                className="rounded-xl bg-stone-900 px-6 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition-colors"
+                className="w-full rounded-xl bg-stone-900 py-3 text-xs font-semibold text-white hover:bg-stone-800 transition-colors min-h-[44px]"
               >
                 Continue Browsing
               </button>
