@@ -88,3 +88,15 @@ export interface HeroBanner {
   active: boolean;
   updated_at: string;
 }
+
+// ── Site Settings ────────────────────────────────────────────────────────────
+
+export interface SiteSettings {
+  id: string;
+  logo_url: string | null;
+  business_name: string;
+  tagline: string;
+  whatsapp_number: string;
+  updated_at: string;
+}
+

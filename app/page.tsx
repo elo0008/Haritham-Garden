@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { PlantCatalog } from "@/components/PlantCatalog";
-import type { Plant, Tag, HeroBanner } from "@/lib/types";
+import type { Plant, Tag, HeroBanner, SiteSettings } from "@/lib/types";
 
 interface PageProps {
   searchParams?: Promise<{ plant?: string }>;
@@ -72,6 +72,21 @@ export default async function HomePage({ searchParams }: PageProps) {
     console.error("Hero banner fetch notice:", err);
   }
 
+  // Fetch site settings safely (singleton)
+  let siteSettings: SiteSettings | undefined = undefined;
+  try {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      siteSettings = data as SiteSettings;
+    }
+  } catch (err) {
+    console.error("Site settings fetch notice:", err);
+  }
+
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
       <PlantCatalog
@@ -79,6 +94,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         tags={(tags as Tag[]) ?? []}
         initialPlantSlug={resolvedParams.plant}
         heroBanner={heroBanner}
+        siteSettings={siteSettings}
       />
     </Suspense>
   );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
-import type { Plant, Tag, HeroBanner } from "@/lib/types";
+import type { Plant, Tag, HeroBanner, SiteSettings } from "@/lib/types";
 import { Logo } from "./Logo";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
@@ -15,9 +15,16 @@ interface PlantCatalogProps {
   tags: Tag[];
   initialPlantSlug?: string;
   heroBanner?: HeroBanner;
+  siteSettings?: SiteSettings;
 }
 
-export function PlantCatalog({ plants, tags, initialPlantSlug, heroBanner }: PlantCatalogProps) {
+export function PlantCatalog({
+  plants,
+  tags,
+  initialPlantSlug,
+  heroBanner,
+  siteSettings,
+}: PlantCatalogProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
@@ -102,7 +109,12 @@ export function PlantCatalog({ plants, tags, initialPlantSlug, heroBanner }: Pla
         <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
             {/* Logo Component */}
-            <Logo showTagline={true} />
+            <Logo
+              showTagline={true}
+              businessName={siteSettings?.business_name}
+              tagline={siteSettings?.tagline}
+              logoUrl={siteSettings?.logo_url}
+            />
 
             {/* Cart Icon Button (Min 44px tap target) */}
             <div className="relative">
@@ -230,7 +242,7 @@ export function PlantCatalog({ plants, tags, initialPlantSlug, heroBanner }: Pla
       />
 
       {/* Cart Drawer */}
-      <CartDrawer />
+      <CartDrawer whatsappNumber={siteSettings?.whatsapp_number} />
     </div>
   );
 }

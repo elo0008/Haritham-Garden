@@ -37,6 +37,14 @@ export default async function AdminLayout({
             <span className="text-xs text-stone-500 hidden sm:block">
               {user.email}
             </span>
+            <Link
+              href="/admin/settings"
+              className="text-xs font-medium text-stone-600 hover:text-[#C1662F]
+                         border border-stone-300 hover:border-stone-400 rounded-xl
+                         px-3 py-1.5 min-h-[36px] flex items-center gap-1 transition-colors"
+            >
+              <span className="text-stone-400 text-xs">⚙️</span> Settings
+            </Link>
             <form action={signOut}>
               <button
                 type="submit"

@@ -10,7 +10,11 @@ import {
   DEFAULT_WHATSAPP_NUMBER,
 } from "@/lib/whatsapp";
 
-export function CartDrawer() {
+interface CartDrawerProps {
+  whatsappNumber?: string;
+}
+
+export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, subtotal, totalItems } =
     useCart();
 
@@ -55,9 +59,10 @@ export function CartDrawer() {
       return; // Do NOT open WhatsApp if order creation failed
     }
 
-    // 2. Build WhatsApp deep link message
+    // 2. Build WhatsApp deep link message using number from settings
+    const targetNumber = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
     const message = buildCartOrderMessage(items, subtotal, result.orderRef);
-    const whatsappUrl = buildWhatsAppUrl(DEFAULT_WHATSAPP_NUMBER, message);
+    const whatsappUrl = buildWhatsAppUrl(targetNumber, message);
 
     // 3. Clear cart and set confirmation state
     const orderRef = result.orderRef;
