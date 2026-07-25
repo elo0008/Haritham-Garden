@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
-import type { Plant, Tag } from "@/lib/types";
+import type { Plant, Tag, HeroBanner } from "@/lib/types";
 import { Logo } from "./Logo";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
+import { HeroBannerDisplay } from "./HeroBannerDisplay";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 
@@ -13,9 +14,10 @@ interface PlantCatalogProps {
   plants: Plant[];
   tags: Tag[];
   initialPlantSlug?: string;
+  heroBanner?: HeroBanner;
 }
 
-export function PlantCatalog({ plants, tags, initialPlantSlug }: PlantCatalogProps) {
+export function PlantCatalog({ plants, tags, initialPlantSlug, heroBanner }: PlantCatalogProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
@@ -175,6 +177,9 @@ export function PlantCatalog({ plants, tags, initialPlantSlug }: PlantCatalogPro
           </div>
         </div>
       </header>
+
+      {/* Hero Banner */}
+      {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
 
       {/* Main Plant Grid */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

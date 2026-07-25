@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { PlantCatalog } from "@/components/PlantCatalog";
-import type { Plant, Tag } from "@/lib/types";
+import type { Plant, Tag, HeroBanner } from "@/lib/types";
 
 interface PageProps {
   searchParams?: Promise<{ plant?: string }>;
@@ -57,12 +57,20 @@ export default async function HomePage({ searchParams }: PageProps) {
     return { ...plant, tags: attachedTags };
   });
 
+  // Fetch hero banner (singleton)
+  const { data: heroBanner } = await supabase
+    .from("hero_banner")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
       <PlantCatalog
         plants={plantsWithTags}
         tags={(tags as Tag[]) ?? []}
         initialPlantSlug={resolvedParams.plant}
+        heroBanner={(heroBanner as HeroBanner) ?? undefined}
       />
     </Suspense>
   );

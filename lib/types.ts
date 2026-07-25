@@ -76,3 +76,15 @@ export interface Order {
   deleted: boolean;
   created_at: string;
 }
+
+// ── Hero Banner ──────────────────────────────────────────────────────────────
+
+export interface HeroBanner {
+  id: string;
+  tag_label: string | null;
+  title: string | null;
+  description: string | null;
+  background_image: string | null;
+  active: boolean;
+  updated_at: string;
+}
