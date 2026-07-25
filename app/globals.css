@@ -1,17 +1,64 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-plus-jakarta), "Plus Jakarta Sans", sans-serif;
+  --font-heading: var(--font-outfit), "Outfit", sans-serif;
+
+  --color-botanical-50: #faf6f0;
+  --color-botanical-100: #f0e6da;
+  --color-botanical-600: #b85d19;
+  --color-botanical-800: #7c3f11;
+  --color-botanical-900: #4a250a;
+
+  --color-terracotta: #c85a32;
+}
+
 :root {
   --background: #FAF8F5;
   --foreground: #24211E;
-  --terracotta: #C1662F;
-  --terracotta-hover: #A85524;
-  --card-bg: #FFFFFF;
+  --scroll-track: #faf6f0;
+  --scroll-thumb: #7c3f11;
+  --scroll-thumb-hover: #4a250a;
+}
+
+html.dark {
+  --background: #0c0a09;
+  --foreground: #f5f5f4;
+  --scroll-track: #0c0a09;
+  --scroll-thumb: #b85d19;
+  --scroll-thumb-hover: #c85a32;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 9999px;
+  border: 1.5px solid var(--scroll-track);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 

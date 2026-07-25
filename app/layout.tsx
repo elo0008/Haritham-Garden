@@ -1,22 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const outfit = Outfit({
   subsets: ["latin"],
+  variable: "--font-outfit",
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  variable: "--font-plus-jakarta",
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
-  title: "Haritham Garden — Your Local Plant Shop",
+  title: "Haritham Garden — Fresh Plants & Greens",
   description:
-    "Haritham Garden is a small plant shop offering a curated selection of indoor and outdoor plants, delivered with care.",
+    "Haritham Garden offers nursery-fresh plants and greens for your home with WhatsApp ordering.",
 };
 
 export default function RootLayout({
@@ -27,10 +30,13 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      className={`${plusJakarta.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <CartProvider>{children}</CartProvider>
+      <body className="min-h-full flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
+        <ThemeProvider>
+          <CartProvider>{children}</CartProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

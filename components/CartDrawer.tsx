@@ -9,6 +9,7 @@ import {
   buildWhatsAppUrl,
   DEFAULT_WHATSAPP_NUMBER,
 } from "@/lib/whatsapp";
+import { ShoppingBag, X, Trash2, MessageCircle } from "lucide-react";
 
 interface CartDrawerProps {
   whatsappNumber?: string;
@@ -109,9 +110,9 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
-      {/* Backdrop */}
+      {/* Backdrop Overlay */}
       <div
-        className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
         onClick={() => {
           setOrderSentRef(null);
           setLastOrderMessage("");
@@ -120,24 +121,22 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
         aria-hidden="true"
       />
 
-      {/* Drawer Container */}
-      <div
-        className="relative z-10 flex h-full w-full max-w-md flex-col bg-[#FAF8F5] text-[#24211E] shadow-2xl transition-transform animate-in slide-in-from-right duration-300"
+      {/* Drawer Panel */}
+      <aside
+        className="relative z-10 w-full sm:w-[440px] h-full bg-white dark:bg-stone-900 shadow-2xl flex flex-col transition-transform animate-in slide-in-from-right duration-300 border-l border-transparent dark:border-stone-800 text-stone-900 dark:text-stone-100"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cart-drawer-title"
       >
         {/* Drawer Header */}
-        <div className="flex items-center justify-between border-b border-stone-200/80 px-5 py-4">
-          <div className="flex items-center gap-2">
-            <h2 id="cart-drawer-title" className="text-lg font-bold text-stone-900">
-              Your Cart
+        <div className="p-6 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50/50 dark:bg-stone-900/50">
+          <div className="flex items-center gap-3">
+            <h2 id="cart-drawer-title" className="font-heading font-bold text-xl text-stone-900 dark:text-stone-100">
+              Your Bag
             </h2>
-            {totalItems > 0 && (
-              <span className="rounded-full bg-[#C1662F] px-2.5 py-0.5 text-xs font-semibold text-white">
-                {totalItems} {totalItems === 1 ? "item" : "items"}
-              </span>
-            )}
+            <span className="bg-botanical-100 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 text-xs font-bold px-2.5 py-0.5 rounded-full">
+              {totalItems} {totalItems === 1 ? "item" : "items"}
+            </span>
           </div>
 
           <button
@@ -147,67 +146,63 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
               closeCart();
             }}
             type="button"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-stone-200/60 text-stone-600 hover:bg-stone-200 hover:text-stone-900 transition-colors"
-            aria-label="Close cart"
+            className="p-2 rounded-full text-stone-400 hover:text-stone-800 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close bag"
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Error Banner */}
         {errorMsg && (
-          <div className="mx-5 mt-4 rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-700">
+          <div className="mx-6 mt-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 p-3.5 text-xs text-red-700 dark:text-red-300">
             <div className="font-semibold mb-0.5">Order Error</div>
             {errorMsg}
           </div>
         )}
 
         {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-grow p-6 overflow-y-auto space-y-4">
           {orderSentRef ? (
-            /* Confirmation State with Fallback Safety Net */
+            /* Confirmation State */
             <div className="flex flex-col items-center text-center py-4 space-y-4">
               <div className="flex flex-col items-center">
-                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-2xl">
+                <div className="mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 text-2xl font-bold">
                   ✓
                 </div>
-                <span className="rounded-full bg-stone-200/80 px-3 py-1 text-xs font-bold text-stone-800 mb-1">
+                <span className="rounded-full bg-stone-200/80 dark:bg-stone-800 px-3 py-1 text-xs font-bold text-stone-800 dark:text-stone-200 mb-1">
                   Order Ref: {orderSentRef}
                 </span>
-                <h3 className="text-lg font-bold text-stone-900 mb-1">
-                  Order Saved!
+                <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100 mb-1">
+                  Order Recorded!
                 </h3>
-                <p className="text-xs text-stone-600 max-w-xs leading-relaxed">
-                  Your order has been recorded in our system.
+                <p className="text-xs text-stone-500 dark:text-stone-400 max-w-xs leading-relaxed">
+                  Your order has been saved in our system.
                 </p>
               </div>
 
-              {/* Fallback Safety Net Container */}
-              <div className="w-full rounded-2xl bg-amber-50/90 border border-amber-200/80 p-4 text-left space-y-3">
+              {/* Fallback Safety Container */}
+              <div className="w-full rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/40 p-4 text-left space-y-3">
                 <div>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 mb-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300 mb-0.5">
                     <span>💬</span> Didn&apos;t open in WhatsApp?
                   </div>
-                  <p className="text-[11px] text-stone-600 leading-normal">
+                  <p className="text-[11px] text-stone-600 dark:text-stone-400 leading-normal">
                     If WhatsApp didn&apos;t open automatically, tap below to copy your order message and send it manually.
                   </p>
                 </div>
 
-                {/* Target Number Display */}
-                <div className="flex items-center justify-between rounded-xl bg-white/90 px-3 py-2 border border-stone-200/60 text-xs">
-                  <span className="text-stone-500 font-medium">Send to:</span>
-                  <span className="font-mono font-bold text-stone-900">
+                <div className="flex items-center justify-between rounded-xl bg-white/90 dark:bg-stone-800 px-3 py-2 border border-stone-200/60 dark:border-stone-700 text-xs">
+                  <span className="text-stone-500 dark:text-stone-400 font-medium">Send to:</span>
+                  <span className="font-mono font-bold text-stone-900 dark:text-stone-100">
                     {formatPhoneDisplay(targetNumber)}
                   </span>
                 </div>
 
-                {/* Copy Button */}
                 <button
                   type="button"
                   onClick={handleCopyMessage}
-                  className="w-full rounded-xl bg-[#C1662F] hover:bg-[#a85524] active:bg-[#92481e] text-white py-2.5 px-3 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
+                  className="w-full rounded-xl bg-terracotta hover:bg-[#b04a25] text-white py-2.5 px-3 text-xs font-semibold shadow-xs flex items-center justify-center gap-1.5 transition-colors"
                 >
                   {copied ? (
                     <>
@@ -222,18 +217,16 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                   )}
                 </button>
 
-                {/* Direct link retry */}
                 <a
                   href={buildWhatsAppUrl(targetNumber, lastOrderMessage)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block text-center text-[11px] font-semibold text-amber-800 hover:text-amber-950 transition-colors"
+                  className="block text-center text-[11px] font-semibold text-amber-800 dark:text-amber-400 hover:underline transition-all"
                 >
                   Tap here to retry opening WhatsApp →
                 </a>
               </div>
 
-              {/* Continue Browsing */}
               <button
                 type="button"
                 onClick={() => {
@@ -241,106 +234,97 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                   setLastOrderMessage("");
                   closeCart();
                 }}
-                className="w-full rounded-xl bg-stone-900 py-3 text-xs font-semibold text-white hover:bg-stone-800 transition-colors min-h-[44px]"
+                className="w-full rounded-xl bg-botanical-800 dark:bg-botanical-600 hover:bg-botanical-900 dark:hover:bg-botanical-800 py-3 text-xs font-semibold text-white transition-colors min-h-[44px]"
               >
                 Continue Browsing
               </button>
             </div>
           ) : items.length === 0 ? (
-            /* Empty State */
-            <div className="flex h-full flex-col items-center justify-center text-center py-12">
-              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-stone-200/50 text-3xl">
-                🛒
+            /* Empty Cart State matching mockup */
+            <div className="h-full flex flex-col items-center justify-center text-center py-12">
+              <div className="w-20 h-20 rounded-full bg-botanical-50 dark:bg-stone-800 border border-botanical-100 dark:border-stone-700 flex items-center justify-center text-botanical-800 dark:text-botanical-100 mb-4 shadow-2xs">
+                <ShoppingBag className="w-8 h-8" />
               </div>
-              <h3 className="text-base font-semibold text-stone-800">
-                Your cart is empty
+              <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100 mb-1">
+                Your bag is currently empty
               </h3>
-              <p className="mt-1.5 text-xs text-stone-500 max-w-xs leading-relaxed">
-                Explore our collection of plants and add some green to your space!
+              <p className="text-stone-500 dark:text-stone-400 text-sm max-w-[260px] mb-6 font-normal">
+                Explore our collection of fresh nursery plants and add some warmth to your space!
               </p>
               <button
                 type="button"
                 onClick={closeCart}
-                className="mt-6 rounded-xl bg-stone-900 px-5 py-2.5 text-xs font-semibold text-white hover:bg-stone-800 transition-colors shadow-xs"
+                className="bg-botanical-800 dark:bg-botanical-600 hover:bg-botanical-900 dark:hover:bg-botanical-800 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all shadow-md min-h-[44px]"
               >
-                Browse Plants
+                Explore Plants
               </button>
             </div>
           ) : (
-            /* Item List */
+            /* Cart Item Rows matching mockup */
             <div className="space-y-4">
               {items.map((item) => (
                 <div
                   key={item.plant_id}
-                  className="flex gap-3.5 rounded-2xl bg-white p-3 border border-stone-200/60 shadow-2xs"
+                  className="flex items-center justify-between p-3.5 bg-white dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 rounded-2xl shadow-2xs hover:border-stone-300 dark:hover:border-stone-600 transition-all"
                 >
-                  {/* Thumbnail */}
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-stone-100 border border-stone-100">
-                    {item.photo ? (
-                      <img
-                        src={item.photo}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-stone-300">
-                        🌿
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Info & Controls */}
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-sm font-semibold text-stone-900 line-clamp-1">
-                        {item.name}
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.plant_id)}
-                        className="text-stone-400 hover:text-red-600 transition-colors p-0.5"
-                        aria-label={`Remove ${item.name}`}
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={1.8}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
-                        </svg>
-                      </button>
+                  <div className="flex items-center gap-3.5 overflow-hidden">
+                    <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-100 dark:bg-stone-800 border border-stone-100 dark:border-stone-700">
+                      {item.photo ? (
+                        <img
+                          src={item.photo}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-stone-400">
+                          🌿
+                        </div>
+                      )}
                     </div>
 
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      {/* Quantity Stepper */}
-                      <div className="flex items-center rounded-lg bg-stone-100 p-0.5">
+                    <div className="overflow-hidden">
+                      <h4 className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100 truncate">
+                        {item.name}
+                      </h4>
+                      <span className="text-xs text-botanical-800 dark:text-botanical-100 font-semibold mt-0.5 block">
+                        {formatINR(item.price)}
+                      </span>
+                      <div className="flex items-center gap-2 mt-2 border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 rounded-lg px-1.5 py-0.5 w-max">
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.plant_id, item.qty - 1)}
-                          className="flex h-6 w-6 items-center justify-center rounded bg-white text-stone-700 hover:bg-stone-200 text-xs font-bold transition-colors"
+                          className="w-5 h-5 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-bold text-xs"
                           aria-label="Decrease quantity"
                         >
                           -
                         </button>
-                        <span className="w-6 text-center text-xs font-bold text-stone-900">
+                        <span className="text-xs font-bold text-stone-800 dark:text-stone-100 w-4 text-center">
                           {item.qty}
                         </span>
                         <button
                           type="button"
                           onClick={() => updateQuantity(item.plant_id, item.qty + 1)}
-                          className="flex h-6 w-6 items-center justify-center rounded bg-white text-stone-700 hover:bg-stone-200 text-xs font-bold transition-colors"
+                          className="w-5 h-5 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-bold text-xs"
                           aria-label="Increase quantity"
                         >
                           +
                         </button>
                       </div>
-
-                      {/* Total price for item */}
-                      <span className="text-sm font-bold text-stone-900">
-                        {formatINR(item.price * item.qty)}
-                      </span>
                     </div>
+                  </div>
+
+                  <div className="flex flex-col items-end justify-between h-16 pl-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.plant_id)}
+                      className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1"
+                      title="Remove item"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                      {formatINR(item.price * item.qty)}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -348,25 +332,26 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
           )}
         </div>
 
-        {/* Drawer Footer */}
+        {/* Drawer Footer matching mockup */}
         {!orderSentRef && items.length > 0 && (
-          <div className="border-t border-stone-200/80 bg-white p-5 shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-stone-600">Subtotal</span>
-              <span className="text-lg font-bold text-stone-900">
-                {formatINR(subtotal)}
-              </span>
+          <div className="p-6 border-t border-stone-100 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-900/80">
+            <div className="space-y-2 mb-6">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-stone-500 dark:text-stone-400 font-medium">Subtotal</span>
+                <span className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
+                  {formatINR(subtotal)}
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-400 dark:text-stone-500 font-normal leading-tight">
+                Delivery calculated separately — final price confirmed on WhatsApp.
+              </p>
             </div>
-
-            <p className="mb-4 text-[11px] text-stone-500 leading-normal">
-              Delivery calculated separately — final price confirmed on WhatsApp
-            </p>
 
             <button
               type="button"
               onClick={handleSendOrder}
               disabled={isSubmitting}
-              className="w-full rounded-xl bg-[#C1662F] py-3.5 px-4 text-center text-sm font-semibold text-white shadow-xs hover:bg-[#a85524] active:bg-[#92481e] transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-2">
@@ -378,16 +363,14 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                 </span>
               ) : (
                 <>
+                  <MessageCircle className="w-5 h-5 fill-current" />
                   <span>Send Order via WhatsApp</span>
-                  <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981z" />
-                  </svg>
                 </>
               )}
             </button>
           </div>
         )}
-      </div>
+      </aside>
     </div>
   );
 }

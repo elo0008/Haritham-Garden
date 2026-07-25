@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface CarouselSectionProps {
   settings?: CarouselSectionSettings;
@@ -52,10 +53,8 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
     const minSwipeDistance = 40;
 
     if (diff > minSwipeDistance) {
-      // Swiped left → Next
       handleNext();
     } else if (diff < -minSwipeDistance) {
-      // Swiped right → Prev
       handlePrev();
     }
 
@@ -68,22 +67,22 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
   const headerSubtitle = settings.header_subtitle?.trim();
 
   return (
-    <section className="my-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="mb-16 pt-8 border-t border-stone-200 dark:border-stone-800">
       {/* ── Section Header ────────────────────────────────────────────────── */}
       {(headerTag || headerTitle || headerSubtitle) && (
-        <div className="mb-6 text-center sm:text-left">
+        <div className="text-center max-w-2xl mx-auto mb-10">
           {headerTag && (
-            <span className="inline-block mb-2 rounded-full bg-[#C1662F]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#C1662F]">
+            <span className="text-xs font-bold uppercase tracking-wider text-botanical-600 dark:text-botanical-100 bg-botanical-50 dark:bg-stone-900 border border-botanical-100 dark:border-stone-800 px-3 py-1 rounded-full inline-block mb-3">
               {headerTag}
             </span>
           )}
           {headerTitle && (
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#24211E] tracking-tight">
+            <h2 className="font-heading font-bold text-3xl sm:text-4xl text-stone-900 dark:text-stone-100">
               {headerTitle}
             </h2>
           )}
           {headerSubtitle && (
-            <p className="mt-1 text-sm text-stone-500 max-w-2xl leading-relaxed">
+            <p className="text-stone-500 dark:text-stone-400 text-sm mt-2 leading-relaxed">
               {headerSubtitle}
             </p>
           )}
@@ -92,80 +91,74 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
 
       {/* ── Carousel Slide Container ──────────────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-3xl border border-stone-200/80 shadow-md select-none touch-pan-y"
+        className="relative rounded-3xl overflow-hidden shadow-xl bg-stone-900 border border-transparent dark:border-stone-800 min-h-[380px] sm:min-h-[440px] flex items-center justify-between group touch-pan-y select-none"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ minHeight: 300 }}
       >
         {/* Background Image / Solid Fallback */}
         {currentSlide.background_image ? (
           <img
             src={currentSlide.background_image}
             alt={currentSlide.title}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300"
+            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-700 transform scale-100 group-hover:scale-105"
             loading="eager"
           />
         ) : (
-          <div className="absolute inset-0 bg-stone-800" />
+          <div className="absolute inset-0 bg-stone-900" />
         )}
 
-        {/* Dark Gradient Overlay for Legibility */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-stone-950/85 via-stone-950/45 to-transparent" />
 
         {/* Slide Content */}
-        <div
-          className="relative z-10 p-6 sm:p-10 flex flex-col justify-end"
-          style={{ minHeight: 300 }}
-        >
-          <div className="max-w-xl pb-6">
-            {currentSlide.tag_label?.trim() && (
-              <span className="inline-block mb-2.5 rounded-full bg-[#C1662F] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
-                {currentSlide.tag_label.trim()}
-              </span>
-            )}
-            <h3 className="text-2xl sm:text-3xl font-bold text-white leading-tight mb-2">
-              {currentSlide.title}
-            </h3>
-            <p className="text-sm sm:text-base text-stone-200 leading-relaxed">
-              {currentSlide.description}
-            </p>
-          </div>
+        <div className="relative z-10 max-w-xl p-8 sm:p-12 sm:pl-16 text-white transition-opacity duration-300">
+          {currentSlide.tag_label?.trim() && (
+            <span className="bg-botanical-600 text-botanical-50 font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block shadow-sm">
+              {currentSlide.tag_label.trim()}
+            </span>
+          )}
+          <h3 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight mb-4 leading-tight text-white drop-shadow-sm">
+            {currentSlide.title}
+          </h3>
+          <p className="text-stone-200 text-sm sm:text-base font-normal leading-relaxed drop-shadow-sm">
+            {currentSlide.description}
+          </p>
         </div>
 
-        {/* ── Navigation Arrows (Only if > 1 slide) ────────────────────────── */}
+        {/* ── Navigation Arrows ────────────────────────────────────────────── */}
         {activeSlides.length > 1 && (
           <>
             <button
               type="button"
               onClick={handlePrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-xs transition-all active:scale-95 min-h-[44px] min-w-[44px]"
+              className="absolute left-4 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/90 hover:text-stone-900 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-md opacity-75 hover:opacity-100 min-h-[44px] min-w-[44px]"
               aria-label="Previous slide"
             >
-              ←
+              <ChevronLeft className="w-6 h-6" />
             </button>
             <button
               type="button"
               onClick={handleNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-xs transition-all active:scale-95 min-h-[44px] min-w-[44px]"
+              className="absolute right-4 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/90 hover:text-stone-900 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-md opacity-75 hover:opacity-100 min-h-[44px] min-w-[44px]"
               aria-label="Next slide"
             >
-              →
+              <ChevronRight className="w-6 h-6" />
             </button>
           </>
         )}
 
-        {/* ── Pagination Indicators / Dots ───────────────────────────────── */}
+        {/* ── Pagination Dots ──────────────────────────────────────────────── */}
         {activeSlides.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 flex items-center gap-2 bg-stone-950/40 px-3 py-1.5 rounded-full backdrop-blur-md">
             {activeSlides.map((_, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setCurrentIndex(idx)}
-                className={`h-2 rounded-full transition-all ${
+                className={`h-2 rounded-full transition-all duration-300 ${
                   idx === safeIndex
-                    ? "w-6 bg-[#C1662F]"
+                    ? "w-6 bg-terracotta"
                     : "w-2 bg-white/60 hover:bg-white"
                 }`}
                 aria-label={`Go to slide ${idx + 1}`}

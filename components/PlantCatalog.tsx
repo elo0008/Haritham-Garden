@@ -11,6 +11,7 @@ import type {
   CarouselSlide,
 } from "@/lib/types";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
 import { HeroBannerDisplay } from "./HeroBannerDisplay";
@@ -18,6 +19,7 @@ import { CarouselSection } from "./CarouselSection";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
+import { ShoppingBag } from "lucide-react";
 
 interface PlantCatalogProps {
   plants: Plant[];
@@ -116,86 +118,73 @@ export function PlantCatalog({
   const isAllActive = activeTagIds.size === 0;
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#24211E]">
-      {/* Sticky Top Header (Logo & Cart) */}
-      <header className="sticky top-0 z-20 border-b border-stone-200/60 bg-[#FAF8F5]/90 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-4">
-            {/* Logo Component */}
-            <Logo
-              showTagline={true}
-              businessName={siteSettings?.business_name}
-              tagline={siteSettings?.tagline}
-              logoUrl={siteSettings?.logo_url}
-            />
+    <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
+      {/* Sticky Header / Navbar */}
+      <header className="sticky top-0 z-40 bg-stone-50/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          {/* Logo Component */}
+          <Logo
+            showTagline={true}
+            businessName={siteSettings?.business_name}
+            tagline={siteSettings?.tagline}
+            logoUrl={siteSettings?.logo_url}
+            href="/"
+          />
 
-            {/* Cart Icon Button (Min 44px tap target) */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={openCart}
-                className="relative flex h-11 w-11 items-center justify-center rounded-full bg-stone-200/50 text-[#24211E] hover:bg-stone-200 active:scale-95 transition-all"
-                aria-label={`Shopping Cart with ${totalItems} items`}
-              >
-                <svg
-                  className="h-5 w-5 fill-none stroke-current"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.8"
-                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-                  />
-                </svg>
+          {/* Header Actions: Theme Toggle + Bag Button */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <ThemeToggle />
 
-                {/* Cart Badge */}
-                {totalItems > 0 ? (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#C1662F] text-[11px] font-bold text-white shadow-xs animate-in zoom-in-50 duration-200">
-                    {totalItems > 99 ? "99+" : totalItems}
-                  </span>
-                ) : (
-                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-stone-300 text-[11px] font-bold text-stone-600">
-                    0
-                  </span>
-                )}
-              </button>
-            </div>
+            {/* Bag Button */}
+            <button
+              type="button"
+              onClick={openCart}
+              className="relative p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 transition-all shadow-2xs flex items-center gap-2 px-4 min-h-[44px]"
+              aria-label={`Shopping Bag with ${totalItems} items`}
+            >
+              <ShoppingBag className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              <span className="text-sm font-semibold hidden sm:inline">Bag</span>
+              <span className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                {totalItems}
+              </span>
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Hero Banner (Above tag filter chips and plant grid) */}
-      {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
+      {/* Main Content Area */}
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        {/* Hero Banner */}
+        {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
 
-      {/* Tag Filter Chips Bar (Below Hero Banner, Multi-select, min 44px height tap targets) */}
-      <div className="border-b border-stone-200/40 bg-[#FAF8F5]">
-        <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
-          <div className="no-scrollbar touch-scroll flex items-center gap-2 overflow-x-auto">
-            {/* "All Plants" chip */}
+        {/* Filters Section Bar */}
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-8 border-b border-stone-200 dark:border-stone-800 pb-5" id="filter-bar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 no-scrollbar w-full sm:w-auto">
+            {/* "All Plants" Chip */}
             <button
+              type="button"
               onClick={clearFilters}
-              className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shrink-0 min-h-[44px] ${
                 isAllActive
-                  ? "bg-[#C1662F] text-white shadow-xs"
-                  : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
+                  ? "bg-botanical-800 dark:bg-botanical-600 text-white shadow-xs"
+                  : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >
               All Plants
             </button>
 
-            {/* Dynamic tag chips */}
+            {/* Dynamic Tag Filter Chips */}
             {tags.map((tag) => {
               const isActive = activeTagIds.has(tag.id);
               return (
                 <button
                   key={tag.id}
+                  type="button"
                   onClick={() => toggleTag(tag.id)}
-                  className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
+                  className={`px-5 py-2.5 rounded-full text-sm transition-all shrink-0 min-h-[44px] ${
                     isActive
-                      ? "bg-[#C1662F] text-white shadow-xs"
-                      : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
+                      ? "bg-botanical-800 dark:bg-botanical-600 text-white font-semibold shadow-xs"
+                      : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"
                   }`}
                 >
                   {tag.name}
@@ -203,39 +192,34 @@ export function PlantCatalog({
               );
             })}
           </div>
+
+          <div className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+            Showing <span className="text-stone-900 dark:text-stone-100 font-bold">{filteredPlants.length}</span> items
+          </div>
         </div>
-      </div>
 
-      {/* Main Plant Grid */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        {/* Items counter when filters are active */}
-        {!isAllActive && filteredPlants.length > 0 && (
-          <p className="mb-4 text-xs text-stone-500">
-            Showing {filteredPlants.length} plant{filteredPlants.length !== 1 ? "s" : ""}
-          </p>
-        )}
-
+        {/* Product Grid */}
         {filteredPlants.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-stone-200/50 text-2xl">
+            <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-botanical-50 dark:bg-stone-900 border border-botanical-100 dark:border-stone-800 text-2xl">
               🌱
             </div>
-            <h2 className="text-lg font-semibold text-stone-800">
+            <h2 className="font-heading text-lg font-bold text-stone-900 dark:text-stone-100">
               No plants match these filters
             </h2>
-            <p className="mt-1 text-xs text-stone-500 max-w-xs">
+            <p className="mt-1 text-xs text-stone-500 dark:text-stone-400 max-w-xs">
               Try removing some tags to see more plants.
             </p>
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-4 min-h-[44px] rounded-full bg-[#C1662F] px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#A85524] active:bg-[#92481e] transition-colors"
+              className="mt-5 min-h-[44px] rounded-full bg-botanical-800 dark:bg-botanical-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-botanical-900 transition-colors"
             >
               Clear filters
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 sm:gap-x-6 sm:gap-y-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8 mb-16">
             {filteredPlants.map((plant) => (
               <PlantCard
                 key={plant.id}
@@ -245,22 +229,22 @@ export function PlantCatalog({
             ))}
           </div>
         )}
-      </main>
 
-      {/* Carousel Section (Admin manageable, renders only if enabled & has active slides) */}
-      <CarouselSection settings={carouselSettings} slides={carouselSlides} />
+        {/* Dynamic Admin-Manageable Carousel Section */}
+        <CarouselSection settings={carouselSettings} slides={carouselSlides} />
+      </main>
 
       {/* Footer */}
       <Footer settings={siteSettings} />
 
-      {/* Quick-View Bottom Sheet */}
+      {/* Quick-View Bottom Sheet / Modal */}
       <PlantBottomSheet
         plant={activePlant}
         onClose={handleClosePlant}
         onAddToCart={handleAddToCart}
       />
 
-      {/* Cart Drawer */}
+      {/* Slide-over Cart Drawer */}
       <CartDrawer whatsappNumber={siteSettings?.whatsapp_number} />
     </div>
   );

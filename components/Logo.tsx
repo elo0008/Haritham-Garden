@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Leaf } from "lucide-react";
 
 interface LogoProps {
   className?: string;
@@ -18,39 +19,34 @@ export function Logo({
   logoUrl,
 }: LogoProps) {
   const content = (
-    <div className={`flex flex-col ${className}`}>
+    <div className={`flex items-center gap-3 group ${className}`}>
       {logoUrl ? (
-        <div className="flex items-center gap-2">
-          <img
-            src={logoUrl}
-            alt={businessName}
-            className="h-8 sm:h-9 w-auto object-contain"
-          />
-          <span className="text-xl font-bold tracking-tight text-[#24211E] sm:text-2xl font-sans">
-            {businessName}
-          </span>
-        </div>
+        <img
+          src={logoUrl}
+          alt={businessName}
+          className="h-11 w-auto object-contain rounded-xl border border-stone-200 dark:border-stone-800 p-1 bg-white dark:bg-stone-900"
+        />
       ) : (
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#C1662F]/10 text-base text-[#C1662F]">
-            🌿
-          </span>
-          <span className="text-xl font-bold tracking-tight text-[#24211E] sm:text-2xl font-sans">
-            {businessName}
-          </span>
+        <div className="w-11 h-11 rounded-xl bg-botanical-100 dark:bg-stone-900 text-botanical-800 dark:text-botanical-100 flex items-center justify-center group-hover:bg-botanical-800 dark:group-hover:bg-botanical-600 group-hover:text-white transition-colors duration-300 shadow-2xs border border-transparent dark:border-stone-800 shrink-0">
+          <Leaf className="w-6 h-6" />
         </div>
       )}
-      {showTagline && tagline && (
-        <span className="text-xs text-stone-500 font-normal mt-0.5 sm:text-sm">
-          {tagline}
+      <div>
+        <span className="font-heading font-bold text-xl tracking-tight text-botanical-900 dark:text-botanical-100 block leading-none">
+          {businessName}
         </span>
-      )}
+        {showTagline && tagline && (
+          <span className="text-xs text-stone-500 dark:text-stone-400 font-medium mt-1 block">
+            {tagline}
+          </span>
+        )}
+      </div>
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="inline-block hover:opacity-90 transition-opacity">
+      <Link href={href} className="inline-block">
         {content}
       </Link>
     );
