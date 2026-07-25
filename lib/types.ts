@@ -1,6 +1,15 @@
+// ── Tag ───────────────────────────────────────────────────────────────────────
+
+export interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+  display_order: number;
+  created_at: string;
+}
+
 // ── Plant ─────────────────────────────────────────────────────────────────────
 
-export type PlantCategory = 'indoor' | 'outdoor' | 'flowering' | 'fruit' | 'other';
 export type PlantSunlight = 'low' | 'medium' | 'full_sun';
 export type PlantWatering = 'low' | 'medium' | 'high';
 export type PlantAvailability = 'available' | 'limited' | 'unavailable';
@@ -10,7 +19,6 @@ export interface Plant {
   name: string;
   local_name: string | null;
   slug: string;
-  category: PlantCategory;
   photos: string[];
   description: string | null;
   sunlight: PlantSunlight;
@@ -20,12 +28,13 @@ export interface Plant {
   shippable: boolean;
   created_at: string;
   updated_at: string;
+  // Joined from plant_tags → tags (populated by queries that join)
+  tags?: Tag[];
 }
 
 export type PlantWriteData = {
   name: string;
   local_name: string | null;
-  category: PlantCategory;
   photos: string[];
   description: string | null;
   sunlight: PlantSunlight;

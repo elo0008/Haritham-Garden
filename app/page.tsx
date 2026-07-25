@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { PlantCatalog } from "@/components/PlantCatalog";
-import type { Plant } from "@/lib/types";
+import type { Plant, Tag } from "@/lib/types";
 
 interface PageProps {
   searchParams?: Promise<{ plant?: string }>;
@@ -10,19 +10,58 @@ interface PageProps {
 export default async function HomePage({ searchParams }: PageProps) {
   const resolvedParams = searchParams ? await searchParams : {};
   const supabase = await createClient();
-  const { data: plants, error } = await supabase
+
+  // Fetch all plants
+  const { data: plants, error: plantsError } = await supabase
     .from("plants")
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching plants:", error.message);
+  if (plantsError) {
+    console.error("Error fetching plants:", plantsError.message);
   }
+
+  // Fetch all tags (ordered by display_order for chip rendering)
+  const { data: tags, error: tagsError } = await supabase
+    .from("tags")
+    .select("*")
+    .order("display_order", { ascending: true });
+
+  if (tagsError) {
+    console.error("Error fetching tags:", tagsError.message);
+  }
+
+  // Fetch all plant_tags links in one go
+  const { data: plantTags, error: ptError } = await supabase
+    .from("plant_tags")
+    .select("plant_id, tag_id");
+
+  if (ptError) {
+    console.error("Error fetching plant_tags:", ptError.message);
+  }
+
+  // Build a map of plant_id → tag objects for client-side filtering
+  const tagMap = new Map<string, Tag>();
+  for (const tag of (tags ?? []) as Tag[]) {
+    tagMap.set(tag.id, tag);
+  }
+
+  // Attach tags to each plant
+  const plantsWithTags: Plant[] = ((plants as Plant[]) ?? []).map((plant) => {
+    const plantTagLinks = (plantTags ?? []).filter(
+      (pt: { plant_id: string; tag_id: string }) => pt.plant_id === plant.id
+    );
+    const attachedTags = plantTagLinks
+      .map((pt: { plant_id: string; tag_id: string }) => tagMap.get(pt.tag_id))
+      .filter(Boolean) as Tag[];
+    return { ...plant, tags: attachedTags };
+  });
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
       <PlantCatalog
-        plants={(plants as Plant[]) || []}
+        plants={plantsWithTags}
+        tags={(tags as Tag[]) ?? []}
         initialPlantSlug={resolvedParams.plant}
       />
     </Suspense>

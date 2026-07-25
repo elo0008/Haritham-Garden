@@ -153,10 +153,12 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
             <span>💧</span>
             <span>{WATERING_LABELS[plant.watering] || plant.watering}</span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1.5 text-xs font-medium text-stone-700 capitalize">
-            <span>🪴</span>
-            <span>{plant.category}</span>
-          </div>
+          {(plant.tags ?? []).map((tag) => (
+            <div key={tag.id} className="flex items-center gap-1.5 rounded-full bg-stone-200/60 px-3 py-1.5 text-xs font-medium text-stone-700">
+              <span>🏷️</span>
+              <span>{tag.name}</span>
+            </div>
+          ))}
         </div>
 
         {/* Description */}

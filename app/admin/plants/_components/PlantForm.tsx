@@ -3,10 +3,11 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { createPlant, updatePlant } from "../actions";
+import { createPlant, updatePlant, createTag } from "../actions";
+import { TagPicker } from "@/components/TagPicker";
 import type {
   Plant,
-  PlantCategory,
+  Tag,
   PlantSunlight,
   PlantWatering,
   PlantAvailability,
@@ -14,14 +15,6 @@ import type {
 } from "@/lib/types";
 
 // ── Label maps ────────────────────────────────────────────────────────────────
-
-const CATEGORY_OPTIONS: { value: PlantCategory; label: string }[] = [
-  { value: "indoor", label: "Indoor" },
-  { value: "outdoor", label: "Outdoor" },
-  { value: "flowering", label: "Flowering" },
-  { value: "fruit", label: "Fruit" },
-  { value: "other", label: "Other" },
-];
 
 const SUNLIGHT_OPTIONS: { value: PlantSunlight; label: string }[] = [
   { value: "low", label: "Low Light" },
@@ -52,20 +45,21 @@ const inputCls =
 
 interface Props {
   initialData?: Plant;
+  /** All available tags from the database */
+  allTags: Tag[];
+  /** Tag IDs currently assigned to this plant (for edit mode) */
+  initialTagIds?: string[];
 }
 
 type NewFile = { id: string; file: File; preview: string };
 
-export function PlantForm({ initialData }: Props) {
+export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds }: Props) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Field state ──────────────────────────────────────────────────────────────
   const [name, setName] = useState(initialData?.name ?? "");
   const [localName, setLocalName] = useState(initialData?.local_name ?? "");
-  const [category, setCategory] = useState<PlantCategory | "">(
-    initialData?.category ?? ""
-  );
   const [description, setDescription] = useState(
     initialData?.description ?? ""
   );
@@ -82,6 +76,12 @@ export function PlantForm({ initialData }: Props) {
     initialData?.availability ?? "available"
   );
   const [shippable, setShippable] = useState(initialData?.shippable ?? true);
+
+  // ── Tag state ────────────────────────────────────────────────────────────────
+  const [allTags, setAllTags] = useState<Tag[]>(initialAllTags);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    initialTagIds ?? []
+  );
 
   // ── Photo state ──────────────────────────────────────────────────────────────
   const [existingPhotos, setExistingPhotos] = useState<string[]>(
@@ -120,6 +120,15 @@ export function PlantForm({ initialData }: Props) {
     });
   }
 
+  // ── Tag creation handler ─────────────────────────────────────────────────────
+
+  async function handleCreateTag(name: string): Promise<Tag> {
+    const newTag = await createTag(name);
+    // Add to local allTags so the picker shows it immediately
+    setAllTags((prev) => [...prev, newTag]);
+    return newTag;
+  }
+
   // ── Submit ───────────────────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
@@ -128,7 +137,7 @@ export function PlantForm({ initialData }: Props) {
 
     // Validation
     if (!name.trim()) { setError("Plant name is required."); return; }
-    if (!category) { setError("Category is required."); return; }
+    if (selectedTagIds.length === 0) { setError("At least one tag is required."); return; }
     const parsedPrice = parseFloat(price);
     if (!price || isNaN(parsedPrice) || parsedPrice < 0) {
       setError("A valid price is required.");
@@ -167,7 +176,6 @@ export function PlantForm({ initialData }: Props) {
       const plantData: PlantWriteData = {
         name: name.trim(),
         local_name: localName.trim() || null,
-        category: category as PlantCategory,
         description: description.trim() || null,
         sunlight,
         watering,
@@ -178,9 +186,9 @@ export function PlantForm({ initialData }: Props) {
       };
 
       if (initialData) {
-        await updatePlant(initialData.id, plantData, removedPhotos);
+        await updatePlant(initialData.id, plantData, removedPhotos, selectedTagIds);
       } else {
-        await createPlant(plantData);
+        await createPlant(plantData, selectedTagIds);
       }
 
       router.push("/admin/plants");
@@ -234,27 +242,20 @@ export function PlantForm({ initialData }: Props) {
         </div>
       </div>
 
-      {/* ── Row 2: Category + Price ──────────────────────────────────────── */}
+      {/* ── Row 2: Tags + Price ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Category <span className="text-red-500">*</span>
+            Tags <span className="text-red-500">*</span>
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as PlantCategory)}
+          <TagPicker
+            allTags={allTags}
+            selectedTagIds={selectedTagIds}
+            onChange={setSelectedTagIds}
+            onCreateTag={handleCreateTag}
             disabled={saving}
-            className={inputCls}
-          >
-            <option value="" disabled>
-              Select category…
-            </option>
-            {CATEGORY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            placeholder="Search or add tags…"
+          />
         </div>
         <div>
           <label className="block text-xs font-semibold text-stone-700 mb-1.5">

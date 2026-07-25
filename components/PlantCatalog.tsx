@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
-import type { Plant, PlantCategory } from "@/lib/types";
+import type { Plant, Tag } from "@/lib/types";
 import { Logo } from "./Logo";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
@@ -11,25 +11,18 @@ import { useCart } from "@/context/CartContext";
 
 interface PlantCatalogProps {
   plants: Plant[];
+  tags: Tag[];
   initialPlantSlug?: string;
 }
 
-const CATEGORY_CHIPS: { label: string; value: PlantCategory | "all" }[] = [
-  { label: "All", value: "all" },
-  { label: "Indoor", value: "indoor" },
-  { label: "Outdoor", value: "outdoor" },
-  { label: "Flowering", value: "flowering" },
-  { label: "Fruit", value: "fruit" },
-  { label: "Other", value: "other" },
-];
-
-export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
+export function PlantCatalog({ plants, tags, initialPlantSlug }: PlantCatalogProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
   const { totalItems, openCart, addItem } = useCart();
 
-  const [selectedCategory, setSelectedCategory] = useState<PlantCategory | "all">("all");
+  // Multi-select: set of active tag IDs (empty = show all)
+  const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set());
   const [activePlant, setActivePlant] = useState<Plant | null>(null);
 
   // Sync active plant from URL search params or initial prop
@@ -45,9 +38,37 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
     }
   }, [searchParams, initialPlantSlug, plants]);
 
-  const filteredPlants = selectedCategory === "all"
-    ? plants
-    : plants.filter((plant) => plant.category === selectedCategory);
+  // ── Filtering (AND logic) ──────────────────────────────────────────────────
+
+  const filteredPlants =
+    activeTagIds.size === 0
+      ? plants
+      : plants.filter((plant) => {
+          const plantTagIds = new Set((plant.tags ?? []).map((t) => t.id));
+          // Plant must have ALL active tags
+          for (const activeId of activeTagIds) {
+            if (!plantTagIds.has(activeId)) return false;
+          }
+          return true;
+        });
+
+  // ── Tag chip toggle ────────────────────────────────────────────────────────
+
+  const toggleTag = (tagId: string) => {
+    setActiveTagIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tagId)) {
+        next.delete(tagId);
+      } else {
+        next.add(tagId);
+      }
+      return next;
+    });
+  };
+
+  const clearFilters = () => setActiveTagIds(new Set());
+
+  // ── Plant sheet handlers ───────────────────────────────────────────────────
 
   const handleOpenPlant = (plant: Plant) => {
     setActivePlant(plant);
@@ -67,6 +88,10 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
   const handleAddToCart = (plant: Plant, qty: number) => {
     addItem(plant, qty);
   };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const isAllActive = activeTagIds.size === 0;
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#24211E]">
@@ -113,23 +138,36 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
           </div>
         </div>
 
-        {/* Category Filter Chips Bar (Min 44px height tap targets) */}
+        {/* Tag Filter Chips Bar (Multi-select, min 44px height tap targets) */}
         <div className="border-t border-stone-200/40">
           <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
             <div className="no-scrollbar touch-scroll flex items-center gap-2 overflow-x-auto">
-              {CATEGORY_CHIPS.map((chip) => {
-                const isActive = selectedCategory === chip.value;
+              {/* "All Plants" chip */}
+              <button
+                onClick={clearFilters}
+                className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
+                  isAllActive
+                    ? "bg-[#C1662F] text-white shadow-xs"
+                    : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
+                }`}
+              >
+                All Plants
+              </button>
+
+              {/* Dynamic tag chips */}
+              {tags.map((tag) => {
+                const isActive = activeTagIds.has(tag.id);
                 return (
                   <button
-                    key={chip.value}
-                    onClick={() => setSelectedCategory(chip.value)}
+                    key={tag.id}
+                    onClick={() => toggleTag(tag.id)}
                     className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
                       isActive
                         ? "bg-[#C1662F] text-white shadow-xs"
                         : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
                     }`}
                   >
-                    {chip.label}
+                    {tag.name}
                   </button>
                 );
               })}
@@ -140,17 +178,31 @@ export function PlantCatalog({ plants, initialPlantSlug }: PlantCatalogProps) {
 
       {/* Main Plant Grid */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {/* Items counter when filters are active */}
+        {!isAllActive && filteredPlants.length > 0 && (
+          <p className="mb-4 text-xs text-stone-500">
+            Showing {filteredPlants.length} plant{filteredPlants.length !== 1 ? "s" : ""}
+          </p>
+        )}
+
         {filteredPlants.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-stone-200/50 text-2xl">
               🌱
             </div>
             <h2 className="text-lg font-semibold text-stone-800">
-              No plants found
+              No plants match these filters
             </h2>
             <p className="mt-1 text-xs text-stone-500 max-w-xs">
-              No plants available under the &quot;{selectedCategory}&quot; category at the moment.
+              Try removing some tags to see more plants.
             </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-4 min-h-[44px] rounded-full bg-[#C1662F] px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#A85524] active:bg-[#92481e] transition-colors"
+            >
+              Clear filters
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 sm:gap-x-6 sm:gap-y-8">
