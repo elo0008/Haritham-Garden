@@ -5,4 +5,6 @@ export { PlantBottomSheet } from "./PlantBottomSheet";
 export { CartDrawer } from "./CartDrawer";
 export { TagPicker } from "./TagPicker";
 export { Footer } from "./Footer";
+export { CarouselSection } from "./CarouselSection";
 export { CartProvider, useCart } from "@/context/CartContext";
+

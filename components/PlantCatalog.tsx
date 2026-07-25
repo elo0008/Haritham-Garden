@@ -2,11 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, usePathname } from "next/navigation";
-import type { Plant, Tag, HeroBanner, SiteSettings } from "@/lib/types";
+import type {
+  Plant,
+  Tag,
+  HeroBanner,
+  SiteSettings,
+  CarouselSectionSettings,
+  CarouselSlide,
+} from "@/lib/types";
 import { Logo } from "./Logo";
 import { PlantCard } from "./PlantCard";
 import { PlantBottomSheet } from "./PlantBottomSheet";
 import { HeroBannerDisplay } from "./HeroBannerDisplay";
+import { CarouselSection } from "./CarouselSection";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
@@ -17,6 +25,8 @@ interface PlantCatalogProps {
   initialPlantSlug?: string;
   heroBanner?: HeroBanner;
   siteSettings?: SiteSettings;
+  carouselSettings?: CarouselSectionSettings;
+  carouselSlides?: CarouselSlide[];
 }
 
 export function PlantCatalog({
@@ -25,6 +35,8 @@ export function PlantCatalog({
   initialPlantSlug,
   heroBanner,
   siteSettings,
+  carouselSettings,
+  carouselSlides,
 }: PlantCatalogProps) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -234,6 +246,9 @@ export function PlantCatalog({
           </div>
         )}
       </main>
+
+      {/* Carousel Section (Admin manageable, renders only if enabled & has active slides) */}
+      <CarouselSection settings={carouselSettings} slides={carouselSlides} />
 
       {/* Footer */}
       <Footer settings={siteSettings} />

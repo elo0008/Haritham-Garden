@@ -1,7 +1,14 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { PlantCatalog } from "@/components/PlantCatalog";
-import type { Plant, Tag, HeroBanner, SiteSettings } from "@/lib/types";
+import type {
+  Plant,
+  Tag,
+  HeroBanner,
+  SiteSettings,
+  CarouselSectionSettings,
+  CarouselSlide,
+} from "@/lib/types";
 
 interface PageProps {
   searchParams?: Promise<{ plant?: string }>;
@@ -87,6 +94,35 @@ export default async function HomePage({ searchParams }: PageProps) {
     console.error("Site settings fetch notice:", err);
   }
 
+  // Fetch carousel section settings & active slides safely
+  let carouselSettings: CarouselSectionSettings | undefined = undefined;
+  let carouselSlides: CarouselSlide[] = [];
+  try {
+    const { data: cSettings } = await supabase
+      .from("carousel_section_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    if (cSettings) {
+      carouselSettings = cSettings as CarouselSectionSettings;
+    }
+
+    if (carouselSettings?.enabled) {
+      const { data: cSlides } = await supabase
+        .from("carousel_slides")
+        .select("*")
+        .eq("active", true)
+        .order("display_order", { ascending: true });
+
+      if (cSlides) {
+        carouselSlides = cSlides as CarouselSlide[];
+      }
+    }
+  } catch (err) {
+    console.error("Carousel fetch notice:", err);
+  }
+
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
       <PlantCatalog
@@ -95,6 +131,8 @@ export default async function HomePage({ searchParams }: PageProps) {
         initialPlantSlug={resolvedParams.plant}
         heroBanner={heroBanner}
         siteSettings={siteSettings}
+        carouselSettings={carouselSettings}
+        carouselSlides={carouselSlides}
       />
     </Suspense>
   );

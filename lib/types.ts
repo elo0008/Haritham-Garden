@@ -105,3 +105,27 @@ export interface SiteSettings {
   updated_at: string;
 }
 
+// ── Carousel Section ──────────────────────────────────────────────────────────
+
+export interface CarouselSectionSettings {
+  id: string;
+  enabled: boolean;
+  header_tag: string | null;
+  header_title: string | null;
+  header_subtitle: string | null;
+  updated_at: string;
+}
+
+export interface CarouselSlide {
+  id: string;
+  tag_label: string | null;
+  title: string;
+  description: string;
+  background_image: string | null;
+  display_order: number;
+  active: boolean;
+  created_at: string;
+}
+
+
+

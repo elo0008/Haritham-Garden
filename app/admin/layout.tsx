@@ -38,6 +38,14 @@ export default async function AdminLayout({
               {user.email}
             </span>
             <Link
+              href="/admin/carousel-section"
+              className="text-xs font-medium text-stone-600 hover:text-[#C1662F]
+                         border border-stone-300 hover:border-stone-400 rounded-xl
+                         px-3 py-1.5 min-h-[36px] flex items-center gap-1 transition-colors"
+            >
+              <span className="text-stone-400 text-xs">🎠</span> Carousel
+            </Link>
+            <Link
               href="/admin/settings"
               className="text-xs font-medium text-stone-600 hover:text-[#C1662F]
                          border border-stone-300 hover:border-stone-400 rounded-xl
