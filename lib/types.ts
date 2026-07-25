@@ -74,6 +74,7 @@ export interface Order {
   handled: boolean;
   handled_at: string | null;
   deleted: boolean;
+  notes: string | null;
   created_at: string;
 }
 

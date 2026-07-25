@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Order } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
-import { markOrderHandled, softDeleteOrder } from "../actions";
+import { markOrderHandled, softDeleteOrder, updateOrderNotes } from "../actions";
 
 interface AdminOrdersListProps {
   orders: Order[];
@@ -22,6 +22,10 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   // State for Delete Confirmation Modal
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
 
+  // State for Admin Notes Modal
+  const [editingNoteOrder, setEditingNoteOrder] = useState<Order | null>(null);
+  const [noteInput, setNoteInput] = useState<string>("");
+
   // Open Handled modal
   const openHandledModal = (order: Order) => {
     setHandlingOrder(order);
@@ -31,6 +35,12 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
         : "0"
     );
     setModalError(null);
+  };
+
+  // Open Note Modal
+  const openNoteModal = (order: Order) => {
+    setEditingNoteOrder(order);
+    setNoteInput(order.notes ?? "");
   };
 
   // Submit Handled modal
@@ -64,6 +74,21 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
         router.refresh();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to delete order");
+      }
+    });
+  };
+
+  // Submit Note Save
+  const handleSaveNote = () => {
+    if (!editingNoteOrder) return;
+
+    startTransition(async () => {
+      try {
+        await updateOrderNotes(editingNoteOrder.id, noteInput);
+        setEditingNoteOrder(null);
+        router.refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to save note");
       }
     });
   };
@@ -170,6 +195,28 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
               )}
             </div>
 
+            {/* Admin Note Preview (if exists) */}
+            {order.notes && (
+              <div className="mt-3 rounded-xl bg-amber-50/80 border border-amber-200/70 p-3 text-xs text-amber-950">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="font-semibold text-amber-900 flex items-center gap-1">
+                    <span>📝</span> Internal Note
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => openNoteModal(order)}
+                    disabled={isPending}
+                    className="text-stone-500 hover:text-[#C1662F] font-semibold text-[11px] transition-colors"
+                  >
+                    Edit Note
+                  </button>
+                </div>
+                <p className="whitespace-pre-wrap font-sans text-stone-800 leading-relaxed">
+                  {order.notes}
+                </p>
+              </div>
+            )}
+
             {/* Action Bar (Min 44px height tap targets) */}
             <div className="flex items-center justify-between pt-3 mt-2 border-t border-stone-100 min-h-[44px]">
               {/* Handled Checkbox / Button */}
@@ -186,15 +233,29 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 </span>
               </label>
 
-              {/* Soft Delete */}
-              <button
-                type="button"
-                onClick={() => setDeletingOrder(order)}
-                disabled={isPending}
-                className="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px]"
-              >
-                Delete
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Add Note Button (if no note exists) */}
+                {!order.notes && (
+                  <button
+                    type="button"
+                    onClick={() => openNoteModal(order)}
+                    disabled={isPending}
+                    className="text-xs font-semibold text-stone-600 hover:text-[#C1662F] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-stone-100 min-h-[36px] flex items-center gap-1"
+                  >
+                    <span>📝</span> Add Note
+                  </button>
+                )}
+
+                {/* Soft Delete */}
+                <button
+                  type="button"
+                  onClick={() => setDeletingOrder(order)}
+                  disabled={isPending}
+                  className="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px]"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -264,6 +325,56 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                   className="flex-1 min-h-[44px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
                 >
                   {isPending ? "Saving..." : "Save & Mark Handled"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Admin Note Modal ────────────────────────────────────────────── */}
+      {editingNoteOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+            onClick={() => setEditingNoteOrder(null)}
+          />
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl text-[#24211E]">
+            <h3 className="text-lg font-bold text-[#24211E] mb-1">
+              Admin Note — {editingNoteOrder.order_ref}
+            </h3>
+            <p className="text-xs text-stone-500 mb-4">
+              Internal note (e.g. delivery preferences, customer requests). Only visible to admin.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <textarea
+                  value={noteInput}
+                  onChange={(e) => setNoteInput(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. Wants delivery after 6pm, asked for smaller pot..."
+                  className="w-full rounded-xl border border-stone-300 p-3 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent resize-none"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingNoteOrder(null)}
+                  disabled={isPending}
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveNote}
+                  disabled={isPending}
+                  className="flex-1 min-h-[44px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                >
+                  {isPending ? "Saving..." : "Save Note"}
                 </button>
               </div>
             </div>

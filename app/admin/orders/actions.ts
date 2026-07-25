@@ -84,3 +84,26 @@ export async function softDeleteOrder(orderId: string): Promise<void> {
 
   revalidatePath("/admin/orders");
 }
+
+/**
+ * Updates admin-only notes for an order.
+ */
+export async function updateOrderNotes(
+  orderId: string,
+  notes: string | null
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      notes: notes?.trim() || null,
+    })
+    .eq("id", orderId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/orders");
+}
