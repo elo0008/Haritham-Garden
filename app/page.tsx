@@ -57,12 +57,20 @@ export default async function HomePage({ searchParams }: PageProps) {
     return { ...plant, tags: attachedTags };
   });
 
-  // Fetch hero banner (singleton)
-  const { data: heroBanner } = await supabase
-    .from("hero_banner")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
+  // Fetch hero banner safely (singleton)
+  let heroBanner: HeroBanner | undefined = undefined;
+  try {
+    const { data } = await supabase
+      .from("hero_banner")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+    if (data) {
+      heroBanner = data as HeroBanner;
+    }
+  } catch (err) {
+    console.error("Hero banner fetch notice:", err);
+  }
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
@@ -70,7 +78,7 @@ export default async function HomePage({ searchParams }: PageProps) {
         plants={plantsWithTags}
         tags={(tags as Tag[]) ?? []}
         initialPlantSlug={resolvedParams.plant}
-        heroBanner={(heroBanner as HeroBanner) ?? undefined}
+        heroBanner={heroBanner}
       />
     </Suspense>
   );

@@ -97,7 +97,7 @@ export function PlantCatalog({ plants, tags, initialPlantSlug, heroBanner }: Pla
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#24211E]">
-      {/* Sticky Header */}
+      {/* Sticky Top Header (Logo & Cart) */}
       <header className="sticky top-0 z-20 border-b border-stone-200/60 bg-[#FAF8F5]/90 backdrop-blur-md">
         <div className="mx-auto max-w-7xl px-4 py-3.5 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between gap-4">
@@ -139,47 +139,47 @@ export function PlantCatalog({ plants, tags, initialPlantSlug, heroBanner }: Pla
             </div>
           </div>
         </div>
-
-        {/* Tag Filter Chips Bar (Multi-select, min 44px height tap targets) */}
-        <div className="border-t border-stone-200/40">
-          <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
-            <div className="no-scrollbar touch-scroll flex items-center gap-2 overflow-x-auto">
-              {/* "All Plants" chip */}
-              <button
-                onClick={clearFilters}
-                className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
-                  isAllActive
-                    ? "bg-[#C1662F] text-white shadow-xs"
-                    : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
-                }`}
-              >
-                All Plants
-              </button>
-
-              {/* Dynamic tag chips */}
-              {tags.map((tag) => {
-                const isActive = activeTagIds.has(tag.id);
-                return (
-                  <button
-                    key={tag.id}
-                    onClick={() => toggleTag(tag.id)}
-                    className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
-                      isActive
-                        ? "bg-[#C1662F] text-white shadow-xs"
-                        : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
-                    }`}
-                  >
-                    {tag.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       </header>
 
-      {/* Hero Banner */}
+      {/* Hero Banner (Above tag filter chips and plant grid) */}
       {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
+
+      {/* Tag Filter Chips Bar (Below Hero Banner, Multi-select, min 44px height tap targets) */}
+      <div className="border-b border-stone-200/40 bg-[#FAF8F5]">
+        <div className="mx-auto max-w-7xl px-4 py-2.5 sm:px-6 lg:px-8">
+          <div className="no-scrollbar touch-scroll flex items-center gap-2 overflow-x-auto">
+            {/* "All Plants" chip */}
+            <button
+              onClick={clearFilters}
+              className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
+                isAllActive
+                  ? "bg-[#C1662F] text-white shadow-xs"
+                  : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
+              }`}
+            >
+              All Plants
+            </button>
+
+            {/* Dynamic tag chips */}
+            {tags.map((tag) => {
+              const isActive = activeTagIds.has(tag.id);
+              return (
+                <button
+                  key={tag.id}
+                  onClick={() => toggleTag(tag.id)}
+                  className={`shrink-0 min-h-[44px] rounded-full px-4 py-2 text-xs font-medium transition-all sm:text-sm ${
+                    isActive
+                      ? "bg-[#C1662F] text-white shadow-xs"
+                      : "bg-stone-200/60 text-stone-700 hover:bg-stone-200 active:bg-stone-300"
+                  }`}
+                >
+                  {tag.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* Main Plant Grid */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
