@@ -4,60 +4,149 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, OrderStatus } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
-import { updateOrderStatus, softDeleteOrder, updateOrderNotes } from "../actions";
+import {
+  updateOrderStatus,
+  softDeleteOrder,
+  updateOrderNotes,
+  createManualOrder,
+  type ManualOrderInput,
+} from "../actions";
+import {
+  Package,
+  CheckCircle2,
+  Clock,
+  Truck,
+  CreditCard,
+  Box,
+  Plus,
+  MessageCircle,
+  FileText,
+  Trash2,
+  ExternalLink,
+  X,
+  User,
+  MapPin,
+  Phone,
+  ChevronRight,
+} from "lucide-react";
 
 interface AdminOrdersListProps {
   orders: Order[];
 }
 
+type FilterTab = "all" | "active" | OrderStatus;
+
+const PIPELINE_STAGES: OrderStatus[] = [
+  "pending",
+  "handled",
+  "paid",
+  "packaged",
+  "dispatched",
+];
+
 const STATUS_CONFIG: Record<
   OrderStatus,
-  { label: string; bg: string; text: string; border: string; step: number }
+  {
+    label: string;
+    badgeBg: string;
+    badgeText: string;
+    badgeBorder: string;
+    nextActionLabel: string | null;
+  }
 > = {
-  pending: { label: "1. Pending Review", bg: "bg-amber-100", text: "text-amber-800", border: "border-amber-200", step: 1 },
-  handled: { label: "2. Handled (Quote Sent)", bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-200", step: 2 },
-  paid: { label: "3. Payment Received", bg: "bg-purple-100", text: "text-purple-800", border: "border-purple-200", step: 3 },
-  packaged: { label: "4. Packaged & Ready", bg: "bg-indigo-100", text: "text-indigo-800", border: "border-indigo-200", step: 4 },
-  dispatched: { label: "5. Dispatched", bg: "bg-emerald-100", text: "text-emerald-800", border: "border-emerald-200", step: 5 },
+  pending: {
+    label: "Pending Review",
+    badgeBg: "bg-amber-100 dark:bg-amber-950/80",
+    badgeText: "text-amber-800 dark:text-amber-300",
+    badgeBorder: "border-amber-200/80 dark:border-amber-800/50",
+    nextActionLabel: "Verify & Quote Courier →",
+  },
+  handled: {
+    label: "Handled (Quote Sent)",
+    badgeBg: "bg-blue-100 dark:bg-blue-950/80",
+    badgeText: "text-blue-800 dark:text-blue-300",
+    badgeBorder: "border-blue-200/80 dark:border-blue-800/50",
+    nextActionLabel: "Mark as Paid →",
+  },
+  paid: {
+    label: "Payment Received",
+    badgeBg: "bg-purple-100 dark:bg-purple-950/80",
+    badgeText: "text-purple-800 dark:text-purple-300",
+    badgeBorder: "border-purple-200/80 dark:border-purple-800/50",
+    nextActionLabel: "Mark as Packaged →",
+  },
+  packaged: {
+    label: "Packaged & Ready",
+    badgeBg: "bg-teal-100 dark:bg-teal-950/80",
+    badgeText: "text-teal-800 dark:text-teal-300",
+    badgeBorder: "border-teal-200/80 dark:border-teal-800/50",
+    nextActionLabel: "Dispatch Shipment →",
+  },
+  dispatched: {
+    label: "Dispatched (Completed)",
+    badgeBg: "bg-emerald-100 dark:bg-emerald-950/80",
+    badgeText: "text-emerald-800 dark:text-emerald-300",
+    badgeBorder: "border-emerald-200/80 dark:border-emerald-800/50",
+    nextActionLabel: null,
+  },
 };
 
 export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // State for Pipeline Status Update Modal
-  const [editingStatusOrder, setEditingStatusOrder] = useState<Order | null>(null);
-  const [targetStatus, setTargetStatus] = useState<OrderStatus>("pending");
-  const [estCourierInput, setEstCourierInput] = useState<string>("0");
-  const [finalCourierInput, setFinalCourierInput] = useState<string>("0");
-  const [modalError, setModalError] = useState<string | null>(null);
+  // Active Filter Tab
+  const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
 
-  // State for Delete Confirmation Modal
+  // Customer Details Modal State
+  const [customerModalOrder, setCustomerModalOrder] = useState<Order | null>(null);
+
+  // Courier Charge Modal State
+  const [courierModalOrder, setCourierModalOrder] = useState<Order | null>(null);
+  const [courierTargetStatus, setCourierTargetStatus] = useState<"handled" | "dispatched">("handled");
+  const [courierInputValue, setCourierInputValue] = useState<string>("0");
+  const [courierModalError, setCourierModalError] = useState<string | null>(null);
+
+  // Manual Order Modal State
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [manualForm, setManualForm] = useState<ManualOrderInput>({
+    customerName: "",
+    customerPhone: "",
+    customerAddress: "",
+    customerPincode: "",
+    itemSummary: "",
+    subtotal: 0,
+    status: "pending",
+    estimatedCourierPrice: null,
+    finalCourierPrice: null,
+  });
+  const [manualError, setManualError] = useState<string | null>(null);
+
+  // Soft Delete Modal State
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
 
-  // State for Admin Notes Modal
+  // Admin Notes Modal State
   const [editingNoteOrder, setEditingNoteOrder] = useState<Order | null>(null);
   const [noteInput, setNoteInput] = useState<string>("");
 
-  // Open Status update modal
-  const openStatusModal = (order: Order) => {
-    setEditingStatusOrder(order);
-    const currentStatus = order.status || (order.handled ? "dispatched" : "pending");
-    setTargetStatus(currentStatus);
-    setEstCourierInput(
-      order.estimated_courier_price !== null && order.estimated_courier_price !== undefined
-        ? String(order.estimated_courier_price)
-        : ""
-    );
-    setFinalCourierInput(
-      order.final_courier_price !== null && order.final_courier_price !== undefined
-        ? String(order.final_courier_price)
-        : order.delivery_price !== null && order.delivery_price !== undefined
-        ? String(order.delivery_price)
-        : ""
-    );
-    setModalError(null);
+  // Live filter counts
+  const counts = {
+    all: orders.length,
+    active: orders.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) !== "dispatched").length,
+    pending: orders.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) === "pending").length,
+    handled: orders.filter((o) => o.status === "handled").length,
+    paid: orders.filter((o) => o.status === "paid").length,
+    packaged: orders.filter((o) => o.status === "packaged").length,
+    dispatched: orders.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) === "dispatched").length,
   };
+
+  // Filtered orders list
+  const filteredOrders = orders.filter((order) => {
+    const status = order.status || (order.handled ? "dispatched" : "pending");
+    if (activeFilter === "all") return true;
+    if (activeFilter === "active") return status !== "dispatched";
+    return status === activeFilter;
+  });
 
   // Open Note Modal
   const openNoteModal = (order: Order) => {
@@ -65,49 +154,93 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
     setNoteInput(order.notes ?? "");
   };
 
-  // Submit Status Modal
-  const handleSaveStatus = () => {
-    if (!editingStatusOrder) return;
-
-    const estVal = estCourierInput.trim() !== "" ? parseFloat(estCourierInput) : null;
-    const finalVal = finalCourierInput.trim() !== "" ? parseFloat(finalCourierInput) : null;
-
-    if (estVal !== null && (isNaN(estVal) || estVal < 0)) {
-      setModalError("Estimated courier price must be a non-negative number.");
-      return;
+  // Handler to open courier modal for advancing
+  const initiateStatusTransition = (order: Order, nextStatus: OrderStatus) => {
+    if (nextStatus === "handled") {
+      setCourierModalOrder(order);
+      setCourierTargetStatus("handled");
+      setCourierInputValue(
+        order.estimated_courier_price !== null && order.estimated_courier_price !== undefined
+          ? String(order.estimated_courier_price)
+          : "0"
+      );
+      setCourierModalError(null);
+    } else if (nextStatus === "dispatched") {
+      setCourierModalOrder(order);
+      setCourierTargetStatus("dispatched");
+      // Pre-fill with existing final courier or estimated courier
+      const defaultVal =
+        order.final_courier_price ?? order.estimated_courier_price ?? order.delivery_price ?? 0;
+      setCourierInputValue(String(defaultVal));
+      setCourierModalError(null);
+    } else {
+      // Direct update for paid or packaged or pending
+      startTransition(async () => {
+        try {
+          await updateOrderStatus(order.id, nextStatus);
+          router.refresh();
+        } catch (err) {
+          alert(err instanceof Error ? err.message : "Failed to update status");
+        }
+      });
     }
-    if (finalVal !== null && (isNaN(finalVal) || finalVal < 0)) {
-      setModalError("Final courier price must be a non-negative number.");
+  };
+
+  // Submit Courier Modal
+  const handleSaveCourierModal = (overrideVal?: number) => {
+    if (!courierModalOrder) return;
+
+    const parsed = overrideVal !== undefined ? overrideVal : parseFloat(courierInputValue);
+    if (isNaN(parsed) || parsed < 0) {
+      setCourierModalError("Please enter a valid non-negative courier charge.");
       return;
     }
 
     startTransition(async () => {
       try {
-        await updateOrderStatus(
-          editingStatusOrder.id,
-          targetStatus,
-          estVal,
-          finalVal
-        );
-        setEditingStatusOrder(null);
+        if (courierTargetStatus === "handled") {
+          await updateOrderStatus(courierModalOrder.id, "handled", parsed, null);
+        } else {
+          await updateOrderStatus(courierModalOrder.id, "dispatched", undefined, parsed);
+        }
+        setCourierModalOrder(null);
         router.refresh();
       } catch (err) {
-        setModalError(err instanceof Error ? err.message : "Failed to update order status");
+        setCourierModalError(err instanceof Error ? err.message : "Failed to update courier charge.");
       }
     });
   };
 
-  // Submit Soft Delete
-  const handleConfirmDelete = () => {
-    if (!deletingOrder) return;
+  // Submit Manual Order Creation Form
+  const handleCreateManualOrderSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualForm.itemSummary.trim()) {
+      setManualError("Please provide an item summary.");
+      return;
+    }
+    if (manualForm.subtotal <= 0) {
+      setManualError("Please provide a valid subtotal amount greater than 0.");
+      return;
+    }
 
     startTransition(async () => {
-      try {
-        await softDeleteOrder(deletingOrder.id);
-        setDeletingOrder(null);
+      const res = await createManualOrder(manualForm);
+      if (!res.success) {
+        setManualError(res.error || "Failed to create manual order.");
+      } else {
+        setShowManualModal(false);
+        setManualForm({
+          customerName: "",
+          customerPhone: "",
+          customerAddress: "",
+          customerPincode: "",
+          itemSummary: "",
+          subtotal: 0,
+          status: "pending",
+          estimatedCourierPrice: null,
+          finalCourierPrice: null,
+        });
         router.refresh();
-      } catch (err) {
-        alert(err instanceof Error ? err.message : "Failed to delete order");
       }
     });
   };
@@ -115,7 +248,6 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   // Submit Note Save
   const handleSaveNote = () => {
     if (!editingNoteOrder) return;
-
     startTransition(async () => {
       try {
         await updateOrderNotes(editingNoteOrder.id, noteInput);
@@ -123,6 +255,20 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
         router.refresh();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to save note");
+      }
+    });
+  };
+
+  // Submit Soft Delete
+  const handleConfirmDelete = () => {
+    if (!deletingOrder) return;
+    startTransition(async () => {
+      try {
+        await softDeleteOrder(deletingOrder.id);
+        setDeletingOrder(null);
+        router.refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to delete order");
       }
     });
   };
@@ -142,292 +288,477 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
     }
   };
 
+  // Open WhatsApp to customer phone number
+  const handleOpenWhatsAppCustomer = (phone?: string | null, orderRef?: string) => {
+    if (!phone) {
+      alert("No phone number recorded for this customer.");
+      return;
+    }
+    const cleanPhone = phone.replace(/[^0-9]/g, "");
+    const msg = `Hello, regarding your Haritham Garden order ${orderRef || ""}...`;
+    window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
+
   return (
-    <div className="space-y-4">
-      {orders.map((order) => {
-        const currentStatus: OrderStatus =
-          order.status || (order.handled ? "dispatched" : "pending");
-        const statusMeta = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.pending;
-
-        const hasCustomerDetails =
-          Boolean(order.customer_name) ||
-          Boolean(order.customer_phone) ||
-          Boolean(order.customer_address) ||
-          Boolean(order.customer_pincode);
-
-        // Two-step courier fee calculation logic
-        const estCourier = order.estimated_courier_price ?? null;
-        const finalCourier = order.final_courier_price ?? order.delivery_price ?? null;
-        const effectiveCourier = finalCourier ?? estCourier ?? 0;
-        const calculatedTotal = order.subtotal + effectiveCourier;
-
-        return (
-          <div
-            key={order.id}
-            className={`rounded-2xl border bg-white p-5 transition-all shadow-2xs ${
-              currentStatus === "dispatched"
-                ? "border-emerald-200/80 bg-emerald-50/20"
-                : currentStatus === "pending"
-                ? "border-amber-200/90 ring-1 ring-amber-100 bg-white"
-                : "border-stone-200/80 bg-white"
+    <div className="space-y-6">
+      {/* ── Top Action Header & Filter Pills ──────────────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Status Filter Tabs */}
+        <div className="flex items-center gap-1.5 bg-white dark:bg-stone-900 p-1.5 rounded-2xl border border-stone-200/80 dark:border-stone-800 shadow-2xs overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => setActiveFilter("all")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              activeFilter === "all"
+                ? "bg-botanical-800 dark:bg-botanical-600 text-white shadow-xs"
+                : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
             }`}
           >
-            {/* Header / Meta */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 pb-3">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-base font-bold text-[#24211E]">
-                  {order.order_ref}
-                </span>
-                <span className="text-xs text-stone-500 font-normal">
-                  {formatDate(order.created_at)}
-                </span>
-              </div>
+            All ({counts.all})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("active")}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+              activeFilter === "active"
+                ? "bg-terracotta text-white shadow-xs"
+                : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+            }`}
+          >
+            Active ({counts.active})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("pending")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+              activeFilter === "pending"
+                ? "bg-amber-500 text-white shadow-xs"
+                : "text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+            }`}
+          >
+            Pending ({counts.pending})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("handled")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+              activeFilter === "handled"
+                ? "bg-blue-600 text-white shadow-xs"
+                : "text-blue-700 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+            }`}
+          >
+            Handled ({counts.handled})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("paid")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+              activeFilter === "paid"
+                ? "bg-purple-600 text-white shadow-xs"
+                : "text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+            }`}
+          >
+            Paid ({counts.paid})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("packaged")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+              activeFilter === "packaged"
+                ? "bg-teal-600 text-white shadow-xs"
+                : "text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/30"
+            }`}
+          >
+            Packaged ({counts.packaged})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveFilter("dispatched")}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 ${
+              activeFilter === "dispatched"
+                ? "bg-emerald-600 text-white shadow-xs"
+                : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+            }`}
+          >
+            Completed ({counts.dispatched})
+          </button>
+        </div>
 
-              {/* Status Badge (Clickable to open status modal) */}
-              <button
-                type="button"
-                onClick={() => openStatusModal(order)}
-                className={`rounded-full px-3 py-1 text-xs font-bold border transition-all hover:scale-105 ${statusMeta.bg} ${statusMeta.text} ${statusMeta.border}`}
-                title="Click to update order pipeline status"
+        {/* Add Manual Order Button */}
+        <button
+          type="button"
+          onClick={() => {
+            setManualError(null);
+            setShowManualModal(true);
+          }}
+          className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 shrink-0 min-h-[44px]"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Add Manual Order</span>
+        </button>
+      </div>
+
+      {/* ── Orders Feed List ──────────────────────────────────────────────── */}
+      {filteredOrders.length === 0 ? (
+        <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-800 p-12 text-center text-stone-400 dark:text-stone-500 bg-white dark:bg-stone-900">
+          <Package className="w-10 h-10 mx-auto mb-2 text-stone-300 dark:text-stone-600" />
+          <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">
+            No orders match this filter
+          </p>
+          <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
+            Try switching to &quot;All&quot; or create a manual order.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredOrders.map((order) => {
+            const currentStatus: OrderStatus =
+              order.status || (order.handled ? "dispatched" : "pending");
+            const statusConfig = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.pending;
+            const stageIndex = PIPELINE_STAGES.indexOf(currentStatus);
+            const nextStatus = stageIndex < PIPELINE_STAGES.length - 1 ? PIPELINE_STAGES[stageIndex + 1] : null;
+
+            // Two-step courier fees
+            const estCourier = order.estimated_courier_price ?? null;
+            const finalCourier = order.final_courier_price ?? order.delivery_price ?? null;
+            const effectiveCourier = finalCourier ?? estCourier ?? 0;
+            const calculatedTotal = order.subtotal + effectiveCourier;
+
+            return (
+              <div
+                key={order.id}
+                className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-md transition-all overflow-hidden"
               >
-                {statusMeta.label}
-              </button>
-            </div>
+                {/* 1. Order Card Header */}
+                <div className="p-6 pb-4 flex items-center justify-between border-b border-stone-100 dark:border-stone-800 flex-wrap gap-3 bg-stone-50/50 dark:bg-stone-900/50">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100 tracking-tight">
+                      {order.order_ref}
+                    </span>
+                    <span className="text-xs text-stone-400 dark:text-stone-500 font-medium">
+                      {formatDate(order.created_at)}
+                    </span>
 
-            {/* Customer Delivery Details (if provided) */}
-            {hasCustomerDetails && (
-              <div className="my-3 rounded-xl bg-blue-50/70 border border-blue-100 p-3 text-xs text-stone-800 space-y-1">
-                <div className="font-semibold text-blue-900 flex items-center gap-1.5 mb-1.5">
-                  <span>🚚</span> Customer Delivery Info
-                </div>
-                {order.customer_name && (
-                  <div>
-                    <span className="text-stone-500 font-medium">Name: </span>
-                    <span className="font-semibold text-stone-900">{order.customer_name}</span>
+                    {/* Customer Name Trigger Link/Badge */}
+                    {order.customer_name ? (
+                      <button
+                        type="button"
+                        onClick={() => setCustomerModalOrder(order)}
+                        className="flex items-center gap-1.5 bg-botanical-50 dark:bg-stone-800 px-3 py-1 rounded-xl border border-botanical-100 dark:border-stone-700 text-xs font-bold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        <span>{order.customer_name}</span>
+                        <span className="text-[11px] underline ml-1">Details</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-stone-400 italic">No customer name</span>
+                    )}
                   </div>
-                )}
-                {order.customer_phone && (
-                  <div>
-                    <span className="text-stone-500 font-medium">Phone: </span>
-                    <a href={`tel:${order.customer_phone}`} className="font-semibold text-blue-800 hover:underline">
-                      {order.customer_phone}
-                    </a>
-                  </div>
-                )}
-                {order.customer_address && (
-                  <div>
-                    <span className="text-stone-500 font-medium">Address: </span>
-                    <span className="font-medium text-stone-800 whitespace-pre-wrap">{order.customer_address}</span>
-                  </div>
-                )}
-                {order.customer_pincode && (
-                  <div>
-                    <span className="text-stone-500 font-medium">Pincode: </span>
-                    <span className="font-mono font-semibold text-stone-900">{order.customer_pincode}</span>
-                  </div>
-                )}
-              </div>
-            )}
 
-            {/* Order Items */}
-            <div className="py-3">
-              <div className="text-xs font-semibold uppercase tracking-wider text-stone-400 mb-2">
-                Items ({order.items ? order.items.length : 0})
-              </div>
-              <ul className="space-y-1.5 text-sm text-[#24211E]">
-                {order.items &&
-                  order.items.map((item, idx) => (
-                    <li key={idx} className="flex justify-between items-center">
-                      <span>
-                        <span className="font-semibold">{item.name}</span>{" "}
-                        <span className="text-stone-500 font-mono text-xs">× {item.qty}</span>
-                      </span>
-                      <span className="text-xs font-mono font-medium text-stone-700">
-                        {formatINR(item.price * item.qty)}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-
-            {/* Financial Breakdown (Subtotal + Estimated/Final Courier = Total) */}
-            <div className="rounded-xl bg-stone-100/60 p-3.5 mt-1 text-sm space-y-1.5">
-              <div className="flex justify-between text-stone-600">
-                <span>Subtotal</span>
-                <span className="font-semibold text-[#24211E]">{formatINR(order.subtotal)}</span>
-              </div>
-
-              {estCourier !== null && (
-                <div className="flex justify-between text-stone-600 text-xs">
-                  <span>Estimated Courier Charge</span>
-                  <span className="font-semibold text-amber-800">{formatINR(estCourier)}</span>
-                </div>
-              )}
-
-              {finalCourier !== null ? (
-                <div className="flex justify-between text-stone-600 text-xs">
-                  <span>Confirmed Final Courier Charge</span>
-                  <span className="font-semibold text-emerald-800">{formatINR(finalCourier)}</span>
-                </div>
-              ) : (
-                estCourier === null && (
-                  <div className="text-xs text-amber-800 font-medium pt-0.5">
-                    Courier charge to be estimated on handling
-                  </div>
-                )
-              )}
-
-              <div className="flex justify-between border-t border-stone-200/80 pt-1.5 font-bold text-[#24211E] text-base">
-                <span>Total</span>
-                <span className="text-emerald-700">{formatINR(calculatedTotal)}</span>
-              </div>
-            </div>
-
-            {/* Admin Note Preview (if exists) */}
-            {order.notes && (
-              <div className="mt-3 rounded-xl bg-amber-50/80 border border-amber-200/70 p-3 text-xs text-amber-950">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-semibold text-amber-900 flex items-center gap-1">
-                    <span>📝</span> Internal Note
+                  {/* Status Badge */}
+                  <span
+                    className={`text-xs font-bold px-3.5 py-1 rounded-full border ${statusConfig.badgeBg} ${statusConfig.badgeText} ${statusConfig.badgeBorder}`}
+                  >
+                    {statusConfig.label}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => openNoteModal(order)}
-                    disabled={isPending}
-                    className="text-stone-500 hover:text-[#C1662F] font-semibold text-[11px] transition-colors"
-                  >
-                    Edit Note
-                  </button>
                 </div>
-                <p className="whitespace-pre-wrap font-sans text-stone-800 leading-relaxed">
-                  {order.notes}
-                </p>
-              </div>
-            )}
 
-            {/* Action Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-2 border-t border-stone-100 min-h-[44px]">
-              {/* Quick Status Advance Button */}
-              <button
-                type="button"
-                onClick={() => openStatusModal(order)}
-                disabled={isPending}
-                className="bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5 min-h-[38px]"
-              >
-                <span>⚙️ Update Status / Courier Fee</span>
-              </button>
+                {/* 2. Order Items & Financial Box */}
+                <div className="p-6 space-y-4">
+                  {/* Items List */}
+                  <div>
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 block mb-2">
+                      Items ({order.items ? order.items.length : 0})
+                    </span>
+                    <ul className="space-y-1.5 text-xs text-stone-800 dark:text-stone-200">
+                      {order.items &&
+                        order.items.map((item, idx) => (
+                          <li key={idx} className="flex justify-between items-center">
+                            <span>
+                              <span className="font-semibold text-stone-900 dark:text-stone-100">
+                                {item.name}
+                              </span>{" "}
+                              <span className="text-stone-400 font-mono">× {item.qty}</span>
+                            </span>
+                            <span className="font-mono font-semibold text-stone-700 dark:text-stone-300">
+                              {formatINR(item.price * item.qty)}
+                            </span>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
 
-              <div className="flex items-center gap-2">
-                {/* Add Note Button */}
-                {!order.notes && (
-                  <button
-                    type="button"
-                    onClick={() => openNoteModal(order)}
-                    disabled={isPending}
-                    className="text-xs font-semibold text-stone-600 hover:text-[#C1662F] transition-colors px-2.5 py-1.5 rounded-lg hover:bg-stone-100 min-h-[36px] flex items-center gap-1"
-                  >
-                    <span>📝</span> Add Note
-                  </button>
+                  {/* Financial Breakdown Container */}
+                  <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-1.5 text-xs">
+                    <div className="flex justify-between text-stone-600 dark:text-stone-400 font-medium">
+                      <span>Subtotal</span>
+                      <span className="font-semibold text-stone-900 dark:text-stone-100">
+                        {formatINR(order.subtotal)}
+                      </span>
+                    </div>
+
+                    {/* Courier Charge Line */}
+                    {finalCourier !== null ? (
+                      <div className="flex justify-between text-emerald-700 dark:text-emerald-400 font-semibold">
+                        <span>Final Courier (confirmed)</span>
+                        <span>{formatINR(finalCourier)}</span>
+                      </div>
+                    ) : estCourier !== null ? (
+                      <div className="flex justify-between text-amber-700 dark:text-amber-400 font-semibold">
+                        <span>Estimated Courier (pending)</span>
+                        <span>{formatINR(estCourier)}</span>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-stone-400 italic">
+                        Courier charge to be estimated on handling
+                      </div>
+                    )}
+
+                    {/* Total Line */}
+                    <div className="pt-2 border-t border-stone-200 dark:border-stone-700 flex justify-between items-center font-bold text-stone-900 dark:text-stone-100 text-sm">
+                      <span>Total</span>
+                      <span className="text-botanical-800 dark:text-botanical-100 text-base">
+                        {formatINR(calculatedTotal)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Internal Admin Note Display */}
+                {order.notes && (
+                  <div className="px-6 pb-3">
+                    <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/30 flex items-start justify-between gap-2 text-xs text-amber-950 dark:text-amber-300">
+                      <div>
+                        <span className="font-bold block mb-0.5">📝 Nursery Note:</span>
+                        <p className="whitespace-pre-wrap text-stone-800 dark:text-stone-200">
+                          {order.notes}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openNoteModal(order)}
+                        className="text-stone-400 hover:text-terracotta p-1"
+                        title="Edit note"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
                 )}
 
-                {/* Soft Delete */}
-                <button
-                  type="button"
-                  onClick={() => setDeletingOrder(order)}
-                  disabled={isPending}
-                  className="text-xs font-semibold text-red-600 hover:text-red-800 transition-colors px-2 py-1.5 rounded-lg hover:bg-red-50 min-h-[36px]"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+                {/* 4. Order Card Footer Controls */}
+                <div className="px-6 py-4 bg-stone-50/60 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between flex-wrap gap-3">
+                  {/* Left: Status Selector & Advance Button */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Direct Stage Select */}
+                    <select
+                      value={currentStatus}
+                      onChange={(e) =>
+                        initiateStatusTransition(order, e.target.value as OrderStatus)
+                      }
+                      className="px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-100 focus:outline-none cursor-pointer"
+                    >
+                      <option value="pending">1. Pending Review</option>
+                      <option value="handled">2. Handled (Quote Sent)</option>
+                      <option value="paid">3. Payment Received</option>
+                      <option value="packaged">4. Packaged & Ready</option>
+                      <option value="dispatched">5. Dispatched (Completed)</option>
+                    </select>
 
-      {/* ── 5-Stage Pipeline & Courier Modal ────────────────────────────── */}
-      {editingStatusOrder && (
+                    {/* Step Advance Button */}
+                    {nextStatus && (
+                      <button
+                        type="button"
+                        onClick={() => initiateStatusTransition(order, nextStatus)}
+                        disabled={isPending}
+                        className="bg-botanical-800 hover:bg-botanical-900 dark:bg-botanical-600 dark:hover:bg-botanical-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 min-h-[36px]"
+                      >
+                        <span>{STATUS_CONFIG[currentStatus].nextActionLabel}</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Right: Actions (WhatsApp, Admin Note, Soft Delete) */}
+                  <div className="flex items-center gap-3.5 ml-auto">
+                    {/* WhatsApp Direct Chat */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenWhatsAppCustomer(order.customer_phone, order.order_ref)
+                      }
+                      className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline min-h-[36px]"
+                      title="Open WhatsApp chat with customer"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>WhatsApp</span>
+                    </button>
+
+                    {/* Add / Edit Note */}
+                    <button
+                      type="button"
+                      onClick={() => openNoteModal(order)}
+                      className="flex items-center gap-1 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 min-h-[36px]"
+                    >
+                      <FileText className="w-4 h-4 text-stone-400" />
+                      <span>{order.notes ? "Edit Note" : "Add Note"}</span>
+                    </button>
+
+                    {/* Soft Delete */}
+                    <button
+                      type="button"
+                      onClick={() => setDeletingOrder(order)}
+                      className="flex items-center gap-1 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-800 min-h-[36px]"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── MODAL 1: Customer Info Details Modal ──────────────────────────── */}
+      {customerModalOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setEditingStatusOrder(null)}
+            onClick={() => setCustomerModalOrder(null)}
           />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl text-[#24211E]">
-            <h3 className="text-lg font-bold text-[#24211E] mb-1">
-              Update Order — {editingStatusOrder.order_ref}
+          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
+              <h3 className="font-heading font-bold text-base flex items-center gap-2">
+                <User className="w-4 h-4 text-botanical-600" />
+                <span>Customer Info — {customerModalOrder.order_ref}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setCustomerModalOrder(null)}
+                className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <span className="text-stone-400 font-medium block">Full Name:</span>
+                <span className="font-bold text-stone-800 dark:text-stone-200 text-sm">
+                  {customerModalOrder.customer_name || "Not provided"}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-stone-400 font-medium block">Phone Number:</span>
+                {customerModalOrder.customer_phone ? (
+                  <a
+                    href={`tel:${customerModalOrder.customer_phone}`}
+                    className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>{customerModalOrder.customer_phone}</span>
+                  </a>
+                ) : (
+                  <span className="text-stone-500 italic">Not provided</span>
+                )}
+              </div>
+
+              <div>
+                <span className="text-stone-400 font-medium block">Delivery Address:</span>
+                {customerModalOrder.customer_address ? (
+                  <p className="font-medium text-stone-800 dark:text-stone-200 whitespace-pre-wrap mt-0.5">
+                    {customerModalOrder.customer_address}
+                  </p>
+                ) : (
+                  <span className="text-stone-500 italic">Not provided</span>
+                )}
+              </div>
+
+              <div>
+                <span className="text-stone-400 font-medium block">Pincode:</span>
+                <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
+                  {customerModalOrder.customer_pincode || "Not provided"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setCustomerModalOrder(null)}
+                className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-xl text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 2: Courier Charge Modal (Estimated or Final) ────────────── */}
+      {courierModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+            onClick={() => setCourierModalOrder(null)}
+          />
+          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
+            <h3 className="font-heading font-bold text-lg mb-1">
+              {courierTargetStatus === "handled"
+                ? "Set Estimated Courier Charge"
+                : "Confirm Final Courier Charge"}
             </h3>
-            <p className="text-xs text-stone-500 mb-4">
-              Subtotal: <span className="font-semibold text-stone-900">{formatINR(editingStatusOrder.subtotal)}</span>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">
+              Order <span className="font-mono font-semibold">{courierModalOrder.order_ref}</span> · Items Subtotal: {formatINR(courierModalOrder.subtotal)}
             </p>
 
-            {modalError && (
+            {courierModalError && (
               <div className="mb-3 rounded-xl bg-red-50 p-2.5 text-xs text-red-700 border border-red-200">
-                {modalError}
+                {courierModalError}
               </div>
             )}
 
             <div className="space-y-4">
-              {/* Pipeline Stage Select */}
               <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-                  Pipeline Stage
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  {courierTargetStatus === "handled"
+                    ? "Estimated Courier Price (₹)"
+                    : "Final Courier Price (₹)"}
                 </label>
-                <select
-                  value={targetStatus}
-                  onChange={(e) => setTargetStatus(e.target.value as OrderStatus)}
-                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm text-[#24211E] font-semibold bg-stone-50 focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={courierInputValue}
+                  onChange={(e) => setCourierInputValue(e.target.value)}
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                  placeholder="0"
+                  autoFocus
+                />
+              </div>
+
+              {/* Quick "No Change" Button for Final Courier */}
+              {courierTargetStatus === "dispatched" && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const est = courierModalOrder.estimated_courier_price ?? 0;
+                    handleSaveCourierModal(est);
+                  }}
+                  className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 py-2 rounded-xl text-xs font-semibold transition-colors"
                 >
-                  <option value="pending">1. Pending Review</option>
-                  <option value="handled">2. Handled (Quote Sent)</option>
-                  <option value="paid">3. Payment Received</option>
-                  <option value="packaged">4. Packaged & Ready</option>
-                  <option value="dispatched">5. Dispatched</option>
-                </select>
-              </div>
+                  ⚡ No Change (Reuse Estimated: {formatINR(courierModalOrder.estimated_courier_price ?? 0)})
+                </button>
+              )}
 
-              {/* Estimated Courier Price */}
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Estimated Courier Price (₹) <span className="font-normal text-stone-400">(set on handling)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={estCourierInput}
-                  onChange={(e) => setEstCourierInput(e.target.value)}
-                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
-                  placeholder="e.g. 80"
-                />
-              </div>
-
-              {/* Confirmed Final Courier Price */}
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Confirmed Final Courier Price (₹) <span className="font-normal text-stone-400">(set on dispatch)</span>
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={finalCourierInput}
-                  onChange={(e) => setFinalCourierInput(e.target.value)}
-                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
-                  placeholder="e.g. 75"
-                />
-              </div>
-
-              {/* Total Preview */}
-              <div className="rounded-xl bg-emerald-50 border border-emerald-200/60 p-3 text-xs flex justify-between items-center text-emerald-950 font-medium">
-                <span>Calculated Total:</span>
+              {/* Calculated Total Preview */}
+              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3 text-xs flex justify-between items-center text-emerald-950 dark:text-emerald-300">
+                <span className="font-medium">Calculated Order Total:</span>
                 <span className="text-sm font-bold">
                   {formatINR(
-                    editingStatusOrder.subtotal +
-                      (finalCourierInput.trim() !== ""
-                        ? parseFloat(finalCourierInput) || 0
-                        : estCourierInput.trim() !== ""
-                        ? parseFloat(estCourierInput) || 0
-                        : 0)
+                    courierModalOrder.subtotal + (parseFloat(courierInputValue) || 0)
                   )}
                 </span>
               </div>
@@ -435,19 +766,19 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setEditingStatusOrder(null)}
+                  onClick={() => setCourierModalOrder(null)}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
-                  onClick={handleSaveStatus}
+                  onClick={() => handleSaveCourierModal()}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
                 >
-                  {isPending ? "Saving..." : "Save Pipeline Stage"}
+                  {isPending ? "Saving..." : "Save & Update Stage"}
                 </button>
               </div>
             </div>
@@ -455,15 +786,194 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
         </div>
       )}
 
-      {/* ── Admin Note Modal ────────────────────────────────────────────── */}
+      {/* ── MODAL 3: Add Manual Order Form Modal ──────────────────────────── */}
+      {showManualModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+            onClick={() => setShowManualModal(false)}
+          />
+          <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
+              <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                <Plus className="w-5 h-5 text-terracotta" />
+                <span>Create Manual Order (Phone / In-Person)</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowManualModal(false)}
+                className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {manualError && (
+              <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+                {manualError}
+              </div>
+            )}
+
+            <form onSubmit={handleCreateManualOrderSubmit} className="space-y-4 text-xs">
+              {/* Customer Name */}
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Customer Name
+                </label>
+                <input
+                  type="text"
+                  value={manualForm.customerName || ""}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, customerName: e.target.value })
+                  }
+                  placeholder="e.g. Ramesh Kumar"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                />
+              </div>
+
+              {/* Customer Phone */}
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Customer Phone
+                </label>
+                <input
+                  type="tel"
+                  value={manualForm.customerPhone || ""}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, customerPhone: e.target.value })
+                  }
+                  placeholder="e.g. 9847012345"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                />
+              </div>
+
+              {/* Delivery Address */}
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Delivery Address
+                </label>
+                <textarea
+                  rows={2}
+                  value={manualForm.customerAddress || ""}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, customerAddress: e.target.value })
+                  }
+                  placeholder="e.g. House No. 12, MG Road, Ernakulam"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
+                />
+              </div>
+
+              {/* Pincode */}
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Pincode
+                </label>
+                <input
+                  type="text"
+                  value={manualForm.customerPincode || ""}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, customerPincode: e.target.value })
+                  }
+                  placeholder="e.g. 682001"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                />
+              </div>
+
+              {/* Item Summary (Free Text) */}
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Item Summary <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={manualForm.itemSummary}
+                  onChange={(e) =>
+                    setManualForm({ ...manualForm, itemSummary: e.target.value })
+                  }
+                  placeholder="e.g. 2x Pink Anthurium, 1x Coco-Peat Pot"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                />
+              </div>
+
+              {/* Subtotal & Initial Status */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Items Subtotal (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value={manualForm.subtotal || ""}
+                    onChange={(e) =>
+                      setManualForm({
+                        ...manualForm,
+                        subtotal: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    placeholder="350"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Initial Status
+                  </label>
+                  <select
+                    value={manualForm.status}
+                    onChange={(e) =>
+                      setManualForm({
+                        ...manualForm,
+                        status: e.target.value as OrderStatus,
+                      })
+                    }
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                  >
+                    <option value="pending">1. Pending Review</option>
+                    <option value="handled">2. Handled</option>
+                    <option value="paid">3. Paid</option>
+                    <option value="packaged">4. Packaged</option>
+                    <option value="dispatched">5. Dispatched</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Submit Actions */}
+              <div className="flex gap-2 pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowManualModal(false)}
+                  disabled={isPending}
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                >
+                  {isPending ? "Creating..." : "Create Order"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL 4: Admin Notes Modal ───────────────────────────────────── */}
       {editingNoteOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
             onClick={() => setEditingNoteOrder(null)}
           />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl text-[#24211E]">
-            <h3 className="text-lg font-bold text-[#24211E] mb-1">
+          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
+            <h3 className="font-heading font-bold text-base mb-1">
               Admin Note — {editingNoteOrder.order_ref}
             </h3>
             <p className="text-xs text-stone-500 mb-4">
@@ -471,23 +981,21 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
             </p>
 
             <div className="space-y-4">
-              <div>
-                <textarea
-                  value={noteInput}
-                  onChange={(e) => setNoteInput(e.target.value)}
-                  rows={4}
-                  placeholder="e.g. Wants delivery after 6pm, asked for smaller pot..."
-                  className="w-full rounded-xl border border-stone-300 p-3 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent resize-none"
-                  autoFocus
-                />
-              </div>
+              <textarea
+                value={noteInput}
+                onChange={(e) => setNoteInput(e.target.value)}
+                rows={4}
+                placeholder="e.g. Customer requested delivery after 6pm..."
+                className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
+                autoFocus
+              />
 
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={() => setEditingNoteOrder(null)}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
                 >
                   Cancel
                 </button>
@@ -495,7 +1003,7 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                   type="button"
                   onClick={handleSaveNote}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
                 >
                   {isPending ? "Saving..." : "Save Note"}
                 </button>
@@ -505,18 +1013,18 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
         </div>
       )}
 
-      {/* ── Soft Delete Modal ───────────────────────────────────────────── */}
+      {/* ── MODAL 5: Soft Delete Confirmation Modal ───────────────────────── */}
       {deletingOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
             onClick={() => setDeletingOrder(null)}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-center text-[#24211E]">
+          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
               ⚠️
             </div>
-            <h3 className="text-base font-bold text-[#24211E] mb-1">
+            <h3 className="font-heading font-bold text-base mb-1">
               Delete order {deletingOrder.order_ref}?
             </h3>
             <p className="text-xs text-stone-500 mb-6">
@@ -528,7 +1036,7 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 type="button"
                 onClick={() => setDeletingOrder(null)}
                 disabled={isPending}
-                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
               >
                 Cancel
               </button>

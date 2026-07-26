@@ -4,6 +4,76 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/types";
 
+export interface ManualOrderInput {
+  customerName?: string | null;
+  customerPhone?: string | null;
+  customerAddress?: string | null;
+  customerPincode?: string | null;
+  itemSummary: string;
+  subtotal: number;
+  status: OrderStatus;
+  estimatedCourierPrice?: number | null;
+  finalCourierPrice?: number | null;
+}
+
+/**
+ * Manually creates an order from phone/in-person sales.
+ */
+export async function createManualOrder(
+  input: ManualOrderInput
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const itemSnapshots = [
+      {
+        plant_id: "manual",
+        name: input.itemSummary.trim() || "Manual Order Item",
+        price: input.subtotal,
+        qty: 1,
+      },
+    ];
+
+    const estCourier = input.estimatedCourierPrice ?? null;
+    const finalCourier = input.finalCourierPrice ?? null;
+    const courierFee = finalCourier ?? estCourier ?? 0;
+    const finalTotal = input.subtotal + Math.max(0, courierFee);
+
+    const isHandled = input.status !== "pending";
+
+    const { error } = await supabase.from("orders").insert({
+      items: itemSnapshots,
+      subtotal: input.subtotal,
+      status: input.status,
+      estimated_courier_price: estCourier,
+      final_courier_price: finalCourier,
+      delivery_price: courierFee,
+      final_total: finalTotal,
+      handled: isHandled,
+      handled_at: isHandled ? new Date().toISOString() : null,
+      deleted: false,
+      customer_name: input.customerName?.trim() || null,
+      customer_phone: input.customerPhone?.trim() || null,
+      customer_address: input.customerAddress?.trim() || null,
+      customer_pincode: input.customerPincode?.trim() || null,
+    });
+
+    if (error) {
+      console.error("Error creating manual order:", error.message);
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath("/admin/orders");
+    return { success: true };
+  } catch (err) {
+    console.error("Unexpected error in createManualOrder:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Failed to create manual order.",
+    };
+  }
+}
+
 /**
  * Updates an order's status along with optional estimated or final courier prices.
  */
