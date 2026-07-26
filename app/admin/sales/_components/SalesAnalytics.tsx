@@ -223,6 +223,9 @@ export function SalesAnalytics({ orders }: SalesAnalyticsProps) {
                   <th className="pb-3">Customer Name</th>
                   <th className="pb-3">Plant Items</th>
                   <th className="pb-3 text-right">Subtotal</th>
+                  {filteredOrders.some((o) => (o.discount_amount_applied ?? 0) > 0) && (
+                    <th className="pb-3 text-right">Discount</th>
+                  )}
                   <th className="pb-3 text-right">Courier</th>
                   <th className="pb-3 text-right pr-2">Total</th>
                 </tr>
@@ -234,7 +237,8 @@ export function SalesAnalytics({ orders }: SalesAnalyticsProps) {
                     order.delivery_price ??
                     order.estimated_courier_price ??
                     0;
-                  const finalTotal = order.final_total || order.subtotal + courier;
+                  const discountAmt = order.discount_amount_applied ?? 0;
+                  const finalTotal = order.final_total || order.subtotal - discountAmt + courier;
 
                   const itemSummary =
                     order.items && order.items.length > 0
@@ -265,6 +269,11 @@ export function SalesAnalytics({ orders }: SalesAnalyticsProps) {
                       <td className="py-4 text-right font-mono text-stone-700 dark:text-stone-300">
                         {formatINR(order.subtotal)}
                       </td>
+                      {filteredOrders.some((o) => (o.discount_amount_applied ?? 0) > 0) && (
+                        <td className="py-4 text-right font-mono text-rose-600 dark:text-rose-400 font-semibold">
+                          {discountAmt > 0 ? `−${formatINR(discountAmt)}` : '—'}
+                        </td>
+                      )}
                       <td className="py-4 text-right font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
                         {formatINR(courier)}
                       </td>

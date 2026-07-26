@@ -20,6 +20,8 @@ export interface ManualOrderInput {
   status: OrderStatus;
   estimatedCourierPrice?: number | null;
   finalCourierPrice?: number | null;
+  discountType?: 'flat' | 'percentage' | null;
+  discountValue?: number | null;
 }
 
 /**
@@ -42,7 +44,23 @@ export async function createManualOrder(
     const estCourier = input.estimatedCourierPrice ?? null;
     const finalCourier = input.finalCourierPrice ?? null;
     const courierFee = finalCourier ?? estCourier ?? 0;
-    const finalTotal = subtotal + Math.max(0, courierFee);
+
+    // Compute optional discount
+    let discountType: string | null = null;
+    let discountValue: number | null = null;
+    let discountAmountApplied: number | null = null;
+
+    if (input.discountType && input.discountValue != null && input.discountValue > 0) {
+      discountType = input.discountType;
+      discountValue = input.discountValue;
+      if (input.discountType === 'flat') {
+        discountAmountApplied = Math.min(discountValue, subtotal);
+      } else {
+        discountAmountApplied = Math.round((subtotal * (discountValue / 100)) * 100) / 100;
+      }
+    }
+
+    const finalTotal = subtotal - (discountAmountApplied ?? 0) + Math.max(0, courierFee);
 
     const isHandled = input.status !== "pending";
 
@@ -54,6 +72,9 @@ export async function createManualOrder(
       final_courier_price: finalCourier,
       delivery_price: courierFee,
       final_total: finalTotal,
+      discount_type: discountType,
+      discount_value: discountValue,
+      discount_amount_applied: discountAmountApplied,
       handled: isHandled,
       handled_at: isHandled ? new Date().toISOString() : null,
       deleted: false,
@@ -94,7 +115,7 @@ export async function updateOrderStatus(
   // 1. Fetch current order details
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, handled")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, handled, discount_amount_applied")
     .eq("id", orderId)
     .single();
 
@@ -120,7 +141,8 @@ export async function updateOrderStatus(
 
   // Use final courier fee if present, fallback to estimated, fallback to 0
   const courierFee = effFinalCourier ?? effEstCourier ?? 0;
-  const finalTotal = subtotal + Math.max(0, courierFee);
+  const discountApplied = Number(order.discount_amount_applied) || 0;
+  const finalTotal = subtotal - discountApplied + Math.max(0, courierFee);
 
   const isHandledOrBeyond = newStatus !== "pending";
 
@@ -243,4 +265,111 @@ export async function updateOrderCustomerDetails(
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
 }
+
+/**
+ * Helper: compute discount amount from type, value, and subtotal.
+ */
+function computeDiscountAmount(
+  type: 'flat' | 'percentage',
+  value: number,
+  subtotal: number
+): number {
+  if (type === 'flat') {
+    return Math.min(value, subtotal);
+  }
+  return Math.round((subtotal * (value / 100)) * 100) / 100;
+}
+
+/**
+ * Applies an optional discount to an existing order.
+ * Recalculates final_total with the discount factored in.
+ */
+export async function applyOrderDiscount(
+  orderId: string,
+  discountType: 'flat' | 'percentage',
+  discountValue: number
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError || !order) {
+    throw new Error(fetchError?.message || "Order not found");
+  }
+
+  const subtotal = Number(order.subtotal) || 0;
+  const discountAmountApplied = computeDiscountAmount(discountType, discountValue, subtotal);
+
+  const courierFee =
+    (order.final_courier_price != null ? Number(order.final_courier_price) : null) ??
+    (order.estimated_courier_price != null ? Number(order.estimated_courier_price) : null) ??
+    0;
+  const finalTotal = subtotal - discountAmountApplied + Math.max(0, courierFee);
+
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      discount_type: discountType,
+      discount_value: discountValue,
+      discount_amount_applied: discountAmountApplied,
+      final_total: finalTotal,
+    })
+    .eq("id", orderId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+}
+
+/**
+ * Removes an applied discount from an order.
+ * Recalculates final_total without the discount.
+ */
+export async function removeOrderDiscount(
+  orderId: string
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError || !order) {
+    throw new Error(fetchError?.message || "Order not found");
+  }
+
+  const subtotal = Number(order.subtotal) || 0;
+  const courierFee =
+    (order.final_courier_price != null ? Number(order.final_courier_price) : null) ??
+    (order.estimated_courier_price != null ? Number(order.estimated_courier_price) : null) ??
+    0;
+  const finalTotal = subtotal + Math.max(0, courierFee);
+
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      discount_type: null,
+      discount_value: null,
+      discount_amount_applied: null,
+      final_total: finalTotal,
+    })
+    .eq("id", orderId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+}
+
 

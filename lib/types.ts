@@ -91,6 +91,9 @@ export interface Order {
   customer_phone?: string | null;
   customer_address?: string | null;
   customer_pincode?: string | null;
+  discount_type?: 'flat' | 'percentage' | null;
+  discount_value?: number | null;
+  discount_amount_applied?: number | null;
   created_at: string;
 }
 

@@ -10,6 +10,8 @@ import {
   updateOrderNotes,
   createManualOrder,
   updateOrderCustomerDetails,
+  applyOrderDiscount,
+  removeOrderDiscount,
   type ManualOrderInput,
   type ManualOrderItemInput,
 } from "../actions";
@@ -32,6 +34,8 @@ import {
   ChevronRight,
   Pencil,
   Search,
+  Tag,
+  Percent,
 } from "lucide-react";
 
 interface AdminOrdersListProps {
@@ -223,6 +227,23 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
   const [manualError, setManualError] = useState<string | null>(null);
 
+  // Discount State (for inline editing on order cards)
+  const [discountEditingOrderId, setDiscountEditingOrderId] = useState<string | null>(null);
+  const [discountFormType, setDiscountFormType] = useState<'flat' | 'percentage'>('flat');
+  const [discountFormValue, setDiscountFormValue] = useState<string>('');
+
+  // Discount State (for manual order modal)
+  const [manualDiscountEnabled, setManualDiscountEnabled] = useState(false);
+  const [manualDiscountType, setManualDiscountType] = useState<'flat' | 'percentage'>('flat');
+  const [manualDiscountValue, setManualDiscountValue] = useState<string>('');
+
+  const manualDiscountAmount = (() => {
+    const val = parseFloat(manualDiscountValue);
+    if (!manualDiscountEnabled || isNaN(val) || val <= 0) return 0;
+    if (manualDiscountType === 'flat') return Math.min(val, manualSubtotal);
+    return Math.round((manualSubtotal * (val / 100)) * 100) / 100;
+  })();
+
   // Soft Delete Modal State
   const [deletingOrder, setDeletingOrder] = useState<Order | null>(null);
 
@@ -335,6 +356,8 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
           qty: i.qty,
         })),
         status: manualForm.status,
+        discountType: manualDiscountEnabled && manualDiscountAmount > 0 ? manualDiscountType : null,
+        discountValue: manualDiscountEnabled && manualDiscountAmount > 0 ? parseFloat(manualDiscountValue) : null,
       });
 
       if (!res.success) {
@@ -342,6 +365,9 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       } else {
         setShowManualModal(false);
         setManualSelectedItems([]);
+        setManualDiscountEnabled(false);
+        setManualDiscountType('flat');
+        setManualDiscountValue('');
         setManualForm({
           customerName: "",
           customerPhone: "",
@@ -378,6 +404,36 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
         router.refresh();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to delete order");
+      }
+    });
+  };
+  // Apply Discount to Order
+  const handleApplyDiscount = (orderId: string) => {
+    const val = parseFloat(discountFormValue);
+    if (isNaN(val) || val <= 0) {
+      alert("Please enter a valid discount value greater than 0.");
+      return;
+    }
+    startTransition(async () => {
+      try {
+        await applyOrderDiscount(orderId, discountFormType, val);
+        setDiscountEditingOrderId(null);
+        setDiscountFormValue('');
+        router.refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to apply discount");
+      }
+    });
+  };
+
+  // Remove Discount from Order
+  const handleRemoveDiscount = (orderId: string) => {
+    startTransition(async () => {
+      try {
+        await removeOrderDiscount(orderId);
+        router.refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to remove discount");
       }
     });
   };
@@ -531,7 +587,9 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
             const estCourier = order.estimated_courier_price ?? null;
             const finalCourier = order.final_courier_price ?? order.delivery_price ?? null;
             const effectiveCourier = finalCourier ?? estCourier ?? 0;
-            const calculatedTotal = order.subtotal + effectiveCourier;
+            const discountApplied = order.discount_amount_applied ?? 0;
+            const calculatedTotal = order.subtotal - discountApplied + effectiveCourier;
+            const isEditingDiscount = discountEditingOrderId === order.id;
 
             return (
               <div
@@ -613,6 +671,136 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                         {formatINR(order.subtotal)}
                       </span>
                     </div>
+
+                    {/* Discount Line */}
+                    {discountApplied > 0 && !isEditingDiscount ? (
+                      <div className="flex justify-between items-center text-rose-600 dark:text-rose-400 font-semibold">
+                        <span className="flex items-center gap-1.5">
+                          <Tag className="w-3 h-3" />
+                          Discount
+                          {order.discount_type === 'percentage' && order.discount_value
+                            ? ` (${order.discount_value}%)`
+                            : order.discount_type === 'flat' && order.discount_value
+                            ? ` (₹${order.discount_value})`
+                            : ''}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDiscountEditingOrderId(order.id);
+                              setDiscountFormType(order.discount_type || 'flat');
+                              setDiscountFormValue(String(order.discount_value || ''));
+                            }}
+                            className="text-stone-400 hover:text-terracotta p-0.5 ml-0.5"
+                            title="Edit discount"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDiscount(order.id)}
+                            className="text-stone-400 hover:text-red-500 p-0.5"
+                            title="Remove discount"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                        <span>−{formatINR(discountApplied)}</span>
+                      </div>
+                    ) : !isEditingDiscount ? (
+                      /* Collapsed "+ Apply Discount" link */
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDiscountEditingOrderId(order.id);
+                            setDiscountFormType('flat');
+                            setDiscountFormValue('');
+                          }}
+                          className="text-[11px] text-stone-400 dark:text-stone-500 hover:text-terracotta dark:hover:text-terracotta transition-colors font-medium flex items-center gap-1"
+                        >
+                          <Tag className="w-3 h-3" />
+                          + Apply Discount
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {/* Inline Discount Edit Form */}
+                    {isEditingDiscount && (
+                      <div className="p-2.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-800/40 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                            <button
+                              type="button"
+                              onClick={() => setDiscountFormType('flat')}
+                              className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                                discountFormType === 'flat'
+                                  ? 'bg-terracotta text-white'
+                                  : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                              }`}
+                            >
+                              ₹ Flat
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setDiscountFormType('percentage')}
+                              className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                                discountFormType === 'percentage'
+                                  ? 'bg-terracotta text-white'
+                                  : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                              }`}
+                            >
+                              % Percent
+                            </button>
+                          </div>
+                          <input
+                            type="number"
+                            min="0"
+                            step={discountFormType === 'percentage' ? '1' : '0.01'}
+                            max={discountFormType === 'percentage' ? '100' : undefined}
+                            value={discountFormValue}
+                            onChange={(e) => setDiscountFormValue(e.target.value)}
+                            placeholder={discountFormType === 'flat' ? 'Amount (₹)' : 'Percent (%)'}
+                            className="flex-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-[11px] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta w-20"
+                            autoFocus
+                          />
+                        </div>
+                        {/* Preview */}
+                        {(() => {
+                          const val = parseFloat(discountFormValue);
+                          if (!isNaN(val) && val > 0) {
+                            const previewAmt = discountFormType === 'flat'
+                              ? Math.min(val, order.subtotal)
+                              : Math.round((order.subtotal * (val / 100)) * 100) / 100;
+                            return (
+                              <div className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                                Discount: −{formatINR(previewAmt)} → New Total: {formatINR(order.subtotal - previewAmt + effectiveCourier)}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleApplyDiscount(order.id)}
+                            disabled={isPending}
+                            className="bg-terracotta hover:bg-[#b04a25] text-white px-3 py-1 rounded-lg text-[11px] font-bold disabled:opacity-50"
+                          >
+                            {isPending ? 'Applying…' : 'Apply'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDiscountEditingOrderId(null);
+                              setDiscountFormValue('');
+                            }}
+                            className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 text-[11px] font-medium px-2 py-1"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Courier Charge Line */}
                     {finalCourier !== null ? (
@@ -961,7 +1149,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                 <span className="font-medium">Calculated Order Total:</span>
                 <span className="text-sm font-bold">
                   {formatINR(
-                    courierModalOrder.subtotal + (parseFloat(courierInputValue) || 0)
+                    courierModalOrder.subtotal - (courierModalOrder.discount_amount_applied ?? 0) + (parseFloat(courierInputValue) || 0)
                   )}
                 </span>
               </div>
@@ -1250,11 +1438,29 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
               {/* Auto-Calculated Subtotal Box & Initial Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 p-3 flex justify-between items-center text-xs text-emerald-950 dark:text-emerald-300">
-                  <span className="font-semibold text-[11px]">Auto Subtotal:</span>
-                  <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
-                    {formatINR(manualSubtotal)}
-                  </span>
+                <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 p-3 text-xs text-emerald-950 dark:text-emerald-300">
+                  <div className="flex justify-between items-center">
+                    <span className="font-semibold text-[11px]">Auto Subtotal:</span>
+                    <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                      {formatINR(manualSubtotal)}
+                    </span>
+                  </div>
+                  {manualDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center mt-1 text-rose-600 dark:text-rose-400">
+                      <span className="font-semibold text-[11px]">
+                        Discount ({manualDiscountType === 'percentage' ? `${manualDiscountValue}%` : `₹${manualDiscountValue}`}):
+                      </span>
+                      <span className="font-bold text-[11px]">−{formatINR(manualDiscountAmount)}</span>
+                    </div>
+                  )}
+                  {manualDiscountAmount > 0 && (
+                    <div className="flex justify-between items-center mt-1 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40">
+                      <span className="font-bold text-[11px]">After Discount:</span>
+                      <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                        {formatINR(manualSubtotal - manualDiscountAmount)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1279,6 +1485,76 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                   </select>
                 </div>
               </div>
+
+              {/* Optional Discount (collapsed by default) */}
+              {!manualDiscountEnabled ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setManualDiscountEnabled(true)}
+                    className="text-[11px] text-stone-400 dark:text-stone-500 hover:text-terracotta dark:hover:text-terracotta transition-colors font-medium flex items-center gap-1"
+                  >
+                    <Tag className="w-3 h-3" />
+                    + Add Discount
+                  </button>
+                </div>
+              ) : (
+                <div className="p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-800/40 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                      <Tag className="w-3 h-3" />
+                      Discount
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualDiscountEnabled(false);
+                        setManualDiscountValue('');
+                      }}
+                      className="text-stone-400 hover:text-red-500 p-0.5"
+                      title="Remove discount"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                      <button
+                        type="button"
+                        onClick={() => setManualDiscountType('flat')}
+                        className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                          manualDiscountType === 'flat'
+                            ? 'bg-terracotta text-white'
+                            : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                        }`}
+                      >
+                        ₹ Flat
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setManualDiscountType('percentage')}
+                        className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                          manualDiscountType === 'percentage'
+                            ? 'bg-terracotta text-white'
+                            : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                        }`}
+                      >
+                        % Percent
+                      </button>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      step={manualDiscountType === 'percentage' ? '1' : '0.01'}
+                      max={manualDiscountType === 'percentage' ? '100' : undefined}
+                      value={manualDiscountValue}
+                      onChange={(e) => setManualDiscountValue(e.target.value)}
+                      placeholder={manualDiscountType === 'flat' ? 'Amount (₹)' : 'Percent (%)'}
+                      className="flex-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-[11px] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta w-20"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Submit Actions */}
               <div className="flex gap-2 pt-3">
