@@ -98,6 +98,7 @@ export default async function AdminPage() {
         siteSettings={(siteSettings as SiteSettings) ?? null}
         plants={(plants as Plant[]) ?? []}
         plantTagsMap={plantTagsMap}
+        allTags={(allTags as Tag[]) ?? []}
         orders={(orders as Order[]) ?? []}
         heroBanner={(heroBanner as HeroBanner) ?? null}
         carouselSettings={(carouselSettings as CarouselSectionSettings) ?? null}

@@ -43,6 +43,7 @@ import { SalesAnalytics } from "../sales/_components/SalesAnalytics";
 import { HeroBannerForm } from "../hero-banner/_components/HeroBannerForm";
 import { CarouselAdminClient } from "../carousel-section/_components/CarouselAdminClient";
 import { SettingsForm } from "../settings/_components/SettingsForm";
+import { AdminPlantsGrid } from "../plants/_components/AdminPlantsGrid";
 import { AvailabilitySelect } from "../plants/_components/AvailabilitySelect";
 import { DeleteButton } from "../plants/_components/DeleteButton";
 
@@ -58,6 +59,7 @@ interface UnifiedAdminConsoleProps {
   siteSettings: SiteSettings | null;
   plants: Plant[];
   plantTagsMap: Record<string, Tag[]>;
+  allTags: Tag[];
   orders: Order[];
   heroBanner: HeroBanner | null;
   carouselSettings: CarouselSectionSettings | null;
@@ -100,6 +102,7 @@ export function UnifiedAdminConsole({
   siteSettings,
   plants,
   plantTagsMap,
+  allTags,
   orders,
   heroBanner,
   carouselSettings,
@@ -740,148 +743,12 @@ export function UnifiedAdminConsole({
         {/* TAB 2: PLANTS CATALOGUE */}
         {/* =================================================================== */}
         {activeTab === "plants" && (
-          <div className="space-y-6 animate-fadeIn">
-            {/* Controls Bar */}
-            <div className="flex items-center justify-between gap-4 bg-white dark:bg-stone-900 p-5 rounded-3xl border border-stone-200/80 dark:border-stone-800 shadow-2xs flex-wrap">
-              <div>
-                <h2 className="font-heading font-bold text-2xl text-stone-900 dark:text-stone-100">
-                  Plants Catalogue
-                </h2>
-                <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
-                  {plants.length} plant{plants.length !== 1 ? "s" : ""} currently in catalogue
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <select
-                  value={plantCategoryFilter}
-                  onChange={(e) => setPlantCategoryFilter(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-semibold text-stone-700 dark:text-stone-300 focus:outline-none min-h-[44px]"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="Anthurium">Anthurium</option>
-                  <option value="Indoor">Indoor</option>
-                  <option value="Flowering">Flowering</option>
-                  <option value="Outdoor">Outdoor</option>
-                </select>
-
-                <Link
-                  href="/admin/plants/new"
-                  className="bg-botanical-800 hover:bg-botanical-900 dark:bg-botanical-600 dark:hover:bg-botanical-700 text-white px-5 py-2.5 rounded-xl font-semibold text-xs shadow-md transition-all flex items-center gap-2 shrink-0 min-h-[44px]"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Plant</span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Plants Table */}
-            {filteredPlants.length === 0 ? (
-              <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-800 p-12 text-center text-stone-400 bg-white dark:bg-stone-900">
-                <Sprout className="w-10 h-10 mx-auto mb-2 text-stone-300 dark:text-stone-600" />
-                <p className="text-sm font-semibold text-stone-700 dark:text-stone-300">
-                  No plants match category filter
-                </p>
-                <p className="text-xs text-stone-400 dark:text-stone-500 mt-1">
-                  Add a new plant or select another category filter.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 overflow-hidden shadow-2xs">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-stone-100/70 dark:bg-stone-800/60 border-b border-stone-200/80 dark:border-stone-800 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
-                      <tr>
-                        <th className="px-4 py-3.5 w-16">Photo</th>
-                        <th className="px-4 py-3.5">Name</th>
-                        <th className="px-4 py-3.5">Tags</th>
-                        <th className="px-4 py-3.5">Price</th>
-                        <th className="px-4 py-3.5">Availability</th>
-                        <th className="px-4 py-3.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800 text-stone-800 dark:text-stone-200">
-                      {filteredPlants.map((plant) => {
-                        const tags = plantTagsMap[plant.id] ?? [];
-                        return (
-                          <tr
-                            key={plant.id}
-                            className="hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition-colors"
-                          >
-                            <td className="px-4 py-3">
-                              {plant.photos[0] ? (
-                                <img
-                                  src={plant.photos[0]}
-                                  alt={plant.name}
-                                  className="w-10 h-10 object-cover rounded-xl border border-stone-200/80 dark:border-stone-700"
-                                />
-                              ) : (
-                                <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-lg">
-                                  🌿
-                                </div>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-3">
-                              <div className="font-semibold text-stone-900 dark:text-stone-100">
-                                {plant.name}
-                              </div>
-                              {plant.local_name && (
-                                <div className="text-xs text-stone-400">{plant.local_name}</div>
-                              )}
-                            </td>
-
-                            <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-1">
-                                {tags.length > 0 ? (
-                                  tags.map((tag) => (
-                                    <span
-                                      key={tag.id}
-                                      className="inline-block rounded-lg bg-stone-100 dark:bg-stone-800 border border-stone-200/80 dark:border-stone-700 px-2 py-0.5 text-[11px] font-semibold text-stone-600 dark:text-stone-300"
-                                    >
-                                      {tag.name}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className="text-xs text-stone-400 italic">No tags</span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td className="px-4 py-3 font-semibold text-stone-900 dark:text-stone-100">
-                              {formatINR(plant.price)}
-                            </td>
-
-                            <td className="px-4 py-3">
-                              <AvailabilitySelect
-                                plantId={plant.id}
-                                current={plant.availability}
-                              />
-                            </td>
-
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-end gap-3">
-                                <Link
-                                  href={`/admin/plants/${plant.id}/edit`}
-                                  className="min-h-[44px] flex items-center text-xs font-semibold text-stone-700 dark:text-stone-300 hover:text-terracotta transition-colors"
-                                >
-                                  Edit
-                                </Link>
-                                <DeleteButton
-                                  plantId={plant.id}
-                                  plantName={plant.name}
-                                  photoUrls={plant.photos}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+          <div className="animate-fadeIn">
+            <AdminPlantsGrid
+              plants={plants}
+              plantTagsMap={plantTagsMap}
+              allTags={allTags}
+            />
           </div>
         )}
 

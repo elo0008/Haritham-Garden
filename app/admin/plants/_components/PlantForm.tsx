@@ -14,11 +14,11 @@ import type {
   PlantWriteData,
 } from "@/lib/types";
 
-// ── Label maps ────────────────────────────────────────────────────────────────
+// ── Option Maps ───────────────────────────────────────────────────────────────
 
 const SUNLIGHT_OPTIONS: { value: PlantSunlight; label: string }[] = [
   { value: "low", label: "Low Light" },
-  { value: "medium", label: "Medium Light" },
+  { value: "medium", label: "Medium / Indirect" },
   { value: "full_sun", label: "Full Sun" },
 ];
 
@@ -29,40 +29,44 @@ const WATERING_OPTIONS: { value: PlantWatering; label: string }[] = [
 ];
 
 const AVAILABILITY_OPTIONS: { value: PlantAvailability; label: string }[] = [
-  { value: "available", label: "Available" },
-  { value: "limited", label: "Limited" },
-  { value: "unavailable", label: "Unavailable" },
+  { value: "available", label: "Available (In Stock)" },
+  { value: "limited", label: "Limited Stock" },
+  { value: "unavailable", label: "Unavailable (Out of Stock)" },
 ];
 
-// ── Shared input class ────────────────────────────────────────────────────────
+// ── Shared Input Styling ──────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-[#24211E] " +
-  "focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent " +
-  "disabled:bg-stone-100 disabled:text-stone-400 min-h-[44px]";
+  "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
+  "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
+  "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
-interface Props {
+interface PlantFormProps {
   initialData?: Plant;
   /** All available tags from the database */
   allTags: Tag[];
   /** Tag IDs currently assigned to this plant (for edit mode) */
   initialTagIds?: string[];
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 type NewFile = { id: string; file: File; preview: string };
 
-export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds }: Props) {
+export function PlantForm({
+  initialData,
+  allTags: initialAllTags,
+  initialTagIds,
+  onSuccess,
+  onCancel,
+}: PlantFormProps) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Field state ──────────────────────────────────────────────────────────────
+  // ── Field State ──────────────────────────────────────────────────────────────
   const [name, setName] = useState(initialData?.name ?? "");
   const [localName, setLocalName] = useState(initialData?.local_name ?? "");
-  const [description, setDescription] = useState(
-    initialData?.description ?? ""
-  );
+  const [description, setDescription] = useState(initialData?.description ?? "");
   const [sunlight, setSunlight] = useState<PlantSunlight>(
     initialData?.sunlight ?? "medium"
   );
@@ -77,24 +81,24 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
   );
   const [shippable, setShippable] = useState(initialData?.shippable ?? true);
 
-  // ── Tag state ────────────────────────────────────────────────────────────────
+  // ── Tag State ────────────────────────────────────────────────────────────────
   const [allTags, setAllTags] = useState<Tag[]>(initialAllTags);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
     initialTagIds ?? []
   );
 
-  // ── Photo state ──────────────────────────────────────────────────────────────
+  // ── Photo State ──────────────────────────────────────────────────────────────
   const [existingPhotos, setExistingPhotos] = useState<string[]>(
     initialData?.photos ?? []
   );
   const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
   const [newFiles, setNewFiles] = useState<NewFile[]>([]);
 
-  // ── UI state ─────────────────────────────────────────────────────────────────
+  // ── UI State ─────────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Photo handlers ───────────────────────────────────────────────────────────
+  // ── Photo Handlers ───────────────────────────────────────────────────────────
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
@@ -120,24 +124,29 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
     });
   }
 
-  // ── Tag creation handler ─────────────────────────────────────────────────────
+  // ── Tag Creation Handler ─────────────────────────────────────────────────────
 
-  async function handleCreateTag(name: string): Promise<Tag> {
-    const newTag = await createTag(name);
-    // Add to local allTags so the picker shows it immediately
+  async function handleCreateTag(tagName: string): Promise<Tag> {
+    const newTag = await createTag(tagName);
     setAllTags((prev) => [...prev, newTag]);
     return newTag;
   }
 
-  // ── Submit ───────────────────────────────────────────────────────────────────
+  // ── Submit Form ──────────────────────────────────────────────────────────────
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
     // Validation
-    if (!name.trim()) { setError("Plant name is required."); return; }
-    if (selectedTagIds.length === 0) { setError("At least one tag is required."); return; }
+    if (!name.trim()) {
+      setError("Plant name is required.");
+      return;
+    }
+    if (selectedTagIds.length === 0) {
+      setError("At least one tag is required.");
+      return;
+    }
     const parsedPrice = parseFloat(price);
     if (!price || isNaN(parsedPrice) || parsedPrice < 0) {
       setError("A valid price is required.");
@@ -147,7 +156,7 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
     setSaving(true);
 
     try {
-      // 1. Upload new photos client-side using browser Supabase client
+      // 1. Upload new files to Supabase Storage
       const supabase = createClient();
       const uploadedUrls: string[] = [];
 
@@ -172,7 +181,7 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
       // 2. Build final photo list
       const photos = [...existingPhotos, ...uploadedUrls];
 
-      // 3. Call server action
+      // 3. Save plant write data
       const plantData: PlantWriteData = {
         name: name.trim(),
         local_name: localName.trim() || null,
@@ -191,8 +200,12 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
         await createPlant(plantData, selectedTagIds);
       }
 
-      router.push("/admin/plants");
       router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push("/admin?tab=plants");
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -200,13 +213,11 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
     }
   }
 
-  // ── Render ───────────────────────────────────────────────────────────────────
-
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl bg-white border border-stone-200/80 rounded-2xl p-6 shadow-2xs">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Error banner */}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-xs text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
@@ -214,28 +225,28 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
       {/* ── Row 1: Name + Local Name ─────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Name <span className="text-red-500">*</span>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+            Plant Name <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Snake Plant"
+            placeholder="e.g. Red Anthurium"
             disabled={saving}
             className={inputCls}
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Local Name{" "}
-            <span className="font-normal text-stone-400">(optional)</span>
+            <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
           </label>
           <input
             type="text"
             value={localName}
             onChange={(e) => setLocalName(e.target.value)}
-            placeholder="e.g. Muthukamini"
+            placeholder="e.g. Chuvappu Anthurium"
             disabled={saving}
             className={inputCls}
           />
@@ -245,7 +256,7 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
       {/* ── Row 2: Tags + Price ───────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Tags <span className="text-red-500">*</span>
           </label>
           <TagPicker
@@ -258,7 +269,7 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
           />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Price (₹) <span className="text-red-500">*</span>
           </label>
           <input
@@ -277,8 +288,8 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
       {/* ── Row 3: Sunlight + Watering ───────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Sunlight
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+            Sunlight Requirement
           </label>
           <select
             value={sunlight}
@@ -294,8 +305,8 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Watering
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+            Watering Need
           </label>
           <select
             value={watering}
@@ -315,8 +326,8 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
       {/* ── Row 4: Availability + Shippable ─────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Availability
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+            Initial Availability Status
           </label>
           <select
             value={availability}
@@ -340,56 +351,51 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
             checked={shippable}
             onChange={(e) => setShippable(e.target.checked)}
             disabled={saving}
-            className="w-4 h-4 rounded border-stone-300 text-[#C1662F]
-                       focus:ring-[#C1662F] cursor-pointer"
+            className="w-4 h-4 rounded border-stone-300 text-terracotta focus:ring-terracotta cursor-pointer"
           />
           <label
             htmlFor="shippable"
-            className="text-xs font-semibold text-stone-700 cursor-pointer"
+            className="text-xs font-semibold text-stone-700 dark:text-stone-300 cursor-pointer"
           >
-            Available for shipping
+            Available for courier shipping
           </label>
         </div>
       </div>
 
       {/* ── Description ─────────────────────────────────────────────────── */}
       <div>
-        <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-          Description{" "}
-          <span className="font-normal text-stone-400">(1–2 sentences)</span>
+        <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+          Short Description
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          placeholder="Brief description of the plant…"
+          placeholder="Brief nursery description of the plant…"
           disabled={saving}
-          className="w-full rounded-xl border border-stone-300 bg-white p-3 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent resize-none"
+          className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent resize-none"
         />
       </div>
 
-      {/* ── Photos ──────────────────────────────────────────────────────── */}
+      {/* ── Photos Section ──────────────────────────────────────────────── */}
       <div>
-        <label className="block text-xs font-semibold text-stone-700 mb-2">
-          Photos
+        <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-2">
+          Plant Photos
         </label>
 
-        {/* Preview grid */}
         {(existingPhotos.length > 0 || newFiles.length > 0) && (
           <div className="flex flex-wrap gap-3 mb-3">
             {existingPhotos.map((url) => (
               <div key={url} className="relative group">
                 <img
                   src={url}
-                  alt=""
-                  className="w-20 h-20 object-cover rounded-xl border border-stone-200"
+                  alt="Plant photo"
+                  className="w-20 h-20 object-cover rounded-xl border border-stone-200 dark:border-stone-700"
                 />
                 <button
                   type="button"
                   onClick={() => removeExistingPhoto(url)}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
-                             text-white rounded-full text-xs flex items-center justify-center
-                             shadow transition-colors"
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition-colors"
                   title="Remove photo"
                 >
                   ×
@@ -400,19 +406,16 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
               <div key={item.id} className="relative group">
                 <img
                   src={item.preview}
-                  alt=""
-                  className="w-20 h-20 object-cover rounded-xl border border-[#C1662F]"
+                  alt="New photo"
+                  className="w-20 h-20 object-cover rounded-xl border-2 border-terracotta"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-[#C1662F]/80 text-white
-                                text-[10px] text-center rounded-b-xl py-0.5">
-                  new
+                <div className="absolute bottom-0 left-0 right-0 bg-terracotta text-white text-[10px] text-center font-bold rounded-b-xl py-0.5 uppercase">
+                  New
                 </div>
                 <button
                   type="button"
                   onClick={() => removeNewFile(item.id)}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
-                             text-white rounded-full text-xs flex items-center justify-center
-                             shadow transition-colors"
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition-colors"
                   title="Remove photo"
                 >
                   ×
@@ -434,43 +437,35 @@ export function PlantForm({ initialData, allTags: initialAllTags, initialTagIds 
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={saving}
-          className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px]
-                     hover:bg-stone-50 disabled:opacity-50 transition-colors"
+          className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-50 transition-colors text-stone-700 dark:text-stone-200"
         >
-          + Add Photos
+          + Upload Photos
         </button>
-        <p className="mt-1.5 text-xs text-stone-400">
-          Photos are uploaded on save. New photos are marked in terracotta.
+        <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
+          Photos are uploaded to Supabase Storage when you save.
         </p>
       </div>
 
-      {/* ── Slug note ────────────────────────────────────────────────────── */}
-      <p className="text-xs text-stone-400">
-        The URL slug is auto-generated from the plant name when you save.
-      </p>
-
-      {/* ── Submit / Cancel ──────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 pt-3 border-t border-stone-100">
+      {/* ── Action Buttons ───────────────────────────────────────────────── */}
+      <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100 dark:border-stone-800">
+        <button
+          type="button"
+          onClick={() => (onCancel ? onCancel() : router.back())}
+          disabled={saving}
+          className="text-xs font-semibold text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white px-5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 min-h-[44px] transition-colors"
+        >
+          Cancel
+        </button>
         <button
           type="submit"
           disabled={saving}
-          className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-5 py-3 rounded-xl
-                     text-xs font-semibold min-h-[44px] shadow-xs disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-colors"
+          className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl text-xs font-bold min-h-[44px] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
         >
-          {saving
-            ? "Saving…"
-            : initialData
-            ? "Update Plant"
-            : "Add Plant"}
-        </button>
-        <button
-          type="button"
-          onClick={() => router.back()}
-          disabled={saving}
-          className="text-xs font-medium text-stone-500 hover:text-stone-800 px-4 py-3 min-h-[44px] transition-colors"
-        >
-          Cancel
+          {saving ? (
+            <span>Saving Plant...</span>
+          ) : (
+            <span>{initialData ? "Update Plant" : "Save & Add Plant"}</span>
+          )}
         </button>
       </div>
     </form>
