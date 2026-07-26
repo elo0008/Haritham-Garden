@@ -31,7 +31,7 @@ export function CartToast({ toast, onDismiss }: CartToastProps) {
   return (
     <AnimatePresence>
       {toast && (
-        <div className="fixed top-6 right-6 z-50 pointer-events-none">
+        <div className="fixed top-24 right-4 sm:right-6 z-50 pointer-events-none">
           <motion.div
             key={toast.id}
             initial={{ opacity: 0, x: 50, scale: 0.95 }}

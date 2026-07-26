@@ -38,24 +38,24 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
 
   const handleNext = useCallback(() => {
     if (activeSlides.length <= 1) return;
-    triggerSlideChange((prev) => (prev === activeSlides.length - 1 ? 0 : prev + 1));
+    triggerSlideChange((prev) => (prev >= activeSlides.length - 1 ? 0 : prev + 1));
   }, [activeSlides.length, triggerSlideChange]);
 
   const handlePrev = useCallback(() => {
     if (activeSlides.length <= 1) return;
-    triggerSlideChange((prev) => (prev === 0 ? activeSlides.length - 1 : prev - 1));
+    triggerSlideChange((prev) => (prev <= 0 ? activeSlides.length - 1 : prev - 1));
   }, [activeSlides.length, triggerSlideChange]);
 
-  // Auto-advance timer (every 5s, pauses on hover or manual action)
+  // Auto-advance timer (every 5s, loops infinitely, pauses on hover)
   useEffect(() => {
     if (!settings?.enabled || activeSlides.length <= 1 || isHovered) return;
 
     const interval = setInterval(() => {
-      handleNext();
+      triggerSlideChange((prev) => (prev >= activeSlides.length - 1 ? 0 : prev + 1));
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [settings?.enabled, activeSlides.length, isHovered, handleNext]);
+  }, [settings?.enabled, activeSlides.length, isHovered, triggerSlideChange]);
 
   // If section is disabled or no settings exist, render NOTHING
   if (!settings || !settings.enabled || activeSlides.length === 0) return null;
