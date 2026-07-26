@@ -757,7 +757,7 @@ export function UnifiedAdminConsole({
         {/* =================================================================== */}
         {activeTab === "orders" && (
           <div className="space-y-6 animate-fadeIn">
-            <AdminOrdersList orders={orders} />
+            <AdminOrdersList orders={orders} plants={plants} />
           </div>
         )}
 

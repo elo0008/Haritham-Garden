@@ -4,13 +4,19 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/types";
 
+export interface ManualOrderItemInput {
+  plant_id: string;
+  name: string;
+  price: number;
+  qty: number;
+}
+
 export interface ManualOrderInput {
   customerName?: string | null;
   customerPhone?: string | null;
   customerAddress?: string | null;
   customerPincode?: string | null;
-  itemSummary: string;
-  subtotal: number;
+  items: ManualOrderItemInput[];
   status: OrderStatus;
   estimatedCourierPrice?: number | null;
   finalCourierPrice?: number | null;
@@ -25,25 +31,24 @@ export async function createManualOrder(
   try {
     const supabase = await createClient();
 
-    const itemSnapshots = [
-      {
-        plant_id: "manual",
-        name: input.itemSummary.trim() || "Manual Order Item",
-        price: input.subtotal,
-        qty: 1,
-      },
-    ];
+    const subtotal = input.items.reduce((acc, item) => acc + item.price * item.qty, 0);
+    const itemSnapshots = input.items.map((item) => ({
+      plant_id: item.plant_id,
+      name: item.name,
+      price: item.price,
+      qty: item.qty,
+    }));
 
     const estCourier = input.estimatedCourierPrice ?? null;
     const finalCourier = input.finalCourierPrice ?? null;
     const courierFee = finalCourier ?? estCourier ?? 0;
-    const finalTotal = input.subtotal + Math.max(0, courierFee);
+    const finalTotal = subtotal + Math.max(0, courierFee);
 
     const isHandled = input.status !== "pending";
 
     const { error } = await supabase.from("orders").insert({
       items: itemSnapshots,
-      subtotal: input.subtotal,
+      subtotal: subtotal,
       status: input.status,
       estimated_courier_price: estCourier,
       final_courier_price: finalCourier,
@@ -64,6 +69,7 @@ export async function createManualOrder(
     }
 
     revalidatePath("/admin/orders");
+    revalidatePath("/admin");
     return { success: true };
   } catch (err) {
     console.error("Unexpected error in createManualOrder:", err);

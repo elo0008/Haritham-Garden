@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Order, OrderStatus } from "@/lib/types";
+import type { Order, OrderStatus, Plant } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import {
   updateOrderStatus,
@@ -11,6 +11,7 @@ import {
   createManualOrder,
   updateOrderCustomerDetails,
   type ManualOrderInput,
+  type ManualOrderItemInput,
 } from "../actions";
 import {
   Package,
@@ -30,10 +31,12 @@ import {
   Phone,
   ChevronRight,
   Pencil,
+  Search,
 } from "lucide-react";
 
 interface AdminOrdersListProps {
   orders: Order[];
+  plants?: Plant[];
 }
 
 type FilterTab = "all" | "active" | OrderStatus;
@@ -93,7 +96,7 @@ const STATUS_CONFIG: Record<
   },
 };
 
-export function AdminOrdersList({ orders }: AdminOrdersListProps) {
+export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -147,19 +150,77 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   const [courierInputValue, setCourierInputValue] = useState<string>("0");
   const [courierModalError, setCourierModalError] = useState<string | null>(null);
 
-  // Manual Order Modal State
+  // Manual Order Modal State & Plant Picker
   const [showManualModal, setShowManualModal] = useState(false);
-  const [manualForm, setManualForm] = useState<ManualOrderInput>({
+  const [manualForm, setManualForm] = useState<{
+    customerName: string;
+    customerPhone: string;
+    customerAddress: string;
+    customerPincode: string;
+    status: OrderStatus;
+  }>({
     customerName: "",
     customerPhone: "",
     customerAddress: "",
     customerPincode: "",
-    itemSummary: "",
-    subtotal: 0,
     status: "pending",
-    estimatedCourierPrice: null,
-    finalCourierPrice: null,
   });
+
+  type SelectedManualItem = {
+    plant_id: string;
+    name: string;
+    price: number;
+    qty: number;
+    photo?: string;
+  };
+
+  const [manualSelectedItems, setManualSelectedItems] = useState<SelectedManualItem[]>([]);
+  const [manualPlantSearchQuery, setManualPlantSearchQuery] = useState("");
+  const [isManualPlantSearchOpen, setIsManualPlantSearchOpen] = useState(false);
+
+  const filteredPlantsForManualOrder = plants.filter((p) =>
+    p.name.toLowerCase().includes(manualPlantSearchQuery.toLowerCase().trim())
+  );
+
+  const handleAddPlantToManualOrder = (plant: Plant) => {
+    if (plant.availability === "unavailable") return;
+    setManualSelectedItems((prev) => {
+      const existing = prev.find((i) => i.plant_id === plant.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.plant_id === plant.id ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      return [
+        ...prev,
+        {
+          plant_id: plant.id,
+          name: plant.name,
+          price: plant.price,
+          qty: 1,
+          photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
+        },
+      ];
+    });
+    setManualPlantSearchQuery("");
+    setIsManualPlantSearchOpen(false);
+  };
+
+  const handleUpdateManualItemQty = (plantId: string, newQty: number) => {
+    if (newQty <= 0) {
+      setManualSelectedItems((prev) => prev.filter((i) => i.plant_id !== plantId));
+    } else {
+      setManualSelectedItems((prev) =>
+        prev.map((i) => (i.plant_id === plantId ? { ...i, qty: newQty } : i))
+      );
+    }
+  };
+
+  const manualSubtotal = manualSelectedItems.reduce(
+    (sum, i) => sum + i.price * i.qty,
+    0
+  );
+
   const [manualError, setManualError] = useState<string | null>(null);
 
   // Soft Delete Modal State
@@ -254,31 +315,39 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   // Submit Manual Order Creation Form
   const handleCreateManualOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualForm.itemSummary.trim()) {
-      setManualError("Please provide an item summary.");
-      return;
-    }
-    if (manualForm.subtotal <= 0) {
-      setManualError("Please provide a valid subtotal amount greater than 0.");
+    setManualError(null);
+
+    if (manualSelectedItems.length === 0) {
+      setManualError("Please select at least one plant from the catalogue for this order.");
       return;
     }
 
     startTransition(async () => {
-      const res = await createManualOrder(manualForm);
+      const res = await createManualOrder({
+        customerName: manualForm.customerName,
+        customerPhone: manualForm.customerPhone,
+        customerAddress: manualForm.customerAddress,
+        customerPincode: manualForm.customerPincode,
+        items: manualSelectedItems.map((i) => ({
+          plant_id: i.plant_id,
+          name: i.name,
+          price: i.price,
+          qty: i.qty,
+        })),
+        status: manualForm.status,
+      });
+
       if (!res.success) {
         setManualError(res.error || "Failed to create manual order.");
       } else {
         setShowManualModal(false);
+        setManualSelectedItems([]);
         setManualForm({
           customerName: "",
           customerPhone: "",
           customerAddress: "",
           customerPincode: "",
-          itemSummary: "",
-          subtotal: 0,
           status: "pending",
-          estimatedCourierPrice: null,
-          finalCourierPrice: null,
         });
         router.refresh();
       }
@@ -1013,44 +1082,179 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 />
               </div>
 
-              {/* Item Summary (Free Text) */}
+              {/* Plant Search & Select Picker */}
               <div>
                 <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Item Summary <span className="text-red-500">*</span>
+                  Select Plants from Catalogue <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={manualForm.itemSummary}
-                  onChange={(e) =>
-                    setManualForm({ ...manualForm, itemSummary: e.target.value })
-                  }
-                  placeholder="e.g. 2x Pink Anthurium, 1x Coco-Peat Pot"
-                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                />
+
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
+                    <input
+                      type="text"
+                      value={manualPlantSearchQuery}
+                      onChange={(e) => {
+                        setManualPlantSearchQuery(e.target.value);
+                        setIsManualPlantSearchOpen(true);
+                      }}
+                      onFocus={() => setIsManualPlantSearchOpen(true)}
+                      placeholder="Type plant name to search…"
+                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                    />
+                  </div>
+
+                  {/* Search Results Dropdown */}
+                  {isManualPlantSearchOpen && manualPlantSearchQuery.trim().length > 0 && (
+                    <div className="absolute z-30 mt-1 w-full max-h-56 overflow-y-auto rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-xl p-1.5 space-y-1">
+                      {filteredPlantsForManualOrder.length === 0 ? (
+                        <div className="p-3 text-xs text-stone-400 italic text-center">
+                          No matching plants found in catalogue
+                        </div>
+                      ) : (
+                        filteredPlantsForManualOrder.map((plant) => {
+                          const isUnavailable = plant.availability === "unavailable";
+                          return (
+                            <button
+                              key={plant.id}
+                              type="button"
+                              onClick={() => handleAddPlantToManualOrder(plant)}
+                              disabled={isUnavailable}
+                              className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
+                                isUnavailable
+                                  ? "opacity-50 cursor-not-allowed bg-stone-50 dark:bg-stone-800/40"
+                                  : "hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {plant.photos && plant.photos[0] ? (
+                                  <img
+                                    src={plant.photos[0]}
+                                    alt={plant.name}
+                                    className="w-9 h-9 object-cover rounded-lg border border-stone-200 dark:border-stone-700 shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-sm shrink-0">
+                                    🌿
+                                  </div>
+                                )}
+                                <div className="truncate">
+                                  <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
+                                    {plant.name}
+                                  </span>
+                                  <span className="text-[11px] text-stone-400 block font-mono">
+                                    {formatINR(plant.price)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="shrink-0 ml-2">
+                                {isUnavailable ? (
+                                  <span className="bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                                    Out of Stock
+                                  </span>
+                                ) : (
+                                  <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                                    + Add
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Subtotal & Initial Status */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Items Subtotal (₹) <span className="text-red-500">*</span>
+              {/* Selected Items List */}
+              {manualSelectedItems.length > 0 ? (
+                <div className="space-y-2">
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300">
+                    Selected Plants ({manualSelectedItems.length})
                   </label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    required
-                    value={manualForm.subtotal || ""}
-                    onChange={(e) =>
-                      setManualForm({
-                        ...manualForm,
-                        subtotal: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    placeholder="350"
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                  />
+
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {manualSelectedItems.map((item) => (
+                      <div
+                        key={item.plant_id}
+                        className="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          {item.photo ? (
+                            <img
+                              src={item.photo}
+                              alt={item.name}
+                              className="w-10 h-10 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-sm shrink-0">
+                              🌿
+                            </div>
+                          )}
+                          <div className="truncate">
+                            <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-[11px] text-stone-400 font-mono">
+                              {formatINR(item.price)} each
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 shrink-0">
+                          {/* Quantity Stepper */}
+                          <div className="flex items-center gap-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-1.5 py-0.5">
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateManualItemQty(item.plant_id, item.qty - 1)}
+                              className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs"
+                            >
+                              -
+                            </button>
+                            <span className="font-bold text-xs w-4 text-center text-stone-900 dark:text-stone-100">
+                              {item.qty}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateManualItemQty(item.plant_id, item.qty + 1)}
+                              className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <span className="font-mono font-bold text-xs text-stone-900 dark:text-stone-100 w-16 text-right">
+                            {formatINR(item.price * item.qty)}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateManualItemQty(item.plant_id, 0)}
+                            className="p-1 text-stone-400 hover:text-red-500 transition-colors"
+                            title="Remove plant"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 text-center border border-dashed border-stone-300 dark:border-stone-700 rounded-2xl text-stone-400 text-xs">
+                  No plants selected yet. Search above to add items.
+                </div>
+              )}
+
+              {/* Auto-Calculated Subtotal Box & Initial Status */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 p-3 flex justify-between items-center text-xs text-emerald-950 dark:text-emerald-300">
+                  <span className="font-semibold text-[11px]">Auto Subtotal:</span>
+                  <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                    {formatINR(manualSubtotal)}
+                  </span>
                 </div>
 
                 <div>
