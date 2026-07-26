@@ -66,12 +66,12 @@ export default async function PrivacyPage() {
               1. Information We Collect
             </h2>
             <p>
-              At {businessName}, we respect your privacy. Our website does not require user account registration or collect credit card details online. When you place an order, you communicate directly with us via WhatsApp, where you share:
+              At {businessName}, we respect your privacy. Our website does not require account registration or online payment card processing. When placing an order, customer delivery information (name, contact phone, shipping address, and pincode) may be optionally provided directly on our website or shared during your WhatsApp chat.
             </p>
             <ul className="list-disc pl-5 space-y-1 text-stone-600 dark:text-stone-400">
-              <li>Your Name and Contact Phone Number</li>
-              <li>Your Delivery Shipping Address</li>
-              <li>Your plant selection and order notes</li>
+              <li>Full Name and Contact Phone Number (optional)</li>
+              <li>Delivery Shipping Address and Pincode (optional)</li>
+              <li>Plant selection and order reference details</li>
             </ul>
           </section>
 
@@ -80,7 +80,7 @@ export default async function PrivacyPage() {
               2. How Orders & Payments Work
             </h2>
             <p>
-              All customer orders are initiated on our website and submitted via WhatsApp. No direct payment processing takes place on this website. Final pricing, payment methods (such as UPI/GPay/Bank Transfer), and delivery details are confirmed directly with you on WhatsApp prior to order dispatch.
+              All customer orders are initiated on our website and finalized via WhatsApp. No direct credit/debit card payment processing takes place on this website. Pricing, shipping fees, payment methods (such as UPI/GPay/Bank Transfer), and delivery options are confirmed directly with you on WhatsApp prior to dispatch.
             </p>
           </section>
 
@@ -89,16 +89,16 @@ export default async function PrivacyPage() {
               3. Delivery & Courier Partners
             </h2>
             <p>
-              We fulfill orders across Kerala and selected regions in South India primarily via DTDC courier and India Post. Your shipping address and contact number are shared strictly with our delivery partners to facilitate successful delivery.
+              We fulfill orders across Kerala and South India primarily via DTDC courier and India Post. Your shipping address and contact phone number are shared strictly with our delivery partners solely to facilitate successful package delivery.
             </p>
           </section>
 
           <section className="space-y-2">
             <h2 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
-              4. Data Retention & Usage
+              4. Data Protection & Usage
             </h2>
             <p>
-              Your contact details are used solely to fulfill your order, respond to inquiries, and provide nursery plant care guidance. We do not sell, rent, or trade your personal information to third parties or marketing brokers.
+              Any customer information collected through the website or WhatsApp is stored securely and used exclusively for order fulfillment, delivery tracking, and plant care customer support. We do not sell, rent, or trade your personal information with any third-party advertisers or brokers.
             </p>
           </section>
 
@@ -107,7 +107,7 @@ export default async function PrivacyPage() {
               5. Contact Us
             </h2>
             <p>
-              If you have any questions regarding your order or privacy details, please reach out to us directly on WhatsApp or call us via the contact options listed on our website.
+              If you have any questions regarding your order or privacy details, please reach out to us directly on WhatsApp or call us via the contact details listed on our website.
             </p>
           </section>
         </div>

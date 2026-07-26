@@ -112,6 +112,11 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
     <div className="space-y-4">
       {orders.map((order) => {
         const isHandled = order.handled;
+        const hasCustomerDetails =
+          Boolean(order.customer_name) ||
+          Boolean(order.customer_phone) ||
+          Boolean(order.customer_address) ||
+          Boolean(order.customer_pincode);
 
         return (
           <div
@@ -145,6 +150,41 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 )}
               </div>
             </div>
+
+            {/* Customer Delivery Details (if provided) */}
+            {hasCustomerDetails && (
+              <div className="my-3 rounded-xl bg-blue-50/70 border border-blue-100 p-3 text-xs text-stone-800 space-y-1">
+                <div className="font-semibold text-blue-900 flex items-center gap-1.5 mb-1.5">
+                  <span>🚚</span> Customer Delivery Info
+                </div>
+                {order.customer_name && (
+                  <div>
+                    <span className="text-stone-500 font-medium">Name: </span>
+                    <span className="font-semibold text-stone-900">{order.customer_name}</span>
+                  </div>
+                )}
+                {order.customer_phone && (
+                  <div>
+                    <span className="text-stone-500 font-medium">Phone: </span>
+                    <a href={`tel:${order.customer_phone}`} className="font-semibold text-blue-800 hover:underline">
+                      {order.customer_phone}
+                    </a>
+                  </div>
+                )}
+                {order.customer_address && (
+                  <div>
+                    <span className="text-stone-500 font-medium">Address: </span>
+                    <span className="font-medium text-stone-800 whitespace-pre-wrap">{order.customer_address}</span>
+                  </div>
+                )}
+                {order.customer_pincode && (
+                  <div>
+                    <span className="text-stone-500 font-medium">Pincode: </span>
+                    <span className="font-mono font-semibold text-stone-900">{order.customer_pincode}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Order Items */}
             <div className="py-3">

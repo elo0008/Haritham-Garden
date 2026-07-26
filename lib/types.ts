@@ -64,6 +64,13 @@ export type OrderItem = {
   qty: number;
 };
 
+export interface CustomerDetails {
+  name?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  pincode?: string | null;
+}
+
 export interface Order {
   id: string;
   order_ref: string;
@@ -75,6 +82,10 @@ export interface Order {
   handled_at: string | null;
   deleted: boolean;
   notes: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_address?: string | null;
+  customer_pincode?: string | null;
   created_at: string;
 }
 

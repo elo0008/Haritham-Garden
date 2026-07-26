@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatINR } from "@/lib/utils";
-import { createCustomerOrder } from "@/app/actions/orders";
+import { createCustomerOrder, type CustomerDetailsInput } from "@/app/actions/orders";
 import {
   buildCartOrderMessage,
   buildWhatsAppUrl,
   DEFAULT_WHATSAPP_NUMBER,
 } from "@/lib/whatsapp";
-import { ShoppingBag, X, Trash2, MessageCircle } from "lucide-react";
+import { ShoppingBag, X, Trash2, MessageCircle, Truck, ArrowLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CartDrawerProps {
@@ -29,6 +29,14 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, subtotal, totalItems } =
     useCart();
 
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "interstitial" | "form">("cart");
+
+  // Form states
+  const [custName, setCustName] = useState("");
+  const [custPhone, setCustPhone] = useState("");
+  const [custAddress, setCustAddress] = useState("");
+  const [custPincode, setCustPincode] = useState("");
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [orderSentRef, setOrderSentRef] = useState<string | null>(null);
@@ -39,6 +47,20 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const submittingRef = useRef(false);
 
   const targetNumber = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
+
+  // Load session storage customer details on client mount/open
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const savedName = sessionStorage.getItem("haritham_cust_name") || "";
+    const savedPhone = sessionStorage.getItem("haritham_cust_phone") || "";
+    const savedAddress = sessionStorage.getItem("haritham_cust_address") || "";
+    const savedPincode = sessionStorage.getItem("haritham_cust_pincode") || "";
+
+    if (savedName) setCustName(savedName);
+    if (savedPhone) setCustPhone(savedPhone);
+    if (savedAddress) setCustAddress(savedAddress);
+    if (savedPincode) setCustPincode(savedPincode);
+  }, [isOpen]);
 
   // Close on ESC key
   useEffect(() => {
@@ -58,11 +80,12 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
     if (!isOpen) {
       setErrorMsg(null);
       submittingRef.current = false;
+      setCheckoutStep("cart");
     }
   }, [isOpen]);
 
-  const handleSendOrder = async () => {
-    // Double-check synchronous guard to stop rapid double-taps immediately
+  // Helper to execute order creation and open WhatsApp
+  const executeOrder = async (details?: CustomerDetailsInput | null) => {
     if (items.length === 0 || submittingRef.current || isSubmitting) return;
 
     submittingRef.current = true;
@@ -71,17 +94,18 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
 
     try {
       // 1. Create order record in Supabase
-      const result = await createCustomerOrder(items, subtotal);
+      const result = await createCustomerOrder(items, subtotal, details || undefined);
 
       if (!result.success || !result.orderRef) {
         setErrorMsg(result.error || "Failed to create order. Please try again.");
         submittingRef.current = false;
         setIsSubmitting(false);
-        return; // Do NOT open WhatsApp if order creation failed
+        setCheckoutStep("cart");
+        return;
       }
 
       // 2. Build WhatsApp deep link message using number from settings
-      const message = buildCartOrderMessage(items, subtotal, result.orderRef);
+      const message = buildCartOrderMessage(items, subtotal, result.orderRef, details || undefined);
       const whatsappUrl = buildWhatsAppUrl(targetNumber, message);
 
       // 3. Clear cart and set confirmation state
@@ -89,15 +113,66 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
       setLastOrderMessage(message);
       clearCart();
       setOrderSentRef(orderRef);
+      setCheckoutStep("cart");
 
       // 4. Open WhatsApp
       window.open(whatsappUrl, "_blank");
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setCheckoutStep("cart");
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);
     }
+  };
+
+  // Triggered when user clicks "Send Order via WhatsApp" in Cart step
+  const handleInitiateOrder = () => {
+    if (items.length === 0 || submittingRef.current || isSubmitting) return;
+
+    // Check if customer has already decided details in this session
+    const isDecided = sessionStorage.getItem("haritham_cust_details_decided");
+
+    if (isDecided === "true") {
+      // Pre-fill existing details from session if available
+      const details: CustomerDetailsInput = {
+        name: custName.trim() || null,
+        phone: custPhone.trim() || null,
+        address: custAddress.trim() || null,
+        pincode: custPincode.trim() || null,
+      };
+      executeOrder(details);
+    } else {
+      // Prompt with interstitial screen
+      setCheckoutStep("interstitial");
+    }
+  };
+
+  // Handler for skipping details ("Send Without Details")
+  const handleSkipDetails = () => {
+    sessionStorage.setItem("haritham_cust_details_decided", "true");
+    executeOrder(null);
+  };
+
+  // Handler for submitting details form
+  const handleSubmitForm = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const details: CustomerDetailsInput = {
+      name: custName.trim() || null,
+      phone: custPhone.trim() || null,
+      address: custAddress.trim() || null,
+      pincode: custPincode.trim() || null,
+    };
+
+    // Save to session storage
+    sessionStorage.setItem("haritham_cust_details_decided", "true");
+    if (details.name) sessionStorage.setItem("haritham_cust_name", details.name);
+    if (details.phone) sessionStorage.setItem("haritham_cust_phone", details.phone);
+    if (details.address) sessionStorage.setItem("haritham_cust_address", details.address);
+    if (details.pincode) sessionStorage.setItem("haritham_cust_pincode", details.pincode);
+
+    executeOrder(details);
   };
 
   const handleCopyMessage = () => {
@@ -140,12 +215,28 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
             {/* Drawer Header */}
             <div className="p-6 border-b border-stone-100 dark:border-stone-800 flex items-center justify-between bg-stone-50/50 dark:bg-stone-900/50">
               <div className="flex items-center gap-3">
+                {checkoutStep !== "cart" && !orderSentRef && (
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutStep("cart")}
+                    className="p-1.5 rounded-lg text-stone-500 hover:text-stone-900 dark:hover:text-stone-100 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors mr-1"
+                    title="Back to cart"
+                  >
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
                 <h2 id="cart-drawer-title" className="font-heading font-bold text-xl text-stone-900 dark:text-stone-100">
-                  Your Bag
+                  {checkoutStep === "interstitial"
+                    ? "Delivery Details"
+                    : checkoutStep === "form"
+                    ? "Delivery Info"
+                    : "Your Bag"}
                 </h2>
-                <span className="bg-botanical-100 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 text-xs font-bold px-2.5 py-0.5 rounded-full">
-                  {totalItems} {totalItems === 1 ? "item" : "items"}
-                </span>
+                {checkoutStep === "cart" && !orderSentRef && (
+                  <span className="bg-botanical-100 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 text-xs font-bold px-2.5 py-0.5 rounded-full">
+                    {totalItems} {totalItems === 1 ? "item" : "items"}
+                  </span>
+                )}
               </div>
 
               <button
@@ -248,6 +339,140 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                     Continue Browsing
                   </button>
                 </div>
+              ) : checkoutStep === "interstitial" ? (
+                /* Interstitial Step: Soft required nudge */
+                <div className="py-4 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 rounded-2xl bg-botanical-50 dark:bg-stone-800 border border-botanical-100 dark:border-stone-700 flex items-center justify-center text-botanical-800 dark:text-botanical-100 mx-auto shadow-sm">
+                      <Truck className="w-8 h-8" />
+                    </div>
+                    <h3 className="font-heading font-bold text-xl text-stone-900 dark:text-stone-100">
+                      Add Delivery Details?
+                    </h3>
+                    <p className="text-stone-600 dark:text-stone-300 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed">
+                      Adding your delivery details helps us package and process your plant order faster.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-800 p-4 text-xs text-stone-600 dark:text-stone-400 space-y-1.5">
+                    <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                      <span>⚡</span> Fast & Optional
+                    </div>
+                    <p className="leading-relaxed text-[11px]">
+                      Payment is completed 100% on WhatsApp as usual. You can add your shipping address now or skip and send directly.
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutStep("form")}
+                      className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98]"
+                    >
+                      <span>Add Details</span>
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSkipDetails}
+                      disabled={isSubmitting}
+                      className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-semibold py-3.5 px-6 rounded-2xl transition-all min-h-[48px] active:scale-[0.98]"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Without Details →"}
+                    </button>
+                  </div>
+                </div>
+              ) : checkoutStep === "form" ? (
+                /* Customer Details Form */
+                <form onSubmit={handleSubmitForm} className="space-y-4 animate-in fade-in duration-200">
+                  <div className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-1">
+                    Please provide your contact and shipping information. All fields are optional.
+                  </div>
+
+                  {/* Full Name */}
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Full Name <span className="font-normal text-stone-400">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={custName}
+                      onChange={(e) => setCustName(e.target.value)}
+                      placeholder="e.g. Anish Kumar"
+                      className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:border-botanical-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Phone Number */}
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Phone Number <span className="font-normal text-stone-400">(optional)</span>
+                    </label>
+                    <input
+                      type="tel"
+                      value={custPhone}
+                      onChange={(e) => setCustPhone(e.target.value)}
+                      placeholder="e.g. 9876543210"
+                      className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:border-botanical-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Delivery Address Textarea */}
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Delivery Address <span className="font-normal text-stone-400">(optional)</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={custAddress}
+                      onChange={(e) => setCustAddress(e.target.value)}
+                      placeholder="e.g. House No. 42, Green Valley, MG Road, Thrissur, Kerala"
+                      className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:border-botanical-600 focus:outline-none resize-none"
+                    />
+                  </div>
+
+                  {/* Pincode */}
+                  <div>
+                    <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Pincode <span className="font-normal text-stone-400">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={custPincode}
+                      onChange={(e) => setCustPincode(e.target.value)}
+                      placeholder="e.g. 680001"
+                      className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 placeholder-stone-400 focus:border-botanical-600 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Submit and Skip Buttons */}
+                  <div className="pt-3 space-y-2.5">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98] disabled:opacity-50"
+                    >
+                      {isSubmitting ? (
+                        <span>Sending Order...</span>
+                      ) : (
+                        <>
+                          <MessageCircle className="w-5 h-5 fill-current" />
+                          <span>Continue to WhatsApp</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleSkipDetails}
+                      disabled={isSubmitting}
+                      className="w-full py-2 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 transition-colors text-center"
+                    >
+                      Skip & Send Without Details
+                    </button>
+                  </div>
+                </form>
               ) : items.length === 0 ? (
                 /* Empty Cart State matching mockup */
                 <div className="h-full flex flex-col items-center justify-center text-center py-12">
@@ -350,7 +575,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
             </div>
 
             {/* Drawer Footer matching mockup */}
-            {!orderSentRef && items.length > 0 && (
+            {!orderSentRef && checkoutStep === "cart" && items.length > 0 && (
               <div className="p-6 border-t border-stone-100 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-900/80">
                 <div className="space-y-2 mb-6">
                   <div className="flex items-center justify-between text-sm">
@@ -366,7 +591,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
 
                 <button
                   type="button"
-                  onClick={handleSendOrder}
+                  onClick={handleInitiateOrder}
                   disabled={isSubmitting}
                   className="w-full bg-terracotta hover:bg-[#b04a25] active:scale-[0.98] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
                 >

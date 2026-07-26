@@ -9,9 +9,17 @@ export interface CreateOrderResult {
   error?: string;
 }
 
+export interface CustomerDetailsInput {
+  name?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  pincode?: string | null;
+}
+
 export async function createCustomerOrder(
   items: CartItem[],
-  subtotal: number
+  subtotal: number,
+  customerDetails?: CustomerDetailsInput
 ): Promise<CreateOrderResult> {
   try {
     if (!items || items.length === 0) {
@@ -28,10 +36,19 @@ export async function createCustomerOrder(
       qty: item.qty,
     }));
 
-    // 1. Try calling the place_order RPC function (bypasses RLS SELECT restriction)
+    const cleanName = customerDetails?.name?.trim() || null;
+    const cleanPhone = customerDetails?.phone?.trim() || null;
+    const cleanAddress = customerDetails?.address?.trim() || null;
+    const cleanPincode = customerDetails?.pincode?.trim() || null;
+
+    // 1. Try calling the place_order RPC function if available
     const { data: rpcData, error: rpcError } = await supabase.rpc("place_order", {
       p_items: itemSnapshots,
       p_subtotal: subtotal,
+      p_customer_name: cleanName,
+      p_customer_phone: cleanPhone,
+      p_customer_address: cleanAddress,
+      p_customer_pincode: cleanPincode,
     });
 
     if (!rpcError && rpcData) {
@@ -41,7 +58,7 @@ export async function createCustomerOrder(
       };
     }
 
-    // 2. Fallback to direct insert if RPC is not yet created in DB
+    // 2. Direct insert (or fallback if RPC signature doesn't match)
     const { data: insertData, error: insertError } = await supabase
       .from("orders")
       .insert({
@@ -49,6 +66,10 @@ export async function createCustomerOrder(
         subtotal,
         handled: false,
         deleted: false,
+        customer_name: cleanName,
+        customer_phone: cleanPhone,
+        customer_address: cleanAddress,
+        customer_pincode: cleanPincode,
       })
       .select("order_ref")
       .single();
@@ -58,7 +79,7 @@ export async function createCustomerOrder(
       return {
         success: false,
         error:
-          "Database permission error placing order. Please run migration 20260724000005_place_order_function.sql in Supabase SQL Editor.",
+          "Database permission error placing order. Please run migration 20260726000013_orders_customer_details.sql in Supabase SQL Editor.",
       };
     }
 

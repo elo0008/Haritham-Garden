@@ -1,4 +1,4 @@
-import type { CartItem } from "@/lib/types";
+import type { CartItem, CustomerDetails } from "@/lib/types";
 
 /**
  * Default WhatsApp number for Haritham Garden (can be overridden by NEXT_PUBLIC_WHATSAPP_NUMBER).
@@ -25,24 +25,40 @@ export function buildWhatsAppUrl(phoneNumber: string, message: string): string {
  * @param items - Cart items snapshot
  * @param subtotal - Calculated order subtotal
  * @param orderRef - Generated order reference (e.g. HG-014)
+ * @param customerDetails - Optional customer delivery details
  * @returns A formatted WhatsApp message string
  */
 export function buildCartOrderMessage(
   items: CartItem[],
   subtotal: number,
-  orderRef: string
+  orderRef: string,
+  customerDetails?: CustomerDetails
 ): string {
   const itemLines = items
     .map((item, idx) => ` ${idx + 1}. ${item.name} x${item.qty} - Rs.${item.price * item.qty}`)
     .join("\n");
 
-  return (
+  let message =
     `Hello Haritham Garden, I'd like to order:\n\n` +
     `${itemLines}\n\n` +
     `Subtotal: Rs.${subtotal}\n` +
     `(Delivery to be confirmed)\n\n` +
-    `Order ref: ${orderRef}`
-  );
+    `Order ref: ${orderRef}`;
+
+  const name = customerDetails?.name?.trim();
+  const phone = customerDetails?.phone?.trim();
+  const address = customerDetails?.address?.trim();
+  const pincode = customerDetails?.pincode?.trim();
+
+  if (name || phone || address || pincode) {
+    message += `\n\n📋 *Delivery Details:*`;
+    if (name) message += `\n• Name: ${name}`;
+    if (phone) message += `\n• Phone: ${phone}`;
+    if (address) message += `\n• Address: ${address}`;
+    if (pincode) message += `\n• Pincode: ${pincode}`;
+  }
+
+  return message;
 }
 
 /**
