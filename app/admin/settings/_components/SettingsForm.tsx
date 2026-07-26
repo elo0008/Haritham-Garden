@@ -30,6 +30,8 @@ export function SettingsForm({ settings }: Props) {
   const [serviceAreaText, setServiceAreaText] = useState(settings.service_area_text ?? "");
   const [instagramUrl, setInstagramUrl] = useState(settings.instagram_url ?? "");
   const [contactPhone, setContactPhone] = useState(settings.contact_phone ?? "");
+  const [secondarySocialLabel, setSecondarySocialLabel] = useState(settings.secondary_social_label ?? "");
+  const [secondarySocialUrl, setSecondarySocialUrl] = useState(settings.secondary_social_url ?? "");
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -87,6 +89,8 @@ export function SettingsForm({ settings }: Props) {
         service_area_text: serviceAreaText,
         instagram_url: instagramUrl,
         contact_phone: contactPhone,
+        secondary_social_label: secondarySocialLabel,
+        secondary_social_url: secondarySocialUrl,
       });
       setSuccess(true);
       router.refresh();
@@ -283,6 +287,36 @@ export function SettingsForm({ settings }: Props) {
               value={contactPhone}
               onChange={(e) => setContactPhone(e.target.value)}
               placeholder="e.g. +91 98765 43210"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+
+          {/* Secondary Social Link Label */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Secondary Social / Channel Label <span className="font-normal text-stone-400">(optional, e.g. "Watch Care Guides")</span>
+            </label>
+            <input
+              type="text"
+              value={secondarySocialLabel}
+              onChange={(e) => setSecondarySocialLabel(e.target.value)}
+              placeholder="e.g. Follow on Facebook or Watch on YouTube"
+              disabled={saving}
+              className={inputCls}
+            />
+          </div>
+
+          {/* Secondary Social Link URL */}
+          <div>
+            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+              Secondary Social / Channel URL <span className="font-normal text-stone-400">(optional)</span>
+            </label>
+            <input
+              type="url"
+              value={secondarySocialUrl}
+              onChange={(e) => setSecondarySocialUrl(e.target.value)}
+              placeholder="e.g. https://youtube.com/@harithamgarden"
               disabled={saving}
               className={inputCls}
             />

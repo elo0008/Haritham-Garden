@@ -12,6 +12,8 @@ interface SettingsUpdate {
   service_area_text: string | null;
   instagram_url: string | null;
   contact_phone: string | null;
+  secondary_social_label: string | null;
+  secondary_social_url: string | null;
 }
 
 export async function updateSiteSettings(data: SettingsUpdate): Promise<void> {
@@ -45,6 +47,8 @@ export async function updateSiteSettings(data: SettingsUpdate): Promise<void> {
       service_area_text: data.service_area_text?.trim() || null,
       instagram_url: data.instagram_url?.trim() || null,
       contact_phone: data.contact_phone?.trim() || null,
+      secondary_social_label: data.secondary_social_label?.trim() || null,
+      secondary_social_url: data.secondary_social_url?.trim() || null,
     })
     .eq("id", existing.id);
 

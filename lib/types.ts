@@ -102,6 +102,8 @@ export interface SiteSettings {
   service_area_text?: string | null;
   instagram_url?: string | null;
   contact_phone?: string | null;
+  secondary_social_label?: string | null;
+  secondary_social_url?: string | null;
   updated_at: string;
 }
 
