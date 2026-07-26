@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
-import { Leaf, MapPin, Phone, ExternalLink } from "lucide-react";
+import { Leaf, MapPin, Phone, Truck, ExternalLink } from "lucide-react";
 
 interface FooterProps {
   settings?: SiteSettings;
@@ -24,6 +24,7 @@ export function Footer({ settings }: FooterProps) {
   const businessName = settings?.business_name || "Haritham Garden";
   const locationText = settings?.location_text?.trim();
   const contactPhone = settings?.contact_phone?.trim();
+  const serviceAreaText = settings?.service_area_text?.trim();
   const instagramUrl = settings?.instagram_url?.trim();
   const secondaryLabel = settings?.secondary_social_label?.trim();
   const secondaryUrl = settings?.secondary_social_url?.trim();
@@ -31,6 +32,7 @@ export function Footer({ settings }: FooterProps) {
   const showCards =
     Boolean(locationText) ||
     Boolean(contactPhone) ||
+    Boolean(serviceAreaText) ||
     Boolean(instagramUrl) ||
     (Boolean(secondaryLabel) && Boolean(secondaryUrl));
 
@@ -77,7 +79,24 @@ export function Footer({ settings }: FooterProps) {
               </a>
             )}
 
-            {/* Card 3: Follow on Instagram */}
+            {/* Card 3: Delivery */}
+            {serviceAreaText && (
+              <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-stone-900 border border-stone-800 hover:border-botanical-600 transition-all group">
+                <div className="w-11 h-11 rounded-xl bg-stone-800 text-botanical-100 flex items-center justify-center group-hover:bg-botanical-600 group-hover:text-white transition-colors shrink-0">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <div className="overflow-hidden min-w-0">
+                  <span className="text-xs text-stone-400 font-semibold uppercase tracking-wider block">
+                    Delivery
+                  </span>
+                  <span className="font-heading font-bold text-sm text-stone-100 truncate block">
+                    {serviceAreaText}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Card 4: Follow on Instagram */}
             {instagramUrl && (
               <a
                 href={instagramUrl}
@@ -101,7 +120,7 @@ export function Footer({ settings }: FooterProps) {
               </a>
             )}
 
-            {/* Card 4: Secondary Social */}
+            {/* Card 5: Secondary Social */}
             {secondaryLabel && secondaryUrl && (
               <a
                 href={secondaryUrl}
