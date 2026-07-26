@@ -21,11 +21,11 @@ export function Logo({
   const content = (
     <div className={`flex items-center gap-3 group ${className}`}>
       {logoUrl ? (
-        <div className="w-11 h-11 rounded-xl border border-stone-200 dark:border-stone-800 p-1 bg-white dark:bg-stone-900 flex items-center justify-center overflow-hidden shrink-0">
+        <div className="w-11 h-11 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 flex items-center justify-center overflow-hidden shrink-0">
           <img
             src={logoUrl}
             alt={businessName}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         </div>
       ) : (
