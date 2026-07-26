@@ -64,6 +64,7 @@ export async function createCustomerOrder(
       .insert({
         items: itemSnapshots,
         subtotal,
+        status: "pending",
         handled: false,
         deleted: false,
         customer_name: cleanName,

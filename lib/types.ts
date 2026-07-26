@@ -71,13 +71,18 @@ export interface CustomerDetails {
   pincode?: string | null;
 }
 
+export type OrderStatus = "pending" | "handled" | "paid" | "packaged" | "dispatched";
+
 export interface Order {
   id: string;
   order_ref: string;
   items: OrderItem[];
   subtotal: number;
   delivery_price: number | null;
+  estimated_courier_price: number | null;
+  final_courier_price: number | null;
   final_total: number | null;
+  status: OrderStatus;
   handled: boolean;
   handled_at: string | null;
   deleted: boolean;

@@ -2,21 +2,34 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Order } from "@/lib/types";
+import type { Order, OrderStatus } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
-import { markOrderHandled, softDeleteOrder, updateOrderNotes } from "../actions";
+import { updateOrderStatus, softDeleteOrder, updateOrderNotes } from "../actions";
 
 interface AdminOrdersListProps {
   orders: Order[];
 }
 
+const STATUS_CONFIG: Record<
+  OrderStatus,
+  { label: string; bg: string; text: string; border: string; step: number }
+> = {
+  pending: { label: "1. Pending Review", bg: "bg-amber-100", text: "text-amber-800", border: "border-amber-200", step: 1 },
+  handled: { label: "2. Handled (Quote Sent)", bg: "bg-blue-100", text: "text-blue-800", border: "border-blue-200", step: 2 },
+  paid: { label: "3. Payment Received", bg: "bg-purple-100", text: "text-purple-800", border: "border-purple-200", step: 3 },
+  packaged: { label: "4. Packaged & Ready", bg: "bg-indigo-100", text: "text-indigo-800", border: "border-indigo-200", step: 4 },
+  dispatched: { label: "5. Dispatched", bg: "bg-emerald-100", text: "text-emerald-800", border: "border-emerald-200", step: 5 },
+};
+
 export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  // State for Delivery Price Modal
-  const [handlingOrder, setHandlingOrder] = useState<Order | null>(null);
-  const [deliveryInput, setDeliveryInput] = useState<string>("0");
+  // State for Pipeline Status Update Modal
+  const [editingStatusOrder, setEditingStatusOrder] = useState<Order | null>(null);
+  const [targetStatus, setTargetStatus] = useState<OrderStatus>("pending");
+  const [estCourierInput, setEstCourierInput] = useState<string>("0");
+  const [finalCourierInput, setFinalCourierInput] = useState<string>("0");
   const [modalError, setModalError] = useState<string | null>(null);
 
   // State for Delete Confirmation Modal
@@ -26,13 +39,22 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   const [editingNoteOrder, setEditingNoteOrder] = useState<Order | null>(null);
   const [noteInput, setNoteInput] = useState<string>("");
 
-  // Open Handled modal
-  const openHandledModal = (order: Order) => {
-    setHandlingOrder(order);
-    setDeliveryInput(
-      order.delivery_price !== null && order.delivery_price !== undefined
+  // Open Status update modal
+  const openStatusModal = (order: Order) => {
+    setEditingStatusOrder(order);
+    const currentStatus = order.status || (order.handled ? "dispatched" : "pending");
+    setTargetStatus(currentStatus);
+    setEstCourierInput(
+      order.estimated_courier_price !== null && order.estimated_courier_price !== undefined
+        ? String(order.estimated_courier_price)
+        : ""
+    );
+    setFinalCourierInput(
+      order.final_courier_price !== null && order.final_courier_price !== undefined
+        ? String(order.final_courier_price)
+        : order.delivery_price !== null && order.delivery_price !== undefined
         ? String(order.delivery_price)
-        : "0"
+        : ""
     );
     setModalError(null);
   };
@@ -43,22 +65,34 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
     setNoteInput(order.notes ?? "");
   };
 
-  // Submit Handled modal
-  const handleSaveDelivery = () => {
-    if (!handlingOrder) return;
-    const parsedDelivery = parseFloat(deliveryInput);
-    if (isNaN(parsedDelivery) || parsedDelivery < 0) {
-      setModalError("Please enter a valid non-negative delivery price.");
+  // Submit Status Modal
+  const handleSaveStatus = () => {
+    if (!editingStatusOrder) return;
+
+    const estVal = estCourierInput.trim() !== "" ? parseFloat(estCourierInput) : null;
+    const finalVal = finalCourierInput.trim() !== "" ? parseFloat(finalCourierInput) : null;
+
+    if (estVal !== null && (isNaN(estVal) || estVal < 0)) {
+      setModalError("Estimated courier price must be a non-negative number.");
+      return;
+    }
+    if (finalVal !== null && (isNaN(finalVal) || finalVal < 0)) {
+      setModalError("Final courier price must be a non-negative number.");
       return;
     }
 
     startTransition(async () => {
       try {
-        await markOrderHandled(handlingOrder.id, parsedDelivery);
-        setHandlingOrder(null);
+        await updateOrderStatus(
+          editingStatusOrder.id,
+          targetStatus,
+          estVal,
+          finalVal
+        );
+        setEditingStatusOrder(null);
         router.refresh();
       } catch (err) {
-        setModalError(err instanceof Error ? err.message : "Failed to update order");
+        setModalError(err instanceof Error ? err.message : "Failed to update order status");
       }
     });
   };
@@ -111,20 +145,31 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
   return (
     <div className="space-y-4">
       {orders.map((order) => {
-        const isHandled = order.handled;
+        const currentStatus: OrderStatus =
+          order.status || (order.handled ? "dispatched" : "pending");
+        const statusMeta = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.pending;
+
         const hasCustomerDetails =
           Boolean(order.customer_name) ||
           Boolean(order.customer_phone) ||
           Boolean(order.customer_address) ||
           Boolean(order.customer_pincode);
 
+        // Two-step courier fee calculation logic
+        const estCourier = order.estimated_courier_price ?? null;
+        const finalCourier = order.final_courier_price ?? order.delivery_price ?? null;
+        const effectiveCourier = finalCourier ?? estCourier ?? 0;
+        const calculatedTotal = order.subtotal + effectiveCourier;
+
         return (
           <div
             key={order.id}
             className={`rounded-2xl border bg-white p-5 transition-all shadow-2xs ${
-              isHandled
-                ? "border-stone-200/80 bg-stone-50/50"
-                : "border-amber-200/90 ring-1 ring-amber-100 bg-white"
+              currentStatus === "dispatched"
+                ? "border-emerald-200/80 bg-emerald-50/20"
+                : currentStatus === "pending"
+                ? "border-amber-200/90 ring-1 ring-amber-100 bg-white"
+                : "border-stone-200/80 bg-white"
             }`}
           >
             {/* Header / Meta */}
@@ -138,17 +183,15 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                {isHandled ? (
-                  <span className="rounded-full bg-emerald-100 px-3 py-0.5 text-xs font-semibold text-emerald-800">
-                    Handled
-                  </span>
-                ) : (
-                  <span className="rounded-full bg-amber-100 px-3 py-0.5 text-xs font-semibold text-amber-800">
-                    Pending
-                  </span>
-                )}
-              </div>
+              {/* Status Badge (Clickable to open status modal) */}
+              <button
+                type="button"
+                onClick={() => openStatusModal(order)}
+                className={`rounded-full px-3 py-1 text-xs font-bold border transition-all hover:scale-105 ${statusMeta.bg} ${statusMeta.text} ${statusMeta.border}`}
+                title="Click to update order pipeline status"
+              >
+                {statusMeta.label}
+              </button>
             </div>
 
             {/* Customer Delivery Details (if provided) */}
@@ -192,47 +235,52 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 Items ({order.items ? order.items.length : 0})
               </div>
               <ul className="space-y-1.5 text-sm text-[#24211E]">
-                {order.items && order.items.map((item, idx) => (
-                  <li key={idx} className="flex justify-between items-center">
-                    <span>
-                      <span className="font-semibold">{item.name}</span>{" "}
-                      <span className="text-stone-500 font-mono text-xs">× {item.qty}</span>
-                    </span>
-                    <span className="text-xs font-mono font-medium text-stone-700">
-                      {formatINR(item.price * item.qty)}
-                    </span>
-                  </li>
-                ))}
+                {order.items &&
+                  order.items.map((item, idx) => (
+                    <li key={idx} className="flex justify-between items-center">
+                      <span>
+                        <span className="font-semibold">{item.name}</span>{" "}
+                        <span className="text-stone-500 font-mono text-xs">× {item.qty}</span>
+                      </span>
+                      <span className="text-xs font-mono font-medium text-stone-700">
+                        {formatINR(item.price * item.qty)}
+                      </span>
+                    </li>
+                  ))}
               </ul>
             </div>
 
-            {/* Financial Totals */}
-            <div className="rounded-xl bg-stone-100/60 p-3.5 mt-1 text-sm space-y-1">
+            {/* Financial Breakdown (Subtotal + Estimated/Final Courier = Total) */}
+            <div className="rounded-xl bg-stone-100/60 p-3.5 mt-1 text-sm space-y-1.5">
               <div className="flex justify-between text-stone-600">
                 <span>Subtotal</span>
                 <span className="font-semibold text-[#24211E]">{formatINR(order.subtotal)}</span>
               </div>
 
-              {isHandled ? (
-                <>
-                  <div className="flex justify-between text-stone-600">
-                    <span>Delivery</span>
-                    <span className="font-semibold text-[#24211E]">
-                      {formatINR(order.delivery_price || 0)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between border-t border-stone-200/80 pt-1.5 font-bold text-[#24211E] text-base">
-                    <span>Final Total</span>
-                    <span className="text-emerald-700">
-                      {formatINR(order.final_total || order.subtotal)}
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <div className="text-xs text-amber-800 font-medium pt-0.5">
-                  Delivery to be calculated on handling
+              {estCourier !== null && (
+                <div className="flex justify-between text-stone-600 text-xs">
+                  <span>Estimated Courier Charge</span>
+                  <span className="font-semibold text-amber-800">{formatINR(estCourier)}</span>
                 </div>
               )}
+
+              {finalCourier !== null ? (
+                <div className="flex justify-between text-stone-600 text-xs">
+                  <span>Confirmed Final Courier Charge</span>
+                  <span className="font-semibold text-emerald-800">{formatINR(finalCourier)}</span>
+                </div>
+              ) : (
+                estCourier === null && (
+                  <div className="text-xs text-amber-800 font-medium pt-0.5">
+                    Courier charge to be estimated on handling
+                  </div>
+                )
+              )}
+
+              <div className="flex justify-between border-t border-stone-200/80 pt-1.5 font-bold text-[#24211E] text-base">
+                <span>Total</span>
+                <span className="text-emerald-700">{formatINR(calculatedTotal)}</span>
+              </div>
             </div>
 
             {/* Admin Note Preview (if exists) */}
@@ -257,24 +305,20 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
               </div>
             )}
 
-            {/* Action Bar (Min 44px height tap targets) */}
-            <div className="flex items-center justify-between pt-3 mt-2 border-t border-stone-100 min-h-[44px]">
-              {/* Handled Checkbox / Button */}
-              <label className="flex items-center gap-2.5 cursor-pointer select-none py-1">
-                <input
-                  type="checkbox"
-                  checked={isHandled}
-                  onChange={() => openHandledModal(order)}
-                  disabled={isPending}
-                  className="h-4 w-4 rounded border-stone-300 text-[#C1662F] focus:ring-[#C1662F] cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-stone-700 hover:text-[#24211E]">
-                  {isHandled ? "Handled (Edit Delivery)" : "Mark as Handled"}
-                </span>
-              </label>
+            {/* Action Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 mt-2 border-t border-stone-100 min-h-[44px]">
+              {/* Quick Status Advance Button */}
+              <button
+                type="button"
+                onClick={() => openStatusModal(order)}
+                disabled={isPending}
+                className="bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-2xs transition-colors flex items-center gap-1.5 min-h-[38px]"
+              >
+                <span>⚙️ Update Status / Courier Fee</span>
+              </button>
 
               <div className="flex items-center gap-2">
-                {/* Add Note Button (if no note exists) */}
+                {/* Add Note Button */}
                 {!order.notes && (
                   <button
                     type="button"
@@ -301,19 +345,19 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
         );
       })}
 
-      {/* ── Delivery Price Modal ────────────────────────────────────────── */}
-      {handlingOrder && (
+      {/* ── 5-Stage Pipeline & Courier Modal ────────────────────────────── */}
+      {editingStatusOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setHandlingOrder(null)}
+            onClick={() => setEditingStatusOrder(null)}
           />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-[#24211E]">
+          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl text-[#24211E]">
             <h3 className="text-lg font-bold text-[#24211E] mb-1">
-              Set Delivery Price
+              Update Order — {editingStatusOrder.order_ref}
             </h3>
             <p className="text-xs text-stone-500 mb-4">
-              Order <span className="font-mono font-semibold">{handlingOrder.order_ref}</span> · Subtotal: {formatINR(handlingOrder.subtotal)}
+              Subtotal: <span className="font-semibold text-stone-900">{formatINR(editingStatusOrder.subtotal)}</span>
             </p>
 
             {modalError && (
@@ -323,28 +367,67 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
             )}
 
             <div className="space-y-4">
+              {/* Pipeline Stage Select */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+                  Pipeline Stage
+                </label>
+                <select
+                  value={targetStatus}
+                  onChange={(e) => setTargetStatus(e.target.value as OrderStatus)}
+                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm text-[#24211E] font-semibold bg-stone-50 focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
+                >
+                  <option value="pending">1. Pending Review</option>
+                  <option value="handled">2. Handled (Quote Sent)</option>
+                  <option value="paid">3. Payment Received</option>
+                  <option value="packaged">4. Packaged & Ready</option>
+                  <option value="dispatched">5. Dispatched</option>
+                </select>
+              </div>
+
+              {/* Estimated Courier Price */}
               <div>
                 <label className="block text-xs font-semibold text-stone-700 mb-1">
-                  Delivery Price (₹)
+                  Estimated Courier Price (₹) <span className="font-normal text-stone-400">(set on handling)</span>
                 </label>
                 <input
                   type="number"
                   min="0"
                   step="1"
-                  value={deliveryInput}
-                  onChange={(e) => setDeliveryInput(e.target.value)}
-                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2.5 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
-                  placeholder="0"
-                  autoFocus
+                  value={estCourierInput}
+                  onChange={(e) => setEstCourierInput(e.target.value)}
+                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
+                  placeholder="e.g. 80"
+                />
+              </div>
+
+              {/* Confirmed Final Courier Price */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 mb-1">
+                  Confirmed Final Courier Price (₹) <span className="font-normal text-stone-400">(set on dispatch)</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={finalCourierInput}
+                  onChange={(e) => setFinalCourierInput(e.target.value)}
+                  className="w-full rounded-xl border border-stone-300 px-3.5 py-2 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F]"
+                  placeholder="e.g. 75"
                 />
               </div>
 
               {/* Total Preview */}
-              <div className="rounded-xl bg-emerald-50 border border-emerald-200/60 p-3 text-xs flex justify-between items-center text-emerald-950">
-                <span className="font-medium">Calculated Final Total:</span>
+              <div className="rounded-xl bg-emerald-50 border border-emerald-200/60 p-3 text-xs flex justify-between items-center text-emerald-950 font-medium">
+                <span>Calculated Total:</span>
                 <span className="text-sm font-bold">
                   {formatINR(
-                    handlingOrder.subtotal + (parseFloat(deliveryInput) || 0)
+                    editingStatusOrder.subtotal +
+                      (finalCourierInput.trim() !== ""
+                        ? parseFloat(finalCourierInput) || 0
+                        : estCourierInput.trim() !== ""
+                        ? parseFloat(estCourierInput) || 0
+                        : 0)
                   )}
                 </span>
               </div>
@@ -352,7 +435,7 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
               <div className="flex gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setHandlingOrder(null)}
+                  onClick={() => setEditingStatusOrder(null)}
                   disabled={isPending}
                   className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
                 >
@@ -360,11 +443,11 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={handleSaveDelivery}
+                  onClick={handleSaveStatus}
                   disabled={isPending}
                   className="flex-1 min-h-[44px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
                 >
-                  {isPending ? "Saving..." : "Save & Mark Handled"}
+                  {isPending ? "Saving..." : "Save Pipeline Stage"}
                 </button>
               </div>
             </div>

@@ -2,20 +2,23 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { OrderStatus } from "@/lib/types";
 
 /**
- * Marks an order as handled and sets delivery_price and final_total.
+ * Updates an order's status along with optional estimated or final courier prices.
  */
-export async function markOrderHandled(
+export async function updateOrderStatus(
   orderId: string,
-  deliveryPrice: number
+  newStatus: OrderStatus,
+  estimatedCourierPrice?: number | null,
+  finalCourierPrice?: number | null
 ): Promise<void> {
   const supabase = await createClient();
 
-  // 1. Fetch current subtotal
+  // 1. Fetch current order details
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("subtotal")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, handled")
     .eq("id", orderId)
     .single();
 
@@ -24,17 +27,46 @@ export async function markOrderHandled(
   }
 
   const subtotal = Number(order.subtotal) || 0;
-  const finalTotal = subtotal + Math.max(0, deliveryPrice);
 
-  // 2. Update order record
+  const effEstCourier =
+    estimatedCourierPrice !== undefined
+      ? estimatedCourierPrice
+      : order.estimated_courier_price !== null
+      ? Number(order.estimated_courier_price)
+      : null;
+
+  const effFinalCourier =
+    finalCourierPrice !== undefined
+      ? finalCourierPrice
+      : order.final_courier_price !== null
+      ? Number(order.final_courier_price)
+      : null;
+
+  // Use final courier fee if present, fallback to estimated, fallback to 0
+  const courierFee = effFinalCourier ?? effEstCourier ?? 0;
+  const finalTotal = subtotal + Math.max(0, courierFee);
+
+  const isHandledOrBeyond = newStatus !== "pending";
+
+  const updatePayload: Record<string, any> = {
+    status: newStatus,
+    estimated_courier_price: effEstCourier,
+    final_courier_price: effFinalCourier,
+    delivery_price: courierFee, // backward compatibility
+    final_total: finalTotal,
+    handled: newStatus === "dispatched" || isHandledOrBeyond,
+  };
+
+  if (isHandledOrBeyond && !order.handled) {
+    updatePayload.handled_at = new Date().toISOString();
+  } else if (newStatus === "pending") {
+    updatePayload.handled = false;
+    updatePayload.handled_at = null;
+  }
+
   const { error: updateError } = await supabase
     .from("orders")
-    .update({
-      delivery_price: deliveryPrice,
-      final_total: finalTotal,
-      handled: true,
-      handled_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("id", orderId);
 
   if (updateError) {
@@ -45,24 +77,20 @@ export async function markOrderHandled(
 }
 
 /**
- * Re-opens / marks an order as unhandled.
+ * Backward compatibility: Marks an order as handled with delivery price.
+ */
+export async function markOrderHandled(
+  orderId: string,
+  deliveryPrice: number
+): Promise<void> {
+  return updateOrderStatus(orderId, "dispatched", null, deliveryPrice);
+}
+
+/**
+ * Backward compatibility: Re-opens / marks an order as unhandled.
  */
 export async function markOrderUnhandled(orderId: string): Promise<void> {
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("orders")
-    .update({
-      handled: false,
-      handled_at: null,
-    })
-    .eq("id", orderId);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  revalidatePath("/admin/orders");
+  return updateOrderStatus(orderId, "pending", null, null);
 }
 
 /**
