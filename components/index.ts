@@ -8,6 +8,8 @@ export { Footer } from "./Footer";
 export { CarouselSection } from "./CarouselSection";
 export { ThemeToggle } from "./ThemeToggle";
 export { ThemeProvider } from "./ThemeProvider";
+export { CartToast } from "./CartToast";
 export { CartProvider, useCart } from "@/context/CartContext";
+
 
 

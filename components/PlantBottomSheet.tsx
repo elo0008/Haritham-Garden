@@ -27,13 +27,11 @@ const WATERING_LABELS: Record<string, string> = {
 export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomSheetProps) {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [addedToast, setAddedToast] = useState(false);
 
   // Reset internal state when a new plant is opened
   useEffect(() => {
     setActivePhotoIndex(0);
     setQuantity(1);
-    setAddedToast(false);
   }, [plant?.id]);
 
   // Handle ESC key to close
@@ -55,8 +53,7 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
   const handleAddToCart = () => {
     if (!plant) return;
     onAddToCart?.(plant, quantity);
-    setAddedToast(true);
-    setTimeout(() => setAddedToast(false), 2000);
+    onClose(); // Automatically close modal immediately
   };
 
   return (
@@ -185,13 +182,6 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
                   </p>
                 )}
               </div>
-
-              {/* Toast Notification */}
-              {addedToast && (
-                <div className="mb-3 rounded-xl bg-emerald-800 text-white px-4 py-2.5 text-xs font-semibold text-center shadow-xs animate-in fade-in duration-200">
-                  Added {quantity} x {plant.name} to bag!
-                </div>
-              )}
 
               {/* Bottom Action Footer */}
               <div className="pt-6 border-t border-stone-100 dark:border-stone-800 flex items-center gap-4 mt-auto shrink-0">

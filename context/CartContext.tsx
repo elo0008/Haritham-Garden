@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import type { Plant, CartItem } from "@/lib/types";
+import { CartToast, type ToastInfo } from "@/components/CartToast";
 
 interface CartContextType {
   items: CartItem[];
@@ -15,6 +16,8 @@ interface CartContextType {
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
+  toast: ToastInfo | null;
+  dismissToast: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -25,6 +28,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [toast, setToast] = useState<ToastInfo | null>(null);
+
+  const dismissToast = useCallback(() => {
+    setToast(null);
+  }, []);
 
   // Load cart from localStorage on client mount
   useEffect(() => {
@@ -51,6 +59,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItem = (plant: Plant, qty: number) => {
     if (qty <= 0) return;
+
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex((item) => item.plant_id === plant.id);
       if (existingIndex > -1) {
@@ -72,6 +81,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
           slug: plant.slug,
         },
       ];
+    });
+
+    // Fire or update Toast notification
+    setToast((prev) => {
+      if (prev && prev.plantId === plant.id) {
+        return {
+          id: Date.now().toString(),
+          plantId: plant.id,
+          plantName: plant.name,
+          qty: prev.qty + qty,
+        };
+      }
+      return {
+        id: Date.now().toString(),
+        plantId: plant.id,
+        plantName: plant.name,
+        qty: qty,
+      };
     });
   };
 
@@ -114,9 +141,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         openCart,
         closeCart,
         toggleCart,
+        toast,
+        dismissToast,
       }}
     >
       {children}
+      <CartToast toast={toast} onDismiss={dismissToast} />
     </CartContext.Provider>
   );
 }
