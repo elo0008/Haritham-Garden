@@ -12,9 +12,12 @@ const LABELS: Record<PlantAvailability, string> = {
 };
 
 const STYLES: Record<PlantAvailability, string> = {
-  available: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  limited: "border-amber-300 bg-amber-50 text-amber-800",
-  unavailable: "border-red-300 bg-red-50 text-red-700",
+  available:
+    "border-emerald-300 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300",
+  limited:
+    "border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300",
+  unavailable:
+    "border-rose-300 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300",
 };
 
 interface Props {
@@ -34,7 +37,8 @@ export function AvailabilitySelect({ plantId, current }: Props) {
       try {
         await updateAvailability(plantId, next);
         router.refresh();
-      } catch {
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to update availability");
         setValue(current); // revert on error
       }
     });
@@ -45,13 +49,16 @@ export function AvailabilitySelect({ plantId, current }: Props) {
       value={value}
       onChange={handleChange}
       disabled={isPending}
-      className={`text-xs font-semibold rounded-xl border px-3 py-2 min-h-[38px] sm:min-h-[44px]
-                  focus:outline-none focus:ring-2 focus:ring-[#C1662F]
-                  disabled:opacity-60 cursor-pointer transition-colors
-                  ${STYLES[value]}`}
+      className={`text-xs font-semibold rounded-xl border px-3 py-1.5 min-h-[36px]
+                  focus:outline-none focus:ring-2 focus:ring-terracotta
+                  disabled:opacity-60 cursor-pointer transition-colors ${STYLES[value]}`}
     >
       {(Object.keys(LABELS) as PlantAvailability[]).map((v) => (
-        <option key={v} value={v}>
+        <option
+          key={v}
+          value={v}
+          className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
+        >
           {LABELS[v]}
         </option>
       ))}

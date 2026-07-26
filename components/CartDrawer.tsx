@@ -9,7 +9,7 @@ import {
   buildWhatsAppUrl,
   DEFAULT_WHATSAPP_NUMBER,
 } from "@/lib/whatsapp";
-import { ShoppingBag, X, Trash2, MessageCircle, Truck, ArrowLeft, ChevronRight } from "lucide-react";
+import { ShoppingBag, X, Trash2, MessageCircle, Truck, ArrowLeft, ChevronRight, RefreshCw, UserCheck } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface CartDrawerProps {
@@ -48,18 +48,31 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
 
   const targetNumber = whatsappNumber || DEFAULT_WHATSAPP_NUMBER;
 
-  // Load session storage customer details on client mount/open
+  // Load customer details from localStorage on client mount/open
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const savedName = sessionStorage.getItem("haritham_cust_name") || "";
-    const savedPhone = sessionStorage.getItem("haritham_cust_phone") || "";
-    const savedAddress = sessionStorage.getItem("haritham_cust_address") || "";
-    const savedPincode = sessionStorage.getItem("haritham_cust_pincode") || "";
+    const raw = localStorage.getItem("haritham_customer_details");
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed.name) setCustName(parsed.name);
+        if (parsed.phone) setCustPhone(parsed.phone);
+        if (parsed.address) setCustAddress(parsed.address);
+        if (parsed.pincode) setCustPincode(parsed.pincode);
+      } catch {
+        // Ignore json parse error
+      }
+    } else {
+      const sName = localStorage.getItem("haritham_cust_name") || sessionStorage.getItem("haritham_cust_name") || "";
+      const sPhone = localStorage.getItem("haritham_cust_phone") || sessionStorage.getItem("haritham_cust_phone") || "";
+      const sAddress = localStorage.getItem("haritham_cust_address") || sessionStorage.getItem("haritham_cust_address") || "";
+      const sPincode = localStorage.getItem("haritham_cust_pincode") || sessionStorage.getItem("haritham_cust_pincode") || "";
 
-    if (savedName) setCustName(savedName);
-    if (savedPhone) setCustPhone(savedPhone);
-    if (savedAddress) setCustAddress(savedAddress);
-    if (savedPincode) setCustPincode(savedPincode);
+      if (sName) setCustName(sName);
+      if (sPhone) setCustPhone(sPhone);
+      if (sAddress) setCustAddress(sAddress);
+      if (sPincode) setCustPincode(sPincode);
+    }
   }, [isOpen]);
 
   // Close on ESC key
@@ -83,6 +96,31 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
       setCheckoutStep("cart");
     }
   }, [isOpen]);
+
+  const hasSavedDetails = Boolean(
+    custName.trim() || custPhone.trim() || custAddress.trim() || custPincode.trim()
+  );
+
+  // Clear saved details from localStorage
+  const handleForgetDetails = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("haritham_customer_details");
+      localStorage.removeItem("haritham_cust_name");
+      localStorage.removeItem("haritham_cust_phone");
+      localStorage.removeItem("haritham_cust_address");
+      localStorage.removeItem("haritham_cust_pincode");
+      sessionStorage.removeItem("haritham_cust_details_decided");
+      sessionStorage.removeItem("haritham_cust_name");
+      sessionStorage.removeItem("haritham_cust_phone");
+      sessionStorage.removeItem("haritham_cust_address");
+      sessionStorage.removeItem("haritham_cust_pincode");
+    }
+    setCustName("");
+    setCustPhone("");
+    setCustAddress("");
+    setCustPincode("");
+    setCheckoutStep("interstitial");
+  };
 
   // Helper to execute order creation and open WhatsApp
   const executeOrder = async (details?: CustomerDetailsInput | null) => {
@@ -130,27 +168,12 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const handleInitiateOrder = () => {
     if (items.length === 0 || submittingRef.current || isSubmitting) return;
 
-    // Check if customer has already decided details in this session
-    const isDecided = sessionStorage.getItem("haritham_cust_details_decided");
-
-    if (isDecided === "true") {
-      // Pre-fill existing details from session if available
-      const details: CustomerDetailsInput = {
-        name: custName.trim() || null,
-        phone: custPhone.trim() || null,
-        address: custAddress.trim() || null,
-        pincode: custPincode.trim() || null,
-      };
-      executeOrder(details);
-    } else {
-      // Prompt with interstitial screen
-      setCheckoutStep("interstitial");
-    }
+    // Show interstitial step for details view/edit or decision
+    setCheckoutStep("interstitial");
   };
 
   // Handler for skipping details ("Send Without Details")
   const handleSkipDetails = () => {
-    sessionStorage.setItem("haritham_cust_details_decided", "true");
     executeOrder(null);
   };
 
@@ -165,12 +188,20 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
       pincode: custPincode.trim() || null,
     };
 
-    // Save to session storage
-    sessionStorage.setItem("haritham_cust_details_decided", "true");
-    if (details.name) sessionStorage.setItem("haritham_cust_name", details.name);
-    if (details.phone) sessionStorage.setItem("haritham_cust_phone", details.phone);
-    if (details.address) sessionStorage.setItem("haritham_cust_address", details.address);
-    if (details.pincode) sessionStorage.setItem("haritham_cust_pincode", details.pincode);
+    // Save to localStorage for persistence across visits
+    const savedObj = {
+      name: details.name || "",
+      phone: details.phone || "",
+      address: details.address || "",
+      pincode: details.pincode || "",
+    };
+    if (typeof window !== "undefined") {
+      localStorage.setItem("haritham_customer_details", JSON.stringify(savedObj));
+      if (details.name) localStorage.setItem("haritham_cust_name", details.name);
+      if (details.phone) localStorage.setItem("haritham_cust_phone", details.phone);
+      if (details.address) localStorage.setItem("haritham_cust_address", details.address);
+      if (details.pincode) localStorage.setItem("haritham_cust_pincode", details.pincode);
+    }
 
     executeOrder(details);
   };
@@ -340,54 +371,135 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                   </button>
                 </div>
               ) : checkoutStep === "interstitial" ? (
-                /* Interstitial Step: Soft required nudge */
-                <div className="py-4 space-y-6 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="text-center space-y-3">
-                    <div className="w-16 h-16 rounded-2xl bg-botanical-50 dark:bg-stone-800 border border-botanical-100 dark:border-stone-700 flex items-center justify-center text-botanical-800 dark:text-botanical-100 mx-auto shadow-sm">
-                      <Truck className="w-8 h-8" />
+                /* Interstitial Step: Has saved details preview OR initial choice screen */
+                hasSavedDetails ? (
+                  <div className="py-4 space-y-5 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="text-center space-y-2">
+                      <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center text-emerald-700 dark:text-emerald-300 mx-auto shadow-2xs">
+                        <UserCheck className="w-7 h-7" />
+                      </div>
+                      <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
+                        Saved Delivery Details
+                      </h3>
+                      <p className="text-stone-500 dark:text-stone-400 text-xs max-w-xs mx-auto">
+                        Your shipping details from your previous visit are pre-filled below.
+                      </p>
                     </div>
-                    <h3 className="font-heading font-bold text-xl text-stone-900 dark:text-stone-100">
-                      Add Delivery Details?
-                    </h3>
-                    <p className="text-stone-600 dark:text-stone-300 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed">
-                      Adding your delivery details helps us package and process your plant order faster.
-                    </p>
-                  </div>
 
-                  <div className="rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-800 p-4 text-xs text-stone-600 dark:text-stone-400 space-y-1.5">
-                    <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
-                      <span>⚡</span> Fast & Optional
+                    {/* Saved details preview card */}
+                    <div className="rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700 p-4 text-xs space-y-2.5 text-stone-800 dark:text-stone-200">
+                      {custName && (
+                        <div>
+                          <span className="text-stone-400 font-medium block">Name:</span>
+                          <span className="font-bold text-stone-900 dark:text-stone-100">{custName}</span>
+                        </div>
+                      )}
+                      {custPhone && (
+                        <div>
+                          <span className="text-stone-400 font-medium block">Phone:</span>
+                          <span className="font-semibold text-stone-900 dark:text-stone-100">{custPhone}</span>
+                        </div>
+                      )}
+                      {custAddress && (
+                        <div>
+                          <span className="text-stone-400 font-medium block">Address:</span>
+                          <span className="font-medium text-stone-900 dark:text-stone-100 whitespace-pre-wrap">{custAddress}</span>
+                        </div>
+                      )}
+                      {custPincode && (
+                        <div>
+                          <span className="text-stone-400 font-medium block">Pincode:</span>
+                          <span className="font-mono font-semibold text-stone-900 dark:text-stone-100">{custPincode}</span>
+                        </div>
+                      )}
                     </div>
-                    <p className="leading-relaxed text-[11px]">
-                      Payment is completed 100% on WhatsApp as usual. You can add your shipping address now or skip and send directly.
-                    </p>
-                  </div>
 
-                  <div className="space-y-3 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setCheckoutStep("form")}
-                      className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98]"
-                    >
-                      <span>Add Details</span>
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+                    {/* Action Buttons */}
+                    <div className="space-y-2.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          executeOrder({
+                            name: custName.trim() || null,
+                            phone: custPhone.trim() || null,
+                            address: custAddress.trim() || null,
+                            pincode: custPincode.trim() || null,
+                          });
+                        }}
+                        disabled={isSubmitting}
+                        className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98] disabled:opacity-50"
+                      >
+                        <MessageCircle className="w-5 h-5 fill-current" />
+                        <span>{isSubmitting ? "Sending..." : "Send Order via WhatsApp"}</span>
+                      </button>
 
-                    <button
-                      type="button"
-                      onClick={handleSkipDetails}
-                      disabled={isSubmitting}
-                      className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-semibold py-3.5 px-6 rounded-2xl transition-all min-h-[48px] active:scale-[0.98]"
-                    >
-                      {isSubmitting ? "Sending..." : "Send Without Details →"}
-                    </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCheckoutStep("form")}
+                          className="flex-1 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-semibold py-2.5 px-4 rounded-xl text-xs transition-all min-h-[40px]"
+                        >
+                          Edit Details
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleForgetDetails}
+                          className="flex-1 bg-stone-100 dark:bg-stone-800 hover:bg-red-50 dark:hover:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold py-2.5 px-4 rounded-xl text-xs transition-all min-h-[40px]"
+                        >
+                          Forget My Details
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="py-4 space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="text-center space-y-3">
+                      <div className="w-16 h-16 rounded-2xl bg-botanical-50 dark:bg-stone-800 border border-botanical-100 dark:border-stone-700 flex items-center justify-center text-botanical-800 dark:text-botanical-100 mx-auto shadow-sm">
+                        <Truck className="w-8 h-8" />
+                      </div>
+                      <h3 className="font-heading font-bold text-xl text-stone-900 dark:text-stone-100">
+                        Add Delivery Details?
+                      </h3>
+                      <p className="text-stone-600 dark:text-stone-300 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed">
+                        Adding your delivery details helps us package and process your plant order faster.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-800 p-4 text-xs text-stone-600 dark:text-stone-400 space-y-1.5">
+                      <div className="font-semibold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                        <span>⚡</span> Fast & Optional
+                      </div>
+                      <p className="leading-relaxed text-[11px]">
+                        Payment is completed 100% on WhatsApp as usual. You can add your shipping address now or skip and send directly.
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setCheckoutStep("form")}
+                        className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98]"
+                      >
+                        <span>Add Details</span>
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSkipDetails}
+                        disabled={isSubmitting}
+                        className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-semibold py-3.5 px-6 rounded-2xl transition-all min-h-[48px] active:scale-[0.98]"
+                      >
+                        {isSubmitting ? "Sending..." : "Send Without Details →"}
+                      </button>
+                    </div>
+                  </div>
+                )
               ) : checkoutStep === "form" ? (
                 /* Customer Details Form */
                 <form onSubmit={handleSubmitForm} className="space-y-4 animate-in fade-in duration-200">
                   <div className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed mb-1">
-                    Please provide your contact and shipping information. All fields are optional.
+                    Please provide your contact and shipping information. Saved details persist for your future visits.
                   </div>
 
                   {/* Full Name */}
@@ -458,7 +570,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                       ) : (
                         <>
                           <MessageCircle className="w-5 h-5 fill-current" />
-                          <span>Continue to WhatsApp</span>
+                          <span>Save & Continue to WhatsApp</span>
                         </>
                       )}
                     </button>
@@ -471,6 +583,16 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                     >
                       Skip & Send Without Details
                     </button>
+
+                    {hasSavedDetails && (
+                      <button
+                        type="button"
+                        onClick={handleForgetDetails}
+                        className="w-full py-1.5 text-xs font-semibold text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors text-center block"
+                      >
+                        Forget my saved details
+                      </button>
+                    )}
                   </div>
                 </form>
               ) : items.length === 0 ? (

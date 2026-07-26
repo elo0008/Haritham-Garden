@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Plant, Tag } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
-import { AvailabilityCycleButton } from "./AvailabilityCycleButton";
+import { AvailabilitySelect } from "./AvailabilitySelect";
 import { DeleteButton } from "./DeleteButton";
 import { PlantModal } from "./PlantModal";
 import { Plus, Pencil, Sprout, Tag as TagIcon, X } from "lucide-react";
@@ -163,25 +163,15 @@ export function AdminPlantsGrid({
                       </div>
                     )}
 
-                    {/* Overlaid Top-Left: Tags Pill Badges */}
-                    <div className="absolute top-3 left-3 flex flex-wrap gap-1 max-w-[70%] z-10">
+                    {/* Overlaid Top-Left: First Tag Pill Badge */}
+                    <div className="absolute top-3 left-3 z-10">
                       {tags.length > 0 ? (
-                        tags.slice(0, 2).map((t) => (
-                          <span
-                            key={t.id}
-                            className="bg-stone-900/80 text-white backdrop-blur-md text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-2xs"
-                          >
-                            {t.name}
-                          </span>
-                        ))
+                        <span className="bg-stone-900/80 text-white backdrop-blur-md text-[10px] font-semibold px-2 py-0.5 rounded-md shadow-2xs">
+                          {tags[0].name}
+                        </span>
                       ) : (
                         <span className="bg-stone-900/60 text-white backdrop-blur-md text-[10px] font-medium px-2 py-0.5 rounded-md">
                           No Tags
-                        </span>
-                      )}
-                      {tags.length > 2 && (
-                        <span className="bg-stone-900/80 text-white backdrop-blur-md text-[10px] font-semibold px-1.5 py-0.5 rounded-md">
-                          +{tags.length - 2}
                         </span>
                       )}
                     </div>
@@ -231,8 +221,8 @@ export function AdminPlantsGrid({
 
                 {/* Card Quick Actions Bar */}
                 <div className="p-4 pt-3 bg-stone-50/70 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
-                  {/* Quick Availability Cycle Button */}
-                  <AvailabilityCycleButton
+                  {/* Inline Availability Dropdown Select */}
+                  <AvailabilitySelect
                     plantId={plant.id}
                     current={plant.availability}
                   />

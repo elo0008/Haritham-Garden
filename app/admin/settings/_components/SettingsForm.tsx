@@ -7,9 +7,9 @@ import { updateSiteSettings } from "../actions";
 import type { SiteSettings } from "@/lib/types";
 
 const inputCls =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-[#24211E] " +
-  "focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent " +
-  "disabled:bg-stone-100 disabled:text-stone-400 min-h-[44px]";
+  "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
+  "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
+  "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
 
 interface Props {
   settings: SiteSettings;
@@ -103,33 +103,33 @@ export function SettingsForm({ settings }: Props) {
   }
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 max-w-2xl bg-white border border-stone-200/80 rounded-2xl p-6 shadow-2xs">
+    <form onSubmit={handleSave} className="space-y-6 max-w-2xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-6 sm:p-8 shadow-2xs">
       {/* Status Messages */}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-xs text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs text-emerald-700">
+        <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-300">
           Settings saved successfully!
         </div>
       )}
 
       {/* ── Section 1: Header & Branding ──────────────────────────────────── */}
       <div>
-        <h2 className="text-sm font-bold text-[#24211E] uppercase tracking-wider text-stone-400 mb-4 pb-2 border-b border-stone-100">
+        <h2 className="text-sm font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-4 pb-2 border-b border-stone-100 dark:border-stone-800">
           Branding & Header
         </h2>
 
         <div className="space-y-5">
           {/* Logo Upload */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
               Header Logo Image{" "}
-              <span className="font-normal text-stone-400">(optional)</span>
+              <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
-            <p className="text-xs text-stone-500 mb-3">
+            <p className="text-xs text-stone-500 dark:text-stone-400 mb-3">
               If uploaded, this image will replace the default text wordmark in the header. If left empty, it safely falls back to text.
             </p>
 
@@ -138,14 +138,12 @@ export function SettingsForm({ settings }: Props) {
                 <img
                   src={logoUrl}
                   alt="Site Logo"
-                  className="h-14 w-auto rounded-xl border border-stone-200 object-contain p-1.5 bg-stone-50"
+                  className="h-14 w-auto rounded-xl border border-stone-200 dark:border-stone-700 object-contain p-1.5 bg-stone-50 dark:bg-stone-800"
                 />
                 <button
                   type="button"
                   onClick={() => setLogoUrl(null)}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
-                             text-white rounded-full text-xs flex items-center justify-center
-                             shadow transition-colors"
+                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition-colors"
                   title="Remove logo image"
                 >
                   ×
@@ -165,8 +163,7 @@ export function SettingsForm({ settings }: Props) {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={saving || uploading}
-                className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px]
-                           hover:bg-stone-50 disabled:opacity-50 transition-colors"
+                className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200"
               >
                 {uploading ? "Uploading…" : logoUrl ? "Replace Logo Image" : "+ Upload Logo Image"}
               </button>
@@ -175,7 +172,7 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Business Name */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
               Business Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -191,8 +188,8 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Tagline */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Tagline <span className="font-normal text-stone-400">(shown under name in header)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Tagline <span className="font-normal text-stone-400 dark:text-stone-500">(shown under name in header)</span>
             </label>
             <input
               type="text"
@@ -206,7 +203,7 @@ export function SettingsForm({ settings }: Props) {
 
           {/* WhatsApp Number */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
               WhatsApp Order Number <span className="text-red-500">*</span>
             </label>
             <input
@@ -218,8 +215,8 @@ export function SettingsForm({ settings }: Props) {
               disabled={saving}
               className={inputCls}
             />
-            <p className="mt-1.5 text-xs text-stone-500 leading-relaxed">
-              <span className="font-semibold text-stone-700">Format note:</span> Include country code without any <code className="bg-stone-100 px-1 py-0.5 rounded text-stone-800">+</code> or spaces (e.g. <code className="bg-stone-100 px-1 py-0.5 rounded font-mono text-stone-800">919876543210</code> for India). Customer WhatsApp order messages will be sent to this number.
+            <p className="mt-1.5 text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
+              <span className="font-semibold text-stone-700 dark:text-stone-300">Format note:</span> Include country code without any <code className="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-stone-800 dark:text-stone-200">+</code> or spaces (e.g. <code className="bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded font-mono text-stone-800 dark:text-stone-200">919876543210</code> for India). Customer WhatsApp order messages will be sent to this number.
             </p>
           </div>
         </div>
@@ -227,15 +224,15 @@ export function SettingsForm({ settings }: Props) {
 
       {/* ── Section 2: Shop Info & Footer ─────────────────────────────────── */}
       <div className="pt-4">
-        <h2 className="text-sm font-bold text-[#24211E] uppercase tracking-wider text-stone-400 mb-4 pb-2 border-b border-stone-100">
+        <h2 className="text-sm font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wider text-stone-400 dark:text-stone-500 mb-4 pb-2 border-b border-stone-100 dark:border-stone-800">
           Shop Info & Footer
         </h2>
 
         <div className="space-y-4">
           {/* Location Text */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Location / Town <span className="font-normal text-stone-400">(optional)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Location / Town <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
             <input
               type="text"
@@ -249,8 +246,8 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Service Area / Shipping Text */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Service Area / Delivery Info <span className="font-normal text-stone-400">(optional)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Service Area / Delivery Info <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
             <input
               type="text"
@@ -264,8 +261,8 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Instagram URL */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Instagram Profile URL <span className="font-normal text-stone-400">(optional)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Instagram Profile URL <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
             <input
               type="url"
@@ -279,8 +276,8 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Contact Phone */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Contact Phone / Call Number <span className="font-normal text-stone-400">(optional, if different from WhatsApp)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Contact Phone / Call Number <span className="font-normal text-stone-400 dark:text-stone-500">(optional, if different from WhatsApp)</span>
             </label>
             <input
               type="text"
@@ -294,8 +291,8 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Secondary Social Link Label */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Secondary Social / Channel Label <span className="font-normal text-stone-400">(optional, e.g. "Watch Care Guides")</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Secondary Social / Channel Label <span className="font-normal text-stone-400 dark:text-stone-500">(optional, e.g. "Watch Care Guides")</span>
             </label>
             <input
               type="text"
@@ -309,8 +306,8 @@ export function SettingsForm({ settings }: Props) {
 
           {/* Secondary Social Link URL */}
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-              Secondary Social / Channel URL <span className="font-normal text-stone-400">(optional)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+              Secondary Social / Channel URL <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
             <input
               type="url"
@@ -325,13 +322,11 @@ export function SettingsForm({ settings }: Props) {
       </div>
 
       {/* ── Submit ────────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 pt-3 border-t border-stone-100">
+      <div className="flex items-center gap-3 pt-3 border-t border-stone-100 dark:border-stone-800">
         <button
           type="submit"
           disabled={saving}
-          className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-5 py-3 rounded-xl
-                     text-xs font-semibold min-h-[44px] shadow-xs disabled:opacity-50 disabled:cursor-not-allowed
-                     transition-colors"
+          className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all min-h-[44px]"
         >
           {saving ? "Saving Settings…" : "Save Settings"}
         </button>

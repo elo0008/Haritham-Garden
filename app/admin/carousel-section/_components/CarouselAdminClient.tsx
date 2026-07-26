@@ -13,9 +13,9 @@ import {
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
 
 const inputCls =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-[#24211E] " +
-  "focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent " +
-  "disabled:bg-stone-100 disabled:text-stone-400 min-h-[44px]";
+  "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
+  "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
+  "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
 
 interface Props {
   settings: CarouselSectionSettings;
@@ -80,7 +80,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     }
   }
 
-  // ── Handlers: Slide Add/Edit ───────────────────────────────────────────────
+  // ── Handlers: Slide Add/Edit Modal ────────────────────────────────────────
 
   function openAddModal() {
     setEditingSlide(null);
@@ -89,7 +89,6 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     setSlideDescription("");
     setSlideBgImage(null);
     setSlideActive(true);
-    setErrorMsg(null);
     setActiveModal("add");
   }
 
@@ -100,7 +99,6 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     setSlideDescription(slide.description);
     setSlideBgImage(slide.background_image ?? null);
     setSlideActive(slide.active);
-    setErrorMsg(null);
     setActiveModal("edit");
   }
 
@@ -114,8 +112,6 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     if (!file) return;
 
     setUploadingImage(true);
-    setErrorMsg(null);
-
     try {
       const supabase = createClient();
       const ext = file.name.split(".").pop() ?? "jpg";
@@ -136,33 +132,33 @@ export function CarouselAdminClient({ settings, slides }: Props) {
       setErrorMsg(err instanceof Error ? err.message : "Image upload failed.");
     } finally {
       setUploadingImage(false);
-      e.target.value = "";
     }
   }
 
   async function handleSaveSlide(e: React.FormEvent) {
     e.preventDefault();
-    if (!slideTitle.trim() || !slideDescription.trim()) {
-      setErrorMsg("Title and description are required.");
-      return;
-    }
+    if (!slideTitle.trim() || !slideDescription.trim()) return;
 
     setSavingSlide(true);
     setErrorMsg(null);
 
     try {
-      const slideData = {
-        tag_label: slideTagLabel,
-        title: slideTitle,
-        description: slideDescription,
-        background_image: slideBgImage,
-        active: slideActive,
-      };
-
       if (activeModal === "edit" && editingSlide) {
-        await updateCarouselSlide(editingSlide.id, slideData);
+        await updateCarouselSlide(editingSlide.id, {
+          tag_label: slideTagLabel.trim() || null,
+          title: slideTitle.trim(),
+          description: slideDescription.trim(),
+          background_image: slideBgImage,
+          active: slideActive,
+        });
       } else {
-        await createCarouselSlide(slideData);
+        await createCarouselSlide({
+          tag_label: slideTagLabel.trim() || null,
+          title: slideTitle.trim(),
+          description: slideDescription.trim(),
+          background_image: slideBgImage,
+          active: slideActive,
+        });
       }
 
       closeModal();
@@ -174,7 +170,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     }
   }
 
-  // ── Handlers: Delete ──────────────────────────────────────────────────────
+  // ── Handlers: Delete Slide ────────────────────────────────────────────────
 
   async function handleConfirmDelete() {
     if (!deletingSlide) return;
@@ -192,7 +188,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     }
   }
 
-  // ── Handlers: Reorder ─────────────────────────────────────────────────────
+  // ── Handlers: Reorder Slides ──────────────────────────────────────────────
 
   async function handleMove(index: number, direction: "up" | "down") {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -220,28 +216,32 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     <div className="space-y-8 max-w-3xl">
       {/* Global Error Banner */}
       {errorMsg && (
-        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
+        <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-xs text-red-700 dark:text-red-300">
           {errorMsg}
         </div>
       )}
 
       {/* ── Section 1: Section Header & Toggle Settings ────────────────────── */}
-      <form onSubmit={handleSaveSettings} className="bg-white border border-stone-200/80 rounded-2xl p-6 shadow-2xs space-y-5">
-        <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+      <form onSubmit={handleSaveSettings} className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-6 sm:p-8 shadow-2xs space-y-5">
+        <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
           <div>
-            <h2 className="text-base font-bold text-[#24211E]">Carousel Section Controls</h2>
-            <p className="text-xs text-stone-500 mt-0.5">
+            <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">
+              Carousel Section Controls
+            </h2>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
               Control whether this section appears on the homepage and customize its header text.
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-stone-700">Section Enabled</span>
+            <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">
+              Section Enabled
+            </span>
             <button
               type="button"
               onClick={() => setEnabled(!enabled)}
               disabled={savingSettings}
               className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 min-w-[48px] ${
-                enabled ? "bg-[#C1662F]" : "bg-stone-300"
+                enabled ? "bg-terracotta" : "bg-stone-300 dark:bg-stone-700"
               }`}
               role="switch"
               aria-checked={enabled}
@@ -256,15 +256,15 @@ export function CarouselAdminClient({ settings, slides }: Props) {
         </div>
 
         {settingsSuccess && (
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-2.5 text-xs text-emerald-700">
+          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2.5 text-xs text-emerald-700 dark:text-emerald-300">
             Section settings saved successfully!
           </div>
         )}
 
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
-              Header Tag Pill <span className="font-normal text-stone-400">(optional, e.g. "OUR STORY")</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              Header Tag Pill <span className="font-normal text-stone-400 dark:text-stone-500">(optional, e.g. "OUR STORY")</span>
             </label>
             <input
               type="text"
@@ -277,8 +277,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
-              Header Main Title <span className="font-normal text-stone-400">(optional)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              Header Main Title <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
             </label>
             <input
               type="text"
@@ -291,8 +291,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-stone-700 mb-1">
-              Header Subtitle <span className="font-normal text-stone-400">(optional supporting text)</span>
+            <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              Header Subtitle <span className="font-normal text-stone-400 dark:text-stone-500">(optional supporting text)</span>
             </label>
             <input
               type="text"
@@ -305,15 +305,14 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           </div>
         </div>
 
-        <div className="pt-2 border-t border-stone-100 flex items-center justify-between">
-          <span className="text-xs text-stone-400">
-            Status: <strong className={enabled ? "text-emerald-700 font-semibold" : "text-stone-500 font-semibold"}>{enabled ? "Visible on homepage" : "Hidden (renders nothing)"}</strong>
+        <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+          <span className="text-xs text-stone-400 dark:text-stone-500">
+            Status: <strong className={enabled ? "text-emerald-600 dark:text-emerald-400 font-semibold" : "text-stone-500 font-semibold"}>{enabled ? "Visible on homepage" : "Hidden (renders nothing)"}</strong>
           </span>
           <button
             type="submit"
             disabled={savingSettings}
-            className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-5 py-2.5 rounded-xl
-                       text-xs font-semibold min-h-[44px] shadow-xs disabled:opacity-50 transition-colors"
+            className="bg-terracotta hover:bg-[#b04a25] text-white px-5 py-2.5 rounded-xl text-xs font-semibold min-h-[44px] shadow-md disabled:opacity-50 transition-all"
           >
             {savingSettings ? "Saving Settings…" : "Save Section Settings"}
           </button>
@@ -324,23 +323,24 @@ export function CarouselAdminClient({ settings, slides }: Props) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-[#24211E]">Carousel Slides ({slides.length})</h2>
-            <p className="text-xs text-stone-500">
+            <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">
+              Carousel Slides ({slides.length})
+            </h2>
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               Manage the individual slides displayed in the carousel.
             </p>
           </div>
           <button
             type="button"
             onClick={openAddModal}
-            className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-4 py-2.5
-                       rounded-xl text-xs font-semibold shadow-xs min-h-[44px] flex items-center gap-1.5 transition-colors"
+            className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-md min-h-[44px] flex items-center gap-1.5 transition-all"
           >
             <span>+</span> Add New Slide
           </button>
         </div>
 
         {slides.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-stone-300 p-8 text-center bg-white text-stone-500 text-xs">
+          <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-800 p-8 text-center bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 text-xs">
             No slides created yet. Click <strong>+ Add New Slide</strong> to add your first slide.
           </div>
         ) : (
@@ -348,7 +348,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
             {slides.map((slide, idx) => (
               <div
                 key={slide.id}
-                className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs"
+                className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-2xs"
               >
                 {/* Thumbnail / Info */}
                 <div className="flex items-center gap-3.5 min-w-0">
@@ -356,35 +356,35 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                     <img
                       src={slide.background_image}
                       alt={slide.title}
-                      className="w-14 h-14 object-cover rounded-xl border border-stone-200 shrink-0"
+                      className="w-14 h-14 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-xl bg-stone-200/60 flex items-center justify-center text-xl shrink-0">
+                    <div className="w-14 h-14 rounded-xl bg-stone-200/60 dark:bg-stone-800 flex items-center justify-center text-xl shrink-0">
                       🖼️
                     </div>
                   )}
 
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-semibold text-sm text-[#24211E] truncate">
+                      <span className="font-semibold text-sm text-stone-900 dark:text-stone-100 truncate">
                         {slide.title}
                       </span>
                       <span
                         className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                           slide.active
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-stone-200 text-stone-600"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            : "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
                         }`}
                       >
                         {slide.active ? "Active" : "Hidden"}
                       </span>
                     </div>
                     {slide.tag_label && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#C1662F] block">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta block">
                         {slide.tag_label}
                       </span>
                     )}
-                    <p className="text-xs text-stone-500 truncate max-w-sm">
+                    <p className="text-xs text-stone-500 dark:text-stone-400 truncate max-w-sm">
                       {slide.description}
                     </p>
                   </div>
@@ -398,7 +398,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                       type="button"
                       onClick={() => handleMove(idx, "up")}
                       disabled={idx === 0}
-                      className="p-1 rounded hover:bg-stone-100 disabled:opacity-30 text-xs font-bold"
+                      className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 disabled:opacity-30 text-xs font-bold"
                       title="Move up"
                     >
                       ▲
@@ -407,7 +407,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                       type="button"
                       onClick={() => handleMove(idx, "down")}
                       disabled={idx === slides.length - 1}
-                      className="p-1 rounded hover:bg-stone-100 disabled:opacity-30 text-xs font-bold"
+                      className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 disabled:opacity-30 text-xs font-bold"
                       title="Move down"
                     >
                       ▼
@@ -417,14 +417,14 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   <button
                     type="button"
                     onClick={() => openEditModal(slide)}
-                    className="text-xs font-semibold text-stone-700 hover:text-[#C1662F] px-3 py-2 rounded-xl border border-stone-200 hover:border-stone-300 min-h-[38px] transition-colors"
+                    className="text-xs font-semibold text-stone-700 dark:text-stone-200 hover:text-terracotta px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-stone-300 min-h-[38px] transition-colors"
                   >
                     Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => setDeletingSlide(slide)}
-                    className="text-xs font-semibold text-red-600 hover:text-red-800 px-3 py-2 rounded-xl border border-red-200 hover:bg-red-50 min-h-[38px] transition-colors"
+                    className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 rounded-xl min-h-[38px] transition-colors"
                   >
                     Delete
                   </button>
@@ -441,16 +441,16 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs" onClick={closeModal} />
           <form
             onSubmit={handleSaveSlide}
-            className="relative z-10 w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4 text-[#24211E]"
+            className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-6 sm:p-8 shadow-xl space-y-4 text-stone-900 dark:text-stone-100"
           >
-            <h3 className="text-lg font-bold text-[#24211E]">
+            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
               {activeModal === "edit" ? "Edit Slide" : "Add New Slide"}
             </h3>
 
             {/* Tag Label */}
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Slide Tag Label <span className="font-normal text-stone-400">(optional, e.g. "NURSERY HERITAGE")</span>
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                Slide Tag Label <span className="font-normal text-stone-400 dark:text-stone-500">(optional, e.g. "NURSERY HERITAGE")</span>
               </label>
               <input
                 type="text"
@@ -464,7 +464,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
 
             {/* Title */}
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                 Slide Title <span className="text-red-500">*</span>
               </label>
               <input
@@ -480,7 +480,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
 
             {/* Description */}
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
                 Slide Description <span className="text-red-500">*</span>
               </label>
               <textarea
@@ -490,14 +490,14 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                 placeholder="Slide description..."
                 required
                 disabled={savingSlide}
-                className="w-full rounded-xl border border-stone-300 p-3 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent resize-none"
+                className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent resize-none"
               />
             </div>
 
             {/* Background Image Upload */}
             <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">
-                Background Image <span className="font-normal text-stone-400">(optional)</span>
+              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                Background Image <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
               </label>
 
               {slideBgImage && (
@@ -505,7 +505,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   <img
                     src={slideBgImage}
                     alt="Preview"
-                    className="h-20 w-auto rounded-xl border border-stone-200 object-cover"
+                    className="h-20 w-auto rounded-xl border border-stone-200 dark:border-stone-700 object-cover"
                   />
                   <button
                     type="button"
@@ -529,7 +529,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={savingSlide || uploadingImage}
-                  className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 transition-colors"
+                  className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200"
                 >
                   {uploadingImage ? "Uploading…" : slideBgImage ? "Replace Image" : "+ Upload Image"}
                 </button>
@@ -538,13 +538,13 @@ export function CarouselAdminClient({ settings, slides }: Props) {
 
             {/* Active Toggle */}
             <div className="flex items-center justify-between pt-2">
-              <span className="text-xs font-semibold text-stone-700">Slide Active</span>
+              <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">Slide Active</span>
               <button
                 type="button"
                 onClick={() => setSlideActive(!slideActive)}
                 disabled={savingSlide}
                 className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ${
-                  slideActive ? "bg-[#C1662F]" : "bg-stone-300"
+                  slideActive ? "bg-terracotta" : "bg-stone-300 dark:bg-stone-700"
                 }`}
                 role="switch"
                 aria-checked={slideActive}
@@ -558,19 +558,19 @@ export function CarouselAdminClient({ settings, slides }: Props) {
             </div>
 
             {/* Modal Actions */}
-            <div className="flex gap-2 pt-4 border-t border-stone-100">
+            <div className="flex gap-2 pt-4 border-t border-stone-100 dark:border-stone-800">
               <button
                 type="button"
                 onClick={closeModal}
                 disabled={savingSlide}
-                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={savingSlide || uploadingImage}
-                className="flex-1 min-h-[44px] rounded-xl bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-md disabled:opacity-50"
               >
                 {savingSlide ? "Saving..." : activeModal === "edit" ? "Update Slide" : "Add Slide"}
               </button>
@@ -583,14 +583,14 @@ export function CarouselAdminClient({ settings, slides }: Props) {
       {deletingSlide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs" onClick={() => setDeletingSlide(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl text-center text-[#24211E]">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
+          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 text-xl">
               ⚠️
             </div>
-            <h3 className="text-base font-bold text-[#24211E] mb-1">
+            <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
               Delete slide &quot;{deletingSlide.title}&quot;?
             </h3>
-            <p className="text-xs text-stone-500 mb-6">
+            <p className="text-xs text-stone-500 dark:text-stone-400 mb-6">
               This will permanently delete this slide from the carousel.
             </p>
 
@@ -599,7 +599,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                 type="button"
                 onClick={() => setDeletingSlide(null)}
                 disabled={isDeleting}
-                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
               >
                 Cancel
               </button>
@@ -607,7 +607,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
-                className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
+                className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50 shadow-md"
               >
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
               </button>

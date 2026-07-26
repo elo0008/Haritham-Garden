@@ -127,10 +127,10 @@ export function TagPicker({
     <div ref={containerRef} className="relative">
       {/* Input area with selected chips */}
       <div
-        className={`flex flex-wrap items-center gap-1.5 min-h-[44px] rounded-xl border bg-white px-3 py-2
-                    transition-colors cursor-text
-                    ${isOpen ? "border-[#C1662F] ring-2 ring-[#C1662F]" : "border-stone-300"}
-                    ${disabled ? "bg-stone-100 cursor-not-allowed" : ""}`}
+        className={`flex flex-wrap items-center gap-1.5 min-h-[44px] rounded-xl border bg-white dark:bg-stone-800 px-3 py-2
+                    transition-colors cursor-text text-stone-900 dark:text-stone-100
+                    ${isOpen ? "border-terracotta ring-2 ring-terracotta" : "border-stone-300 dark:border-stone-700"}
+                    ${disabled ? "bg-stone-100 dark:bg-stone-900 cursor-not-allowed text-stone-400" : ""}`}
         onClick={() => {
           if (!disabled) {
             inputRef.current?.focus();
@@ -142,8 +142,8 @@ export function TagPicker({
         {selectedTags.map((tag) => (
           <span
             key={tag.id}
-            className="inline-flex items-center gap-1 rounded-lg bg-stone-100 border border-stone-200
-                       px-2 py-1 text-xs font-semibold text-[#24211E] whitespace-nowrap"
+            className="inline-flex items-center gap-1 rounded-lg bg-stone-100 dark:bg-stone-700 border border-stone-200 dark:border-stone-600
+                       px-2 py-1 text-xs font-semibold text-stone-900 dark:text-stone-100 whitespace-nowrap"
           >
             {tag.name}
             {!disabled && (
@@ -153,9 +153,9 @@ export function TagPicker({
                   e.stopPropagation();
                   removeTag(tag.id);
                 }}
-                className="ml-0.5 text-stone-400 hover:text-red-500 transition-colors
+                className="ml-0.5 text-stone-400 dark:text-stone-400 hover:text-red-500 dark:hover:text-red-400 transition-colors
                            w-4 h-4 flex items-center justify-center rounded-full
-                           hover:bg-red-50"
+                           hover:bg-red-50 dark:hover:bg-red-950/40"
                 aria-label={`Remove ${tag.name}`}
               >
                 ×
@@ -178,15 +178,15 @@ export function TagPicker({
           disabled={disabled}
           placeholder={selectedTags.length === 0 ? placeholder : ""}
           className="flex-1 min-w-[120px] border-none outline-none bg-transparent text-sm
-                     text-[#24211E] placeholder:text-stone-400 disabled:cursor-not-allowed py-0.5"
+                     text-stone-900 dark:text-stone-100 placeholder:text-stone-400 dark:placeholder:text-stone-500 disabled:cursor-not-allowed py-0.5"
         />
       </div>
 
       {/* Dropdown */}
       {isOpen && !disabled && (filteredTags.length > 0 || showCreateOption) && (
         <div
-          className="absolute z-30 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-stone-200
-                     bg-white shadow-lg py-1"
+          className="absolute z-30 mt-1 w-full max-h-48 overflow-y-auto rounded-xl border border-stone-200 dark:border-stone-800
+                     bg-white dark:bg-stone-900 shadow-xl py-1"
         >
           {filteredTags.map((tag) => (
             <button
@@ -196,10 +196,10 @@ export function TagPicker({
                 addTag(tag.id);
                 inputRef.current?.focus();
               }}
-              className="w-full text-left px-3 py-2.5 text-sm text-[#24211E] hover:bg-stone-50
+              className="w-full text-left px-3 py-2.5 text-sm text-stone-900 dark:text-stone-100 hover:bg-stone-50 dark:hover:bg-stone-800
                          transition-colors flex items-center gap-2 min-h-[40px]"
             >
-              <span className="w-2 h-2 rounded-full bg-stone-300 flex-shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-600 flex-shrink-0" />
               {tag.name}
             </button>
           ))}
@@ -212,9 +212,9 @@ export function TagPicker({
                 inputRef.current?.focus();
               }}
               disabled={creating}
-              className="w-full text-left px-3 py-2.5 text-sm text-[#C1662F] hover:bg-orange-50
+              className="w-full text-left px-3 py-2.5 text-sm text-terracotta hover:bg-orange-50 dark:hover:bg-orange-950/40
                          transition-colors flex items-center gap-2 min-h-[40px] font-semibold
-                         border-t border-stone-100 disabled:opacity-50"
+                         border-t border-stone-100 dark:border-stone-800 disabled:opacity-50"
             >
               <span className="text-base leading-none">+</span>
               {creating

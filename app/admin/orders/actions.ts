@@ -205,3 +205,36 @@ export async function updateOrderNotes(
 
   revalidatePath("/admin/orders");
 }
+
+/**
+ * Updates customer contact and shipping details for an existing order.
+ */
+export async function updateOrderCustomerDetails(
+  orderId: string,
+  details: {
+    customer_name?: string | null;
+    customer_phone?: string | null;
+    customer_address?: string | null;
+    customer_pincode?: string | null;
+  }
+): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      customer_name: details.customer_name?.trim() || null,
+      customer_phone: details.customer_phone?.trim() || null,
+      customer_address: details.customer_address?.trim() || null,
+      customer_pincode: details.customer_pincode?.trim() || null,
+    })
+    .eq("id", orderId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+}
+

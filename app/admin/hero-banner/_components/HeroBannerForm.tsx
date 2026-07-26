@@ -7,9 +7,9 @@ import { updateHeroBanner } from "../actions";
 import type { HeroBanner } from "@/lib/types";
 
 const inputCls =
-  "w-full rounded-xl border border-stone-300 bg-white px-3.5 py-2.5 text-sm text-[#24211E] " +
-  "focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent " +
-  "disabled:bg-stone-100 disabled:text-stone-400 min-h-[44px]";
+  "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
+  "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
+  "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
 
 interface Props {
   banner: HeroBanner;
@@ -63,13 +63,13 @@ export function HeroBannerForm({ banner }: Props) {
     }
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  // ── Save ───────────────────────────────────────────────────────────────────
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError(null);
     setSuccess(false);
+    setSaving(true);
 
     try {
       await updateHeroBanner({
@@ -79,29 +79,27 @@ export function HeroBannerForm({ banner }: Props) {
         background_image: backgroundImage.trim() || null,
         active,
       });
+
       setSuccess(true);
       router.refresh();
-      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save.");
+      setError(err instanceof Error ? err.message : "Failed to save banner.");
     } finally {
       setSaving(false);
     }
   }
 
-  // ── Preview helper ────────────────────────────────────────────────────────
-
-  const hasContent = title || description || tagLabel;
+  const hasContent = tagLabel || title || description || backgroundImage;
 
   return (
     <div className="space-y-6">
       {/* ── Live Preview ──────────────────────────────────────────────────── */}
       <div>
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 mb-2">
-          Preview
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400 mb-2">
+          Live Banner Preview
         </h2>
         <div
-          className="relative overflow-hidden rounded-2xl border border-stone-200/80 shadow-2xs"
+          className="relative overflow-hidden rounded-3xl border border-stone-200/80 dark:border-stone-800 shadow-2xs bg-stone-900"
           style={{ minHeight: 200 }}
         >
           {/* Background */}
@@ -112,16 +110,16 @@ export function HeroBannerForm({ banner }: Props) {
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-stone-200 to-stone-300" />
+            <div className="absolute inset-0 bg-gradient-to-br from-stone-800 to-stone-900" />
           )}
 
           {/* Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
 
           {/* Content */}
           <div className="relative z-10 flex flex-col justify-end h-full p-6 sm:p-8" style={{ minHeight: 200 }}>
             {tagLabel && (
-              <span className="self-start mb-2 rounded-full bg-[#C1662F] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
+              <span className="self-start mb-2 rounded-full bg-terracotta px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white">
                 {tagLabel}
               </span>
             )}
@@ -156,22 +154,22 @@ export function HeroBannerForm({ banner }: Props) {
         </div>
 
         {!hasContent && (
-          <p className="mt-2 text-xs text-stone-400 italic">
+          <p className="mt-2 text-xs text-stone-400 dark:text-stone-500 italic">
             Fill in the fields below to see a live preview.
           </p>
         )}
       </div>
 
       {/* ── Form ──────────────────────────────────────────────────────────── */}
-      <form onSubmit={handleSave} className="space-y-5 bg-white border border-stone-200/80 rounded-2xl p-6 shadow-2xs">
+      <form onSubmit={handleSave} className="space-y-5 bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-3xl p-6 sm:p-8 shadow-2xs">
         {/* Status messages */}
         {error && (
-          <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-xs text-red-700">
+          <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-xs text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
         {success && (
-          <div className="rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs text-emerald-700">
+          <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-300">
             Banner saved successfully!
           </div>
         )}
@@ -179,8 +177,10 @@ export function HeroBannerForm({ banner }: Props) {
         {/* Active toggle */}
         <div className="flex items-center justify-between py-2 px-1">
           <div>
-            <div className="text-sm font-semibold text-[#24211E]">Show on homepage</div>
-            <div className="text-xs text-stone-500 mt-0.5">
+            <div className="text-sm font-semibold text-stone-900 dark:text-stone-100">
+              Show on homepage
+            </div>
+            <div className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
               {active
                 ? "Banner is visible to customers"
                 : "Banner is hidden from the homepage"}
@@ -191,7 +191,7 @@ export function HeroBannerForm({ banner }: Props) {
             onClick={() => setActive(!active)}
             disabled={saving}
             className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 min-w-[48px] ${
-              active ? "bg-[#C1662F]" : "bg-stone-300"
+              active ? "bg-terracotta" : "bg-stone-300 dark:bg-stone-700"
             }`}
             role="switch"
             aria-checked={active}
@@ -206,9 +206,9 @@ export function HeroBannerForm({ banner }: Props) {
 
         {/* Tag Label */}
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Tag Label{" "}
-            <span className="font-normal text-stone-400">(small pill above title)</span>
+            <span className="font-normal text-stone-400 dark:text-stone-500">(small pill above title)</span>
           </label>
           <input
             type="text"
@@ -222,7 +222,7 @@ export function HeroBannerForm({ banner }: Props) {
 
         {/* Title */}
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Title
           </label>
           <input
@@ -237,9 +237,9 @@ export function HeroBannerForm({ banner }: Props) {
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Description{" "}
-            <span className="font-normal text-stone-400">(1–2 lines)</span>
+            <span className="font-normal text-stone-400 dark:text-stone-500">(1–2 lines)</span>
           </label>
           <textarea
             value={description}
@@ -247,66 +247,53 @@ export function HeroBannerForm({ banner }: Props) {
             rows={2}
             placeholder="Supporting text that appears below the title…"
             disabled={saving}
-            className="w-full rounded-xl border border-stone-300 bg-white p-3 text-sm text-[#24211E] focus:outline-none focus:ring-2 focus:ring-[#C1662F] focus:border-transparent resize-none"
+            className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent resize-none"
           />
         </div>
 
-        {/* Background Image */}
+        {/* Background Image URL / Upload */}
         <div>
-          <label className="block text-xs font-semibold text-stone-700 mb-1.5">
-            Background Image
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+            Background Image URL
           </label>
-
-          {backgroundImage && (
-            <div className="relative mb-3 inline-block">
-              <img
-                src={backgroundImage}
-                alt="Banner background"
-                className="h-24 w-auto rounded-xl border border-stone-200 object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => setBackgroundImage("")}
-                className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600
-                           text-white rounded-full text-xs flex items-center justify-center
-                           shadow transition-colors"
-                title="Remove image"
-              >
-                ×
-              </button>
-            </div>
-          )}
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleImageUpload}
-          />
-          <div className="flex items-center gap-3">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={backgroundImage}
+              onChange={(e) => setBackgroundImage(e.target.value)}
+              placeholder="https://images.unsplash.com/…"
+              disabled={saving || uploading}
+              className={inputCls}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={saving || uploading}
-              className="text-xs font-semibold border border-stone-300 rounded-xl px-4 py-2.5 min-h-[44px]
-                         hover:bg-stone-50 disabled:opacity-50 transition-colors"
+              className="border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold px-4 rounded-xl shrink-0 disabled:opacity-50 transition-colors min-h-[44px]"
             >
-              {uploading ? "Uploading…" : backgroundImage ? "Replace Image" : "+ Upload Image"}
+              {uploading ? "Uploading…" : "Upload"}
             </button>
           </div>
+          <p className="mt-1.5 text-[11px] text-stone-400 dark:text-stone-500">
+            Enter an image URL or upload a file directly to Supabase storage.
+          </p>
         </div>
 
-        {/* Save */}
-        <div className="flex items-center gap-3 pt-3 border-t border-stone-100">
+        {/* Save button */}
+        <div className="pt-2">
           <button
             type="submit"
-            disabled={saving}
-            className="bg-[#C1662F] hover:bg-[#A85524] active:bg-[#92481e] text-white px-5 py-3 rounded-xl
-                       text-xs font-semibold min-h-[44px] shadow-xs disabled:opacity-50 disabled:cursor-not-allowed
-                       transition-colors"
+            disabled={saving || uploading}
+            className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all min-h-[44px]"
           >
-            {saving ? "Saving…" : "Save Banner"}
+            {saving ? "Saving…" : "Save Hero Banner"}
           </button>
         </div>
       </form>

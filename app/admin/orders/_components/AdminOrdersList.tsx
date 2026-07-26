@@ -9,6 +9,7 @@ import {
   softDeleteOrder,
   updateOrderNotes,
   createManualOrder,
+  updateOrderCustomerDetails,
   type ManualOrderInput,
 } from "../actions";
 import {
@@ -28,6 +29,7 @@ import {
   MapPin,
   Phone,
   ChevronRight,
+  Pencil,
 } from "lucide-react";
 
 interface AdminOrdersListProps {
@@ -100,6 +102,44 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
 
   // Customer Details Modal State
   const [customerModalOrder, setCustomerModalOrder] = useState<Order | null>(null);
+  const [isEditingCustomerDetails, setIsEditingCustomerDetails] = useState(false);
+  const [customerEditForm, setCustomerEditForm] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_address: "",
+    customer_pincode: "",
+  });
+
+  const openCustomerModal = (order: Order) => {
+    setCustomerModalOrder(order);
+    setIsEditingCustomerDetails(false);
+    setCustomerEditForm({
+      customer_name: order.customer_name || "",
+      customer_phone: order.customer_phone || "",
+      customer_address: order.customer_address || "",
+      customer_pincode: order.customer_pincode || "",
+    });
+  };
+
+  const handleSaveCustomerDetails = () => {
+    if (!customerModalOrder) return;
+    startTransition(async () => {
+      try {
+        await updateOrderCustomerDetails(customerModalOrder.id, customerEditForm);
+        setCustomerModalOrder({
+          ...customerModalOrder,
+          customer_name: customerEditForm.customer_name.trim() || null,
+          customer_phone: customerEditForm.customer_phone.trim() || null,
+          customer_address: customerEditForm.customer_address.trim() || null,
+          customer_pincode: customerEditForm.customer_pincode.trim() || null,
+        });
+        setIsEditingCustomerDetails(false);
+        router.refresh();
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to update customer details");
+      }
+    });
+  };
 
   // Courier Charge Modal State
   const [courierModalOrder, setCourierModalOrder] = useState<Order | null>(null);
@@ -443,7 +483,7 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                     {order.customer_name ? (
                       <button
                         type="button"
-                        onClick={() => setCustomerModalOrder(order)}
+                        onClick={() => openCustomerModal(order)}
                         className="flex items-center gap-1.5 bg-botanical-50 dark:bg-stone-800 px-3 py-1 rounded-xl border border-botanical-100 dark:border-stone-700 text-xs font-bold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors"
                       >
                         <User className="w-3.5 h-3.5" />
@@ -451,7 +491,15 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
                         <span className="text-[11px] underline ml-1">Details</span>
                       </button>
                     ) : (
-                      <span className="text-xs text-stone-400 italic">No customer name</span>
+                      <button
+                        type="button"
+                        onClick={() => openCustomerModal(order)}
+                        className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-800 px-3 py-1 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-semibold text-stone-500 hover:text-terracotta transition-colors"
+                      >
+                        <User className="w-3.5 h-3.5" />
+                        <span className="italic">No customer details</span>
+                        <span className="text-[11px] underline ml-1">+ Add</span>
+                      </button>
                     )}
                   </div>
 
@@ -642,57 +690,143 @@ export function AdminOrdersList({ orders }: AdminOrdersListProps) {
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-stone-400 font-medium block">Full Name:</span>
-                <span className="font-bold text-stone-800 dark:text-stone-200 text-sm">
-                  {customerModalOrder.customer_name || "Not provided"}
-                </span>
-              </div>
+            {!isEditingCustomerDetails ? (
+              /* Read-only view */
+              <div className="space-y-3 text-xs">
+                <div>
+                  <span className="text-stone-400 font-medium block">Full Name:</span>
+                  <span className="font-bold text-stone-800 dark:text-stone-200 text-sm">
+                    {customerModalOrder.customer_name || "Not provided"}
+                  </span>
+                </div>
 
-              <div>
-                <span className="text-stone-400 font-medium block">Phone Number:</span>
-                {customerModalOrder.customer_phone ? (
-                  <a
-                    href={`tel:${customerModalOrder.customer_phone}`}
-                    className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                <div>
+                  <span className="text-stone-400 font-medium block">Phone Number:</span>
+                  {customerModalOrder.customer_phone ? (
+                    <a
+                      href={`tel:${customerModalOrder.customer_phone}`}
+                      className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>{customerModalOrder.customer_phone}</span>
+                    </a>
+                  ) : (
+                    <span className="text-stone-500 italic">Not provided</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-medium block">Delivery Address:</span>
+                  {customerModalOrder.customer_address ? (
+                    <p className="font-medium text-stone-800 dark:text-stone-200 whitespace-pre-wrap mt-0.5">
+                      {customerModalOrder.customer_address}
+                    </p>
+                  ) : (
+                    <span className="text-stone-500 italic">Not provided</span>
+                  )}
+                </div>
+
+                <div>
+                  <span className="text-stone-400 font-medium block">Pincode:</span>
+                  <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
+                    {customerModalOrder.customer_pincode || "Not provided"}
+                  </span>
+                </div>
+
+                <div className="mt-6 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingCustomerDetails(true)}
+                    className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-terracotta text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors"
                   >
-                    <Phone className="w-3.5 h-3.5" />
-                    <span>{customerModalOrder.customer_phone}</span>
-                  </a>
-                ) : (
-                  <span className="text-stone-500 italic">Not provided</span>
-                )}
-              </div>
+                    <Pencil className="w-3.5 h-3.5" />
+                    <span>Edit Details</span>
+                  </button>
 
-              <div>
-                <span className="text-stone-400 font-medium block">Delivery Address:</span>
-                {customerModalOrder.customer_address ? (
-                  <p className="font-medium text-stone-800 dark:text-stone-200 whitespace-pre-wrap mt-0.5">
-                    {customerModalOrder.customer_address}
-                  </p>
-                ) : (
-                  <span className="text-stone-500 italic">Not provided</span>
-                )}
+                  <button
+                    type="button"
+                    onClick={() => setCustomerModalOrder(null)}
+                    className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-xl text-xs font-semibold"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
+            ) : (
+              /* Editable form view */
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="block text-stone-400 font-semibold mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={customerEditForm.customer_name}
+                    onChange={(e) =>
+                      setCustomerEditForm({ ...customerEditForm, customer_name: e.target.value })
+                    }
+                    placeholder="Customer Name"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                  />
+                </div>
 
-              <div>
-                <span className="text-stone-400 font-medium block">Pincode:</span>
-                <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
-                  {customerModalOrder.customer_pincode || "Not provided"}
-                </span>
+                <div>
+                  <label className="block text-stone-400 font-semibold mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={customerEditForm.customer_phone}
+                    onChange={(e) =>
+                      setCustomerEditForm({ ...customerEditForm, customer_phone: e.target.value })
+                    }
+                    placeholder="Phone Number"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-400 font-semibold mb-1">Delivery Address</label>
+                  <textarea
+                    rows={2}
+                    value={customerEditForm.customer_address}
+                    onChange={(e) =>
+                      setCustomerEditForm({ ...customerEditForm, customer_address: e.target.value })
+                    }
+                    placeholder="Shipping Address"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-stone-400 font-semibold mb-1">Pincode</label>
+                  <input
+                    type="text"
+                    value={customerEditForm.customer_pincode}
+                    onChange={(e) =>
+                      setCustomerEditForm({ ...customerEditForm, customer_pincode: e.target.value })
+                    }
+                    placeholder="Pincode"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
+                  />
+                </div>
+
+                <div className="mt-6 pt-3 border-t border-stone-100 dark:border-stone-800 flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingCustomerDetails(false)}
+                    disabled={isPending}
+                    className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-xl text-xs font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveCustomerDetails}
+                    disabled={isPending}
+                    className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md disabled:opacity-50"
+                  >
+                    {isPending ? "Saving..." : "Save Details"}
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-6 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setCustomerModalOrder(null)}
-                className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-xl text-xs font-semibold"
-              >
-                Close
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
