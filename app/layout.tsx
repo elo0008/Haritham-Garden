@@ -3,6 +3,7 @@ import { Outfit, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { DisableNumberInputScroll } from "@/components/DisableNumberInputScroll";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -35,6 +36,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
         <ThemeProvider>
+          <DisableNumberInputScroll />
           <CartProvider>{children}</CartProvider>
         </ThemeProvider>
       </body>

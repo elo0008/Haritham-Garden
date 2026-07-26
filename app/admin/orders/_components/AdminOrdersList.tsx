@@ -169,6 +169,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     customerPincode: "",
     status: "pending",
   });
+  const [manualEstimatedCourier, setManualEstimatedCourier] = useState<string>("");
 
   type SelectedManualItem = {
     plant_id: string;
@@ -344,6 +345,11 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     }
 
     startTransition(async () => {
+      const parsedCourier =
+        manualForm.status !== "pending" && manualEstimatedCourier.trim() !== ""
+          ? parseFloat(manualEstimatedCourier)
+          : null;
+
       const res = await createManualOrder({
         customerName: manualForm.customerName,
         customerPhone: manualForm.customerPhone,
@@ -356,6 +362,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
           qty: i.qty,
         })),
         status: manualForm.status,
+        estimatedCourierPrice: parsedCourier !== null && !isNaN(parsedCourier) ? parsedCourier : null,
         discountType: manualDiscountEnabled && manualDiscountAmount > 0 ? manualDiscountType : null,
         discountValue: manualDiscountEnabled && manualDiscountAmount > 0 ? parseFloat(manualDiscountValue) : null,
       });
@@ -365,6 +372,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       } else {
         setShowManualModal(false);
         setManualSelectedItems([]);
+        setManualEstimatedCourier("");
         setManualDiscountEnabled(false);
         setManualDiscountType('flat');
         setManualDiscountValue('');
@@ -1478,13 +1486,33 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
                   >
                     <option value="pending">1. Pending Review</option>
-                    <option value="handled">2. Handled</option>
-                    <option value="paid">3. Paid</option>
+                    <option value="handled">2. Handled / Confirmed</option>
+                    <option value="paid">3. Paid (Verified)</option>
                     <option value="packaged">4. Packaged</option>
-                    <option value="dispatched">5. Dispatched</option>
                   </select>
                 </div>
               </div>
+
+              {/* Conditional Estimated Courier Field (shown for Handled, Paid, or Packaged) */}
+              {manualForm.status !== "pending" && (
+                <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1.5 animate-fadeIn">
+                  <label className="block font-semibold text-stone-800 dark:text-stone-200 text-xs">
+                    Estimated Courier Charge (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={manualEstimatedCourier}
+                    onChange={(e) => setManualEstimatedCourier(e.target.value)}
+                    placeholder="e.g. 80"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 font-mono"
+                  />
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                    Courier fee quote provided to customer during phone/in-person sale.
+                  </p>
+                </div>
+              )}
 
               {/* Optional Discount (collapsed by default) */}
               {!manualDiscountEnabled ? (
