@@ -92,7 +92,7 @@ export function PlantCatalog({
 
   const clearFilters = () => setActiveTagIds(new Set());
 
-  // ── Plant sheet handlers ───────────────────────────────────────────────────
+  // ── Plant sheet & cart handlers ────────────────────────────────────────────
 
   const handleOpenPlant = (plant: Plant) => {
     setActivePlant(plant);
@@ -109,8 +109,17 @@ export function PlantCatalog({
     window.history.pushState(null, "", newUrl);
   };
 
-  const handleAddToCart = (plant: Plant, qty: number) => {
+  const handleAddToCart = (plant: Plant, qty: number = 1) => {
     addItem(plant, qty);
+
+    // Auto-open cart drawer ONLY on first item add of this session
+    if (typeof window !== "undefined") {
+      const hasAutoOpened = sessionStorage.getItem("haritham_cart_auto_opened");
+      if (!hasAutoOpened) {
+        sessionStorage.setItem("haritham_cart_auto_opened", "true");
+        openCart();
+      }
+    }
   };
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -139,12 +148,15 @@ export function PlantCatalog({
             <button
               type="button"
               onClick={openCart}
-              className="relative p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 transition-all shadow-2xs flex items-center gap-2 px-4 min-h-[44px]"
+              className="relative p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-2 px-4 min-h-[44px]"
               aria-label={`Shopping Bag with ${totalItems} items`}
             >
               <ShoppingBag className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
               <span className="text-sm font-semibold hidden sm:inline">Bag</span>
-              <span className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center">
+              <span
+                key={totalItems}
+                className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center animate-badge-bounce"
+              >
                 {totalItems}
               </span>
             </button>
@@ -164,7 +176,7 @@ export function PlantCatalog({
             <button
               type="button"
               onClick={clearFilters}
-              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shrink-0 min-h-[44px] ${
+              className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all shrink-0 min-h-[44px] active:scale-95 ${
                 isAllActive
                   ? "bg-botanical-800 dark:bg-botanical-600 text-white shadow-xs"
                   : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800"
@@ -181,7 +193,7 @@ export function PlantCatalog({
                   key={tag.id}
                   type="button"
                   onClick={() => toggleTag(tag.id)}
-                  className={`px-5 py-2.5 rounded-full text-sm transition-all shrink-0 min-h-[44px] ${
+                  className={`px-5 py-2.5 rounded-full text-sm transition-all shrink-0 min-h-[44px] active:scale-95 ${
                     isActive
                       ? "bg-botanical-800 dark:bg-botanical-600 text-white font-semibold shadow-xs"
                       : "bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800 font-medium"
@@ -213,7 +225,7 @@ export function PlantCatalog({
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-5 min-h-[44px] rounded-full bg-botanical-800 dark:bg-botanical-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-botanical-900 transition-colors"
+              className="mt-5 min-h-[44px] rounded-full bg-botanical-800 dark:bg-botanical-600 px-6 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-botanical-900 transition-colors active:scale-95"
             >
               Clear filters
             </button>
@@ -225,6 +237,7 @@ export function PlantCatalog({
                 key={plant.id}
                 plant={plant}
                 onSelect={handleOpenPlant}
+                onQuickAdd={(p) => handleAddToCart(p, 1)}
               />
             ))}
           </div>

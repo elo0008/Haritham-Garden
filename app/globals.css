@@ -62,6 +62,22 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+@keyframes badge-bounce {
+  0% {
+    transform: scale(0.6);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-badge-bounce {
+  animation: badge-bounce 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 /* Hide scrollbar for category filter bar while maintaining scroll functionality */
 .no-scrollbar::-webkit-scrollbar {
   display: none;

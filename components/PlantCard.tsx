@@ -7,9 +7,10 @@ import { Plus } from "lucide-react";
 interface PlantCardProps {
   plant: Plant;
   onSelect?: (plant: Plant) => void;
+  onQuickAdd?: (plant: Plant) => void;
 }
 
-export function PlantCard({ plant, onSelect }: PlantCardProps) {
+export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
   const isUnavailable = plant.availability === "unavailable";
   const isLimited = plant.availability === "limited";
   const firstPhoto = plant.photos && plant.photos.length > 0 ? plant.photos[0] : null;
@@ -26,8 +27,8 @@ export function PlantCard({ plant, onSelect }: PlantCardProps) {
           onSelect?.(plant);
         }
       }}
-      className={`group bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 overflow-hidden shadow-xs hover:shadow-xl dark:hover:shadow-stone-950/50 hover:-translate-y-1.5 transition-all duration-300 flex flex-col justify-between ${
-        isUnavailable ? "opacity-85" : ""
+      className={`group bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 overflow-hidden shadow-xs hover:shadow-xl dark:hover:shadow-stone-950/50 transition-all duration-300 flex flex-col justify-between ${
+        isUnavailable ? "opacity-85" : "hover:-translate-y-1.5"
       }`}
     >
       {/* Aspect Square Image Container */}
@@ -92,14 +93,21 @@ export function PlantCard({ plant, onSelect }: PlantCardProps) {
             </span>
           </div>
 
+          {/* Dedicated + Quick-Add Button */}
           <button
             type="button"
-            className={`p-2.5 rounded-xl font-medium transition-colors flex items-center justify-center shadow-2xs min-h-[44px] min-w-[44px] ${
+            disabled={isUnavailable}
+            onClick={(e) => {
+              if (isUnavailable) return;
+              e.stopPropagation();
+              onQuickAdd?.(plant);
+            }}
+            className={`p-2.5 rounded-xl font-medium transition-all flex items-center justify-center shadow-2xs min-h-[44px] min-w-[44px] active:scale-90 ${
               isUnavailable
                 ? "bg-stone-100 dark:bg-stone-800/50 text-stone-400 dark:text-stone-600 cursor-not-allowed"
                 : "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 hover:bg-botanical-800 dark:hover:bg-botanical-600 hover:text-white"
             }`}
-            title={isUnavailable ? "Out of stock" : "View details & add to bag"}
+            title={isUnavailable ? "Out of stock" : "Add to bag"}
           >
             <Plus className="w-5 h-5" />
           </button>
