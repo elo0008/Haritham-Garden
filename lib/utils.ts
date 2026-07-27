@@ -23,3 +23,24 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
+
+/**
+ * Formats an ISO date string or Date object into a readable format.
+ */
+export function formatDate(dateString?: string | null): string {
+  if (!dateString) return "";
+  try {
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return "";
+    return new Intl.DateTimeFormat("en-IN", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: true,
+    }).format(d);
+  } catch (e) {
+    return dateString;
+  }
+}

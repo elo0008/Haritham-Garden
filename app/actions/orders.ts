@@ -5,6 +5,7 @@ import type { CartItem } from "@/lib/types";
 
 export interface CreateOrderResult {
   success: boolean;
+  orderId?: string;
   orderRef?: string;
   error?: string;
 }
@@ -52,9 +53,13 @@ export async function createCustomerOrder(
     });
 
     if (!rpcError && rpcData) {
+      // If RPC returned an object or string
+      const refStr = typeof rpcData === "string" ? rpcData : rpcData.order_ref || String(rpcData);
+      const uuidStr = typeof rpcData === "object" && rpcData?.id ? rpcData.id : undefined;
       return {
         success: true,
-        orderRef: rpcData as string,
+        orderId: uuidStr,
+        orderRef: refStr,
       };
     }
 
@@ -72,7 +77,7 @@ export async function createCustomerOrder(
         customer_address: cleanAddress,
         customer_pincode: cleanPincode,
       })
-      .select("order_ref")
+      .select("id, order_ref")
       .single();
 
     if (insertError) {
@@ -86,6 +91,7 @@ export async function createCustomerOrder(
 
     return {
       success: true,
+      orderId: insertData.id,
       orderRef: insertData.order_ref,
     };
   } catch (err) {

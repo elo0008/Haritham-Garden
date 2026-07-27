@@ -19,7 +19,8 @@ import { CarouselSection } from "./CarouselSection";
 import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
-import { ShoppingBag } from "lucide-react";
+import Link from "next/link";
+import { ShoppingBag, PackageCheck } from "lucide-react";
 
 interface PlantCatalogProps {
   plants: Plant[];
@@ -140,8 +141,17 @@ export function PlantCatalog({
             href="/"
           />
 
-          {/* Header Actions: Theme Toggle + Bag Button */}
+          {/* Header Actions: Theme Toggle + My Orders + Bag Button */}
           <div className="flex items-center gap-2.5 sm:gap-3">
+            <Link
+              href="/my-orders"
+              className="relative p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 px-3.5 min-h-[44px]"
+              title="My Orders"
+            >
+              <PackageCheck className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              <span className="text-sm font-semibold hidden sm:inline">My Orders</span>
+            </Link>
+
             <ThemeToggle />
 
             {/* Bag Button */}

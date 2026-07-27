@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { OrderStatus } from "@/lib/types";
 
 export interface ManualOrderItemInput {
-  plant_id: string;
+  plant_id?: string;
   name: string;
   price: number;
   qty: number;

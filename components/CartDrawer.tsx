@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useCart } from "@/context/CartContext";
 import { formatINR } from "@/lib/utils";
 import { createCustomerOrder, type CustomerDetailsInput } from "@/app/actions/orders";
+import { saveLocalOrderUuid } from "@/lib/myOrdersStorage";
 import {
   buildCartOrderMessage,
   buildWhatsAppUrl,
@@ -146,8 +147,11 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
       const message = buildCartOrderMessage(items, subtotal, result.orderRef, details || undefined);
       const whatsappUrl = buildWhatsAppUrl(targetNumber, message);
 
-      // 3. Clear cart and set confirmation state
+      // 3. Save local order UUID for My Orders tracking, clear cart and set confirmation state
       const orderRef = result.orderRef;
+      if (result.orderId) {
+        saveLocalOrderUuid(result.orderId);
+      }
       setLastOrderMessage(message);
       clearCart();
       setOrderSentRef(orderRef);
