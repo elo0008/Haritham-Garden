@@ -114,7 +114,7 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
 
     startTransition(async () => {
       try {
-        await cancelCustomerOrder(cancellingOrder.id, localUuids);
+        await cancelCustomerOrder(cancellingOrder.id, localUuids, cancellingOrder.updated_at);
         setJustCancelledOrder(cancellingOrder);
         setCancellingOrder(null);
         await loadOrders();
@@ -147,8 +147,11 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
     loadOrders();
   }, []);
 
+  const [editingOrderUpdatedAt, setEditingOrderUpdatedAt] = useState<string | null>(null);
+
   const startEditing = (order: Order) => {
     setEditingOrderId(order.id);
+    setEditingOrderUpdatedAt(order.updated_at || null);
     setEditingError(null);
     setEditingDraft(
       (order.items || []).map((i) => ({
@@ -229,7 +232,8 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
             name: i.name,
             price: i.price,
             qty: i.qty,
-          }))
+          })),
+          editingOrderUpdatedAt
         );
         setEditingOrderId(null);
         setEditingDraft([]);

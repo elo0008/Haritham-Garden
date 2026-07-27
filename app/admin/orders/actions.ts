@@ -102,26 +102,48 @@ export async function createManualOrder(
 }
 
 /**
+ * Verifies that the order's current updated_at timestamp matches the expected timestamp captured when editing began.
+ * If expectedUpdatedAt is provided and does not match, throws a conflict error.
+ */
+function verifyOrderNotModified(
+  dbUpdatedAt?: string | null,
+  expectedUpdatedAt?: string | null
+) {
+  if (expectedUpdatedAt && dbUpdatedAt) {
+    const dbTime = new Date(dbUpdatedAt).getTime();
+    const expTime = new Date(expectedUpdatedAt).getTime();
+    if (Math.abs(dbTime - expTime) > 1000) {
+      throw new Error(
+        "This order was updated elsewhere since you started editing. Please refresh and try again."
+      );
+    }
+  }
+}
+
+/**
  * Updates an order's status along with optional estimated or final courier prices.
  */
 export async function updateOrderStatus(
   orderId: string,
   newStatus: OrderStatus,
   estimatedCourierPrice?: number | null,
-  finalCourierPrice?: number | null
+  finalCourierPrice?: number | null,
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   const supabase = await createClient();
 
   // 1. Fetch current order details
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, handled, discount_amount_applied")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, handled, discount_amount_applied, updated_at")
     .eq("id", orderId)
     .single();
 
   if (fetchError || !order) {
     throw new Error(fetchError?.message || "Order not found");
   }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
 
   const subtotal = Number(order.subtotal) || 0;
 
@@ -153,6 +175,7 @@ export async function updateOrderStatus(
     delivery_price: courierFee, // backward compatibility
     final_total: finalTotal,
     handled: newStatus === "dispatched" || isHandledOrBeyond,
+    updated_at: new Date().toISOString(),
   };
 
   if (isHandledOrBeyond && !order.handled) {
@@ -244,9 +267,20 @@ export async function updateOrderCustomerDetails(
     customer_phone?: string | null;
     customer_address?: string | null;
     customer_pincode?: string | null;
-  }
+  },
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   const supabase = await createClient();
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("updated_at")
+    .eq("id", orderId)
+    .single();
+
+  if (order) {
+    verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
+  }
 
   const { error } = await supabase
     .from("orders")
@@ -255,6 +289,7 @@ export async function updateOrderCustomerDetails(
       customer_phone: details.customer_phone?.trim() || null,
       customer_address: details.customer_address?.trim() || null,
       customer_pincode: details.customer_pincode?.trim() || null,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
@@ -287,19 +322,22 @@ function computeDiscountAmount(
 export async function applyOrderDiscount(
   orderId: string,
   discountType: 'flat' | 'percentage',
-  discountValue: number
+  discountValue: number,
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   const supabase = await createClient();
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, updated_at")
     .eq("id", orderId)
     .single();
 
   if (fetchError || !order) {
     throw new Error(fetchError?.message || "Order not found");
   }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
 
   const subtotal = Number(order.subtotal) || 0;
   const discountAmountApplied = computeDiscountAmount(discountType, discountValue, subtotal);
@@ -317,6 +355,7 @@ export async function applyOrderDiscount(
       discount_value: discountValue,
       discount_amount_applied: discountAmountApplied,
       final_total: finalTotal,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
@@ -333,19 +372,22 @@ export async function applyOrderDiscount(
  * Recalculates final_total without the discount.
  */
 export async function removeOrderDiscount(
-  orderId: string
+  orderId: string,
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   const supabase = await createClient();
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price")
+    .select("subtotal, estimated_courier_price, final_courier_price, delivery_price, updated_at")
     .eq("id", orderId)
     .single();
 
   if (fetchError || !order) {
     throw new Error(fetchError?.message || "Order not found");
   }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
 
   const subtotal = Number(order.subtotal) || 0;
   const courierFee =
@@ -361,6 +403,7 @@ export async function removeOrderDiscount(
       discount_value: null,
       discount_amount_applied: null,
       final_total: finalTotal,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
@@ -379,20 +422,23 @@ export async function removeOrderDiscount(
  */
 export async function updateOrderItems(
   orderId: string,
-  newItems: ManualOrderItemInput[]
+  newItems: ManualOrderItemInput[],
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   const supabase = await createClient();
 
   // 1. Fetch current order
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("status, subtotal, estimated_courier_price, final_courier_price, delivery_price, discount_type, discount_value, discount_amount_applied")
+    .select("status, subtotal, estimated_courier_price, final_courier_price, delivery_price, discount_type, discount_value, discount_amount_applied, updated_at")
     .eq("id", orderId)
     .single();
 
   if (fetchError || !order) {
     throw new Error(fetchError?.message || "Order not found");
   }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
 
   // 2. Lock rule: editable only when status is pending or handled
   if (order.status !== "pending" && order.status !== "handled") {
@@ -441,6 +487,7 @@ export async function updateOrderItems(
       discount_amount_applied: discountAmountApplied,
       final_total: finalTotal,
       items_edited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 

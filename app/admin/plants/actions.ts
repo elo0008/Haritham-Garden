@@ -197,7 +197,30 @@ export async function deletePlant(
 ): Promise<void> {
   const supabase = await createClient();
 
-  // Delete associated photos from storage first
+  // 1. Check if plant is referenced in any active orders (not dispatched & not deleted)
+  const { data: activeOrders, error: orderErr } = await supabase
+    .from("orders")
+    .select("id, status, items")
+    .eq("deleted", false)
+    .neq("status", "dispatched");
+
+  if (orderErr) throw new Error(orderErr.message);
+
+  let activeCount = 0;
+  for (const order of activeOrders || []) {
+    const items = (order.items || []) as Array<{ plant_id?: string }>;
+    if (items.some((item) => item.plant_id === id)) {
+      activeCount++;
+    }
+  }
+
+  if (activeCount > 0) {
+    throw new Error(
+      `This plant is part of ${activeCount} active order(s) and can't be deleted right now. Mark it as unavailable instead, or wait until those orders are completed.`
+    );
+  }
+
+  // 2. Delete associated photos from storage first
   if (photoUrls.length > 0) {
     const paths = photoUrls.map(extractStoragePath);
     await supabase.storage.from("plant-photos").remove(paths);
@@ -208,6 +231,8 @@ export async function deletePlant(
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/plants");
+  revalidatePath("/admin");
+  revalidatePath("/");
 }
 
 export async function updateAvailability(

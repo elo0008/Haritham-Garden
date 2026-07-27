@@ -136,7 +136,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     if (!customerModalOrder) return;
     startTransition(async () => {
       try {
-        await updateOrderCustomerDetails(customerModalOrder.id, customerEditForm);
+        await updateOrderCustomerDetails(customerModalOrder.id, customerEditForm, customerModalOrder.updated_at);
         setCustomerModalOrder({
           ...customerModalOrder,
           customer_name: customerEditForm.customer_name.trim() || null,
@@ -187,7 +187,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
   const [manualPlantSearchQuery, setManualPlantSearchQuery] = useState("");
   const [isManualPlantSearchOpen, setIsManualPlantSearchOpen] = useState(false);
 
-  const filteredPlantsForManualOrder = plants.filter((p) =>
+  const filteredPlantsForManualOrder = (plants || []).filter((p) =>
     p.name.toLowerCase().includes(manualPlantSearchQuery.toLowerCase().trim())
   );
 
@@ -264,8 +264,11 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
   const [isEditingItemsPlantSearchOpen, setIsEditingItemsPlantSearchOpen] = useState(false);
   const [editingItemsError, setEditingItemsError] = useState<string | null>(null);
 
+  const [editingOrderUpdatedAt, setEditingOrderUpdatedAt] = useState<string | null>(null);
+
   const startEditingItems = (order: Order) => {
     setEditingItemsOrderId(order.id);
+    setEditingOrderUpdatedAt(order.updated_at || null);
     setEditingItemsError(null);
     setEditingItemsDraft(
       (order.items || []).map((item) => ({
@@ -281,6 +284,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
   const cancelEditingItems = () => {
     setEditingItemsOrderId(null);
+    setEditingOrderUpdatedAt(null);
     setEditingItemsDraft([]);
     setEditingItemsError(null);
     setEditingItemsPlantSearchQuery("");
@@ -344,9 +348,11 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
             name: i.name,
             price: i.price,
             qty: i.qty,
-          }))
+          })),
+          editingOrderUpdatedAt
         );
         setEditingItemsOrderId(null);
+        setEditingOrderUpdatedAt(null);
         setEditingItemsDraft([]);
         router.refresh();
       } catch (err) {
@@ -403,7 +409,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       // Direct update for paid or packaged or pending
       startTransition(async () => {
         try {
-          await updateOrderStatus(order.id, nextStatus);
+          await updateOrderStatus(order.id, nextStatus, undefined, undefined, order.updated_at);
           router.refresh();
         } catch (err) {
           alert(err instanceof Error ? err.message : "Failed to update status");
@@ -425,9 +431,9 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     startTransition(async () => {
       try {
         if (courierTargetStatus === "handled") {
-          await updateOrderStatus(courierModalOrder.id, "handled", parsed, null);
+          await updateOrderStatus(courierModalOrder.id, "handled", parsed, null, courierModalOrder.updated_at);
         } else {
-          await updateOrderStatus(courierModalOrder.id, "dispatched", undefined, parsed);
+          await updateOrderStatus(courierModalOrder.id, "dispatched", undefined, parsed, courierModalOrder.updated_at);
         }
         setCourierModalOrder(null);
         router.refresh();
@@ -525,9 +531,10 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       alert("Please enter a valid discount value greater than 0.");
       return;
     }
+    const targetOrder = orders.find((o) => o.id === orderId);
     startTransition(async () => {
       try {
-        await applyOrderDiscount(orderId, discountFormType, val);
+        await applyOrderDiscount(orderId, discountFormType, val, targetOrder?.updated_at);
         setDiscountEditingOrderId(null);
         setDiscountFormValue('');
         router.refresh();
@@ -539,9 +546,10 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
   // Remove Discount from Order
   const handleRemoveDiscount = (orderId: string) => {
+    const targetOrder = orders.find((o) => o.id === orderId);
     startTransition(async () => {
       try {
-        await removeOrderDiscount(orderId);
+        await removeOrderDiscount(orderId, targetOrder?.updated_at);
         router.refresh();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to remove discount");

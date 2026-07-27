@@ -46,6 +46,25 @@ export async function fetchCustomerOrdersByUuids(uuids: string[]): Promise<Order
 }
 
 /**
+ * Verifies that the order's current updated_at timestamp matches the expected timestamp captured when editing began.
+ * If expectedUpdatedAt is provided and does not match, throws a conflict error.
+ */
+function verifyOrderNotModified(
+  dbUpdatedAt?: string | null,
+  expectedUpdatedAt?: string | null
+) {
+  if (expectedUpdatedAt && dbUpdatedAt) {
+    const dbTime = new Date(dbUpdatedAt).getTime();
+    const expTime = new Date(expectedUpdatedAt).getTime();
+    if (Math.abs(dbTime - expTime) > 1000) {
+      throw new Error(
+        "This order was updated elsewhere since you started editing. Please refresh and try again."
+      );
+    }
+  }
+}
+
+/**
  * Customer-facing action to edit an order's items.
  * Strictly verifies that orderId belongs to the customer's device UUID list.
  * Only allows editing while order status is 'pending' or 'handled'.
@@ -53,7 +72,8 @@ export async function fetchCustomerOrdersByUuids(uuids: string[]): Promise<Order
 export async function updateCustomerOrderItemsByCustomer(
   orderId: string,
   allowedUuids: string[],
-  newItems: ManualOrderItemInput[]
+  newItems: ManualOrderItemInput[],
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   if (!orderId || !UUID_REGEX.test(orderId)) {
     throw new Error("Invalid order ID.");
@@ -74,13 +94,15 @@ export async function updateCustomerOrderItemsByCustomer(
   // 1. Fetch current order
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("status, subtotal, estimated_courier_price, final_courier_price, delivery_price, discount_type, discount_value, discount_amount_applied")
+    .select("status, subtotal, estimated_courier_price, final_courier_price, delivery_price, discount_type, discount_value, discount_amount_applied, updated_at")
     .eq("id", orderId)
     .single();
 
   if (fetchError || !order) {
     throw new Error(fetchError?.message || "Order not found.");
   }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
 
   // 2. Editable window check: only pending or handled allowed
   if (order.status !== "pending" && order.status !== "handled") {
@@ -125,6 +147,7 @@ export async function updateCustomerOrderItemsByCustomer(
       discount_amount_applied: discountAmountApplied,
       final_total: finalTotal,
       items_edited_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
@@ -143,7 +166,8 @@ export async function updateCustomerOrderItemsByCustomer(
  */
 export async function cancelCustomerOrder(
   orderId: string,
-  allowedUuids: string[]
+  allowedUuids: string[],
+  expectedUpdatedAt?: string | null
 ): Promise<void> {
   if (!orderId || !UUID_REGEX.test(orderId)) {
     throw new Error("Invalid order ID.");
@@ -158,13 +182,15 @@ export async function cancelCustomerOrder(
 
   const { data: order, error: fetchError } = await supabase
     .from("orders")
-    .select("status, deleted")
+    .select("status, deleted, updated_at")
     .eq("id", orderId)
     .single();
 
   if (fetchError || !order) {
     throw new Error(fetchError?.message || "Order not found.");
   }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
 
   if (order.status !== "pending" && order.status !== "handled") {
     throw new Error("This order is already being processed and can no longer be cancelled directly.");
@@ -175,6 +201,7 @@ export async function cancelCustomerOrder(
     .update({
       deleted: true,
       cancelled_by_customer: true,
+      updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
 
