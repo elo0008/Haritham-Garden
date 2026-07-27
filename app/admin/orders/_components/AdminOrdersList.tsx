@@ -12,6 +12,7 @@ import {
   updateOrderCustomerDetails,
   applyOrderDiscount,
   removeOrderDiscount,
+  updateOrderItems,
   type ManualOrderInput,
   type ManualOrderItemInput,
 } from "../actions";
@@ -37,6 +38,7 @@ import {
   Search,
   Tag,
   Percent,
+  Lock,
 } from "lucide-react";
 
 interface AdminOrdersListProps {
@@ -253,6 +255,104 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
   // Admin Notes Modal State
   const [editingNoteOrder, setEditingNoteOrder] = useState<Order | null>(null);
   const [noteInput, setNoteInput] = useState<string>("");
+
+  // Order Items Editing State
+  const [editingItemsOrderId, setEditingItemsOrderId] = useState<string | null>(null);
+  const [editingItemsDraft, setEditingItemsDraft] = useState<SelectedManualItem[]>([]);
+  const [editingItemsPlantSearchQuery, setEditingItemsPlantSearchQuery] = useState("");
+  const [isEditingItemsPlantSearchOpen, setIsEditingItemsPlantSearchOpen] = useState(false);
+  const [editingItemsError, setEditingItemsError] = useState<string | null>(null);
+
+  const startEditingItems = (order: Order) => {
+    setEditingItemsOrderId(order.id);
+    setEditingItemsError(null);
+    setEditingItemsDraft(
+      (order.items || []).map((item) => ({
+        plant_id: item.plant_id || "",
+        name: item.name,
+        price: item.price,
+        qty: item.qty,
+      }))
+    );
+    setEditingItemsPlantSearchQuery("");
+    setIsEditingItemsPlantSearchOpen(false);
+  };
+
+  const cancelEditingItems = () => {
+    setEditingItemsOrderId(null);
+    setEditingItemsDraft([]);
+    setEditingItemsError(null);
+    setEditingItemsPlantSearchQuery("");
+    setIsEditingItemsPlantSearchOpen(false);
+  };
+
+  const handleUpdateEditItemQty = (plantIdOrName: string, newQty: number) => {
+    if (newQty <= 0) {
+      setEditingItemsDraft((prev) =>
+        prev.filter((i) => (i.plant_id ? i.plant_id !== plantIdOrName : i.name !== plantIdOrName))
+      );
+    } else {
+      setEditingItemsDraft((prev) =>
+        prev.map((i) =>
+          (i.plant_id ? i.plant_id === plantIdOrName : i.name === plantIdOrName)
+            ? { ...i, qty: newQty }
+            : i
+        )
+      );
+    }
+  };
+
+  const handleAddPlantToEditingDraft = (plant: Plant) => {
+    if (plant.availability === "unavailable") return;
+    const effectivePrice = getEffectivePrice(plant);
+    setEditingItemsDraft((prev) => {
+      const existing = prev.find((i) => i.plant_id === plant.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.plant_id === plant.id ? { ...i, qty: i.qty + 1 } : i
+        );
+      }
+      return [
+        ...prev,
+        {
+          plant_id: plant.id,
+          name: plant.name,
+          price: effectivePrice,
+          qty: 1,
+          photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
+        },
+      ];
+    });
+    setEditingItemsPlantSearchQuery("");
+    setIsEditingItemsPlantSearchOpen(false);
+  };
+
+  const handleSaveOrderItems = (orderId: string) => {
+    setEditingItemsError(null);
+    if (editingItemsDraft.length === 0) {
+      setEditingItemsError("An order must contain at least one plant item.");
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await updateOrderItems(
+          orderId,
+          editingItemsDraft.map((i) => ({
+            plant_id: i.plant_id,
+            name: i.name,
+            price: i.price,
+            qty: i.qty,
+          }))
+        );
+        setEditingItemsOrderId(null);
+        setEditingItemsDraft([]);
+        router.refresh();
+      } catch (err) {
+        setEditingItemsError(err instanceof Error ? err.message : "Failed to update order items.");
+      }
+    });
+  };
 
   // Live filter counts
   const counts = {
@@ -616,6 +716,17 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       {formatDate(order.created_at)}
                     </span>
 
+                    {/* Items Edited Indicator */}
+                    {order.items_edited_at && (
+                      <span
+                        className="text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 px-2 py-0.5 rounded-md flex items-center gap-1"
+                        title={`Items edited on ${formatDate(order.items_edited_at)}`}
+                      >
+                        <Pencil className="w-2.5 h-2.5" />
+                        Edited {formatDate(order.items_edited_at)}
+                      </span>
+                    )}
+
                     {/* Customer Name Trigger Link/Badge */}
                     {order.customer_name ? (
                       <button
@@ -650,28 +761,193 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
                 {/* 2. Order Items & Financial Box */}
                 <div className="p-6 space-y-4">
-                  {/* Items List */}
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 block mb-2">
-                      Items ({order.items ? order.items.length : 0})
-                    </span>
-                    <ul className="space-y-1.5 text-xs text-stone-800 dark:text-stone-200">
-                      {order.items &&
-                        order.items.map((item, idx) => (
-                          <li key={idx} className="flex justify-between items-center">
-                            <span>
-                              <span className="font-semibold text-stone-900 dark:text-stone-100">
+                  {/* Items List / Items Edit Mode */}
+                  {editingItemsOrderId === order.id ? (
+                    <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 space-y-3">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <span className="text-xs font-bold text-stone-900 dark:text-stone-100 flex items-center gap-1.5">
+                          <Pencil className="w-3.5 h-3.5 text-terracotta" />
+                          Edit Order Items
+                        </span>
+                        <span className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 font-mono">
+                          Subtotal: {formatINR(editingItemsDraft.reduce((s, i) => s + i.price * i.qty, 0))}
+                        </span>
+                      </div>
+
+                      {editingItemsError && (
+                        <div className="text-[11px] font-semibold text-red-600 dark:text-red-400">
+                          {editingItemsError}
+                        </div>
+                      )}
+
+                      {/* Items Stepper List */}
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                        {editingItemsDraft.map((item) => (
+                          <div
+                            key={item.plant_id || item.name}
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-xs shadow-2xs"
+                          >
+                            <div className="min-w-0 pr-2">
+                              <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
                                 {item.name}
-                              </span>{" "}
-                              <span className="text-stone-400 font-mono">× {item.qty}</span>
-                            </span>
-                            <span className="font-mono font-semibold text-stone-700 dark:text-stone-300">
-                              {formatINR(item.price * item.qty)}
-                            </span>
-                          </li>
+                              </span>
+                              <span className="text-[10px] text-stone-400 font-mono">
+                                {formatINR(item.price)} each
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="flex items-center gap-1 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg px-1.5 py-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateEditItemQty(item.plant_id || item.name, item.qty - 1)}
+                                  className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs active:scale-90"
+                                >
+                                  -
+                                </button>
+                                <span className="text-xs font-bold text-stone-900 dark:text-stone-100 w-4 text-center">
+                                  {item.qty}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpdateEditItemQty(item.plant_id || item.name, item.qty + 1)}
+                                  className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs active:scale-90"
+                                >
+                                  +
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateEditItemQty(item.plant_id || item.name, 0)}
+                                className="text-stone-400 hover:text-red-500 p-1 transition-colors"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
                         ))}
-                    </ul>
-                  </div>
+                      </div>
+
+                      {/* + Add Item from Catalogue Picker */}
+                      <div className="relative pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingItemsPlantSearchOpen(!isEditingItemsPlantSearchOpen)}
+                          className="text-[11px] font-bold text-terracotta hover:underline flex items-center gap-1"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          + Add Item from Catalogue
+                        </button>
+
+                        {isEditingItemsPlantSearchOpen && (
+                          <div className="mt-2 p-2.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-2 z-20">
+                            <div className="relative">
+                              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
+                              <input
+                                type="text"
+                                value={editingItemsPlantSearchQuery}
+                                onChange={(e) => setEditingItemsPlantSearchQuery(e.target.value)}
+                                placeholder="Search plant catalogue…"
+                                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta"
+                                autoFocus
+                              />
+                            </div>
+
+                            <div className="max-h-40 overflow-y-auto space-y-1">
+                              {(plants || [])
+                                .filter((p) =>
+                                  p.name.toLowerCase().includes(editingItemsPlantSearchQuery.toLowerCase().trim())
+                                )
+                                .map((plant) => (
+                                  <button
+                                    key={plant.id}
+                                    type="button"
+                                    onClick={() => handleAddPlantToEditingDraft(plant)}
+                                    disabled={plant.availability === "unavailable"}
+                                    className={`w-full text-left p-2 rounded-xl flex items-center justify-between text-xs transition-colors ${
+                                      plant.availability === "unavailable"
+                                        ? "opacity-50 cursor-not-allowed"
+                                        : "hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
+                                    }`}
+                                  >
+                                    <span className="font-bold text-stone-900 dark:text-stone-100 truncate">
+                                      {plant.name}
+                                    </span>
+                                    <span className="font-mono text-[11px] text-stone-500 shrink-0 ml-2">
+                                      {formatINR(getEffectivePrice(plant))}
+                                    </span>
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Save & Cancel Actions */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/40">
+                        <button
+                          type="button"
+                          onClick={() => handleSaveOrderItems(order.id)}
+                          disabled={isPending}
+                          className="px-3.5 py-1.5 bg-botanical-800 dark:bg-botanical-600 text-white rounded-xl font-bold text-xs hover:bg-botanical-900 transition-colors shadow-2xs"
+                        >
+                          Save Item Changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEditingItems}
+                          className="px-3.5 py-1.5 bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl font-semibold text-xs hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                          Items ({order.items ? order.items.length : 0})
+                        </span>
+                        {currentStatus === "pending" || currentStatus === "handled" ? (
+                          <button
+                            type="button"
+                            onClick={() => startEditingItems(order)}
+                            className="text-[11px] font-semibold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors flex items-center gap-1"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit Items
+                          </button>
+                        ) : (
+                          <span
+                            className="text-[11px] font-medium text-stone-400 dark:text-stone-500 italic flex items-center gap-1"
+                            title="Items locked after payment confirmation"
+                          >
+                            <Lock className="w-3 h-3" />
+                            Items locked after payment
+                          </span>
+                        )}
+                      </div>
+
+                      <ul className="space-y-1.5 text-xs text-stone-800 dark:text-stone-200">
+                        {order.items &&
+                          order.items.map((item, idx) => (
+                            <li key={idx} className="flex justify-between items-center">
+                              <span>
+                                <span className="font-semibold text-stone-900 dark:text-stone-100">
+                                  {item.name}
+                                </span>{" "}
+                                <span className="text-stone-400 font-mono">× {item.qty}</span>
+                              </span>
+                              <span className="font-mono font-semibold text-stone-700 dark:text-stone-300">
+                                {formatINR(item.price * item.qty)}
+                              </span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {/* Financial Breakdown Container */}
                   <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-1.5 text-xs">

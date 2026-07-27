@@ -114,6 +114,7 @@ export interface Order {
   discount_type?: 'flat' | 'percentage' | null;
   discount_value?: number | null;
   discount_amount_applied?: number | null;
+  items_edited_at?: string | null;
   created_at: string;
 }
 

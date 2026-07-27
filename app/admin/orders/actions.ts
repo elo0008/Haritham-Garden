@@ -372,4 +372,85 @@ export async function removeOrderDiscount(
   revalidatePath("/admin");
 }
 
+/**
+ * Updates an order's items array, recalculates subtotal, discount, and final_total,
+ * and sets items_edited_at timestamp.
+ * Can only be performed while order status is 'pending' or 'handled'.
+ */
+export async function updateOrderItems(
+  orderId: string,
+  newItems: ManualOrderItemInput[]
+): Promise<void> {
+  const supabase = await createClient();
+
+  // 1. Fetch current order
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("status, subtotal, estimated_courier_price, final_courier_price, delivery_price, discount_type, discount_value, discount_amount_applied")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError || !order) {
+    throw new Error(fetchError?.message || "Order not found");
+  }
+
+  // 2. Lock rule: editable only when status is pending or handled
+  if (order.status !== "pending" && order.status !== "handled") {
+    throw new Error("Order items can only be edited while status is Pending or Handled.");
+  }
+
+  if (!newItems || newItems.length === 0) {
+    throw new Error("An order must contain at least one plant item.");
+  }
+
+  // 3. Recalculate subtotal
+  const subtotal = newItems.reduce((acc, item) => acc + item.price * item.qty, 0);
+
+  // 4. Recalculate discount if present
+  let discountAmountApplied: number | null = order.discount_amount_applied ? Number(order.discount_amount_applied) : null;
+  if (order.discount_type && order.discount_value != null) {
+    const val = Number(order.discount_value);
+    if (order.discount_type === 'flat') {
+      discountAmountApplied = Math.min(val, subtotal);
+    } else if (order.discount_type === 'percentage') {
+      discountAmountApplied = Math.round((subtotal * (val / 100)) * 100) / 100;
+    }
+  }
+
+  // 5. Courier fee
+  const courierFee =
+    (order.final_courier_price != null ? Number(order.final_courier_price) : null) ??
+    (order.estimated_courier_price != null ? Number(order.estimated_courier_price) : null) ??
+    0;
+
+  // 6. Recalculate final_total
+  const finalTotal = subtotal - (discountAmountApplied ?? 0) + Math.max(0, courierFee);
+
+  const itemSnapshots = newItems.map((item) => ({
+    plant_id: item.plant_id,
+    name: item.name,
+    price: item.price,
+    qty: item.qty,
+  }));
+
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      items: itemSnapshots,
+      subtotal,
+      discount_amount_applied: discountAmountApplied,
+      final_total: finalTotal,
+      items_edited_at: new Date().toISOString(),
+    })
+    .eq("id", orderId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+}
+
+
 
