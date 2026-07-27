@@ -9,6 +9,7 @@ import { getLocalOrderUuids } from "@/lib/myOrdersStorage";
 import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer } from "@/app/actions/customerOrders";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { PlantSearchPicker } from "@/components/PlantSearchPicker";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import {
   PackageCheck,
@@ -483,60 +484,14 @@ Please confirm my updated order details. Thank you!`;
                           ))}
                         </div>
 
-                        {/* Add Plant Picker */}
-                        <div className="relative pt-1">
-                          <button
-                            type="button"
-                            onClick={() => setIsSearchOpen(!isSearchOpen)}
-                            className="text-[11px] font-bold text-terracotta hover:underline flex items-center gap-1"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            + Add Plant from Catalogue
-                          </button>
-
-                          {isSearchOpen && (
-                            <div className="mt-2 p-2.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-2 z-20">
-                              <div className="relative">
-                                <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
-                                <input
-                                  type="text"
-                                  value={plantSearchQuery}
-                                  onChange={(e) => setPlantSearchQuery(e.target.value)}
-                                  placeholder="Search plant catalogue…"
-                                  className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta"
-                                  autoFocus
-                                />
-                              </div>
-
-                              <div className="max-h-40 overflow-y-auto space-y-1">
-                                {(plants || [])
-                                  .filter((p) =>
-                                    p.name.toLowerCase().includes(plantSearchQuery.toLowerCase().trim())
-                                  )
-                                  .map((plant) => (
-                                    <button
-                                      key={plant.id}
-                                      type="button"
-                                      onClick={() => handleAddPlantToDraft(plant)}
-                                      disabled={plant.availability === "unavailable"}
-                                      className={`w-full text-left p-2 rounded-xl flex items-center justify-between text-xs transition-colors ${
-                                        plant.availability === "unavailable"
-                                          ? "opacity-50 cursor-not-allowed"
-                                          : "hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
-                                      }`}
-                                    >
-                                      <span className="font-bold text-stone-900 dark:text-stone-100 truncate">
-                                        {plant.name}
-                                      </span>
-                                      <span className="font-mono text-[11px] text-stone-500 shrink-0 ml-2">
-                                        {formatINR(getEffectivePrice(plant))}
-                                      </span>
-                                    </button>
-                                  ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        {/* Add Plant Picker Component */}
+                        <PlantSearchPicker
+                          plants={plants}
+                          onSelectPlant={handleAddPlantToDraft}
+                          collapsible={true}
+                          triggerLabel="+ Add Plant from Catalogue"
+                          className="pt-1"
+                        />
 
                         {/* Save & Cancel */}
                         <div className="flex items-center gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/40">

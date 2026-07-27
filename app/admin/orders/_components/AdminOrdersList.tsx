@@ -17,6 +17,7 @@ import {
   type ManualOrderItemInput,
 } from "../actions";
 import { getEffectivePrice } from "@/lib/types";
+import { PlantSearchPicker } from "@/components/PlantSearchPicker";
 import {
   Package,
   CheckCircle2,
@@ -830,60 +831,14 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                         ))}
                       </div>
 
-                      {/* + Add Item from Catalogue Picker */}
-                      <div className="relative pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setIsEditingItemsPlantSearchOpen(!isEditingItemsPlantSearchOpen)}
-                          className="text-[11px] font-bold text-terracotta hover:underline flex items-center gap-1"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          + Add Item from Catalogue
-                        </button>
-
-                        {isEditingItemsPlantSearchOpen && (
-                          <div className="mt-2 p-2.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 shadow-xl space-y-2 z-20">
-                            <div className="relative">
-                              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-stone-400" />
-                              <input
-                                type="text"
-                                value={editingItemsPlantSearchQuery}
-                                onChange={(e) => setEditingItemsPlantSearchQuery(e.target.value)}
-                                placeholder="Search plant catalogue…"
-                                className="w-full pl-8 pr-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta"
-                                autoFocus
-                              />
-                            </div>
-
-                            <div className="max-h-40 overflow-y-auto space-y-1">
-                              {(plants || [])
-                                .filter((p) =>
-                                  p.name.toLowerCase().includes(editingItemsPlantSearchQuery.toLowerCase().trim())
-                                )
-                                .map((plant) => (
-                                  <button
-                                    key={plant.id}
-                                    type="button"
-                                    onClick={() => handleAddPlantToEditingDraft(plant)}
-                                    disabled={plant.availability === "unavailable"}
-                                    className={`w-full text-left p-2 rounded-xl flex items-center justify-between text-xs transition-colors ${
-                                      plant.availability === "unavailable"
-                                        ? "opacity-50 cursor-not-allowed"
-                                        : "hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
-                                    }`}
-                                  >
-                                    <span className="font-bold text-stone-900 dark:text-stone-100 truncate">
-                                      {plant.name}
-                                    </span>
-                                    <span className="font-mono text-[11px] text-stone-500 shrink-0 ml-2">
-                                      {formatINR(getEffectivePrice(plant))}
-                                    </span>
-                                  </button>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
+                      {/* + Add Item from Catalogue Picker Component */}
+                      <PlantSearchPicker
+                        plants={plants || []}
+                        onSelectPlant={handleAddPlantToEditingDraft}
+                        collapsible={true}
+                        triggerLabel="+ Add Item from Catalogue"
+                        className="pt-1"
+                      />
 
                       {/* Save & Cancel Actions */}
                       <div className="flex items-center gap-2 pt-2 border-t border-amber-200/60 dark:border-amber-800/40">
@@ -1562,91 +1517,12 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                   Select Plants from Catalogue <span className="text-red-500">*</span>
                 </label>
 
-                <div className="relative">
-                  <div className="relative">
-                    <Search className="w-4 h-4 absolute left-3 top-3 text-stone-400" />
-                    <input
-                      type="text"
-                      value={manualPlantSearchQuery}
-                      onChange={(e) => {
-                        setManualPlantSearchQuery(e.target.value);
-                        setIsManualPlantSearchOpen(true);
-                      }}
-                      onFocus={() => setIsManualPlantSearchOpen(true)}
-                      placeholder="Type plant name to search…"
-                      className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
-                    />
-                  </div>
-
-                  {/* Search Results Dropdown */}
-                  {isManualPlantSearchOpen && manualPlantSearchQuery.trim().length > 0 && (
-                    <div className="absolute z-30 mt-1 w-full max-h-56 overflow-y-auto rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 shadow-xl p-1.5 space-y-1">
-                      {filteredPlantsForManualOrder.length === 0 ? (
-                        <div className="p-3 text-xs text-stone-400 italic text-center">
-                          No matching plants found in catalogue
-                        </div>
-                      ) : (
-                        filteredPlantsForManualOrder.map((plant) => {
-                          const isUnavailable = plant.availability === "unavailable";
-                          return (
-                            <button
-                              key={plant.id}
-                              type="button"
-                              onClick={() => handleAddPlantToManualOrder(plant)}
-                              disabled={isUnavailable}
-                              className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition-colors ${
-                                isUnavailable
-                                  ? "opacity-50 cursor-not-allowed bg-stone-50 dark:bg-stone-800/40"
-                                  : "hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                {plant.photos && plant.photos[0] ? (
-                                  <img
-                                    src={plant.photos[0]}
-                                    alt={plant.name}
-                                    className="w-9 h-9 object-cover rounded-lg border border-stone-200 dark:border-stone-700 shrink-0"
-                                  />
-                                ) : (
-                                  <div className="w-9 h-9 rounded-lg bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-sm shrink-0">
-                                    🌿
-                                  </div>
-                                )}
-                                <div className="truncate">
-                                  <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
-                                    {plant.name}
-                                  </span>
-                                  {plant.sale_price !== null && plant.sale_price !== undefined && plant.sale_price < plant.price ? (
-                                    <span className="text-[11px] block font-mono">
-                                      <span className="line-through text-stone-400 mr-1">{formatINR(plant.price)}</span>
-                                      <span className="text-terracotta font-bold">{formatINR(getEffectivePrice(plant))}</span>
-                                    </span>
-                                  ) : (
-                                    <span className="text-[11px] text-stone-400 block font-mono">
-                                      {formatINR(plant.price)}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="shrink-0 ml-2">
-                                {isUnavailable ? (
-                                  <span className="bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                                    Out of Stock
-                                  </span>
-                                ) : (
-                                  <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                                    + Add
-                                  </span>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })
-                      )}
-                    </div>
-                  )}
-                </div>
+                <PlantSearchPicker
+                  plants={plants || []}
+                  onSelectPlant={handleAddPlantToManualOrder}
+                  collapsible={false}
+                  placeholder="Type plant name to search…"
+                />
               </div>
 
               {/* Selected Items List */}
