@@ -127,12 +127,23 @@ export function PlantForm({
     });
   }
 
+  const [tagNote, setTagNote] = useState<string | null>(null);
+
   // ── Tag Creation Handler ─────────────────────────────────────────────────────
 
   async function handleCreateTag(tagName: string): Promise<Tag> {
-    const newTag = await createTag(tagName);
-    setAllTags((prev) => [...prev, newTag]);
-    return newTag;
+    setTagNote(null);
+    const res = await createTag(tagName);
+    if (res.isExisting) {
+      setTagNote(`Using existing tag '${res.tag.name}'`);
+      setTimeout(() => setTagNote(null), 4000);
+      if (!allTags.some((t) => t.id === res.tag.id)) {
+        setAllTags((prev) => [...prev, res.tag]);
+      }
+    } else {
+      setAllTags((prev) => [...prev, res.tag]);
+    }
+    return res.tag;
   }
 
   // ── Submit Form ──────────────────────────────────────────────────────────────
@@ -284,6 +295,11 @@ export function PlantForm({
           disabled={saving}
           placeholder="Search or add tags…"
         />
+        {tagNote && (
+          <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 mt-1">
+            ℹ️ {tagNote}
+          </p>
+        )}
       </div>
 
       {/* ── Row 3: Regular Price + Sale Price ────────────────────────────── */}

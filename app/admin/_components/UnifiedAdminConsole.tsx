@@ -23,6 +23,7 @@ import {
   Package,
   LayoutTemplate,
   TrendingUp,
+  Tag as TagIcon,
   Settings,
   LogOut,
   Sun,
@@ -44,6 +45,8 @@ import { HeroBannerForm } from "../hero-banner/_components/HeroBannerForm";
 import { CarouselAdminClient } from "../carousel-section/_components/CarouselAdminClient";
 import { SettingsForm } from "../settings/_components/SettingsForm";
 import { AdminPlantsGrid } from "../plants/_components/AdminPlantsGrid";
+import { TagManagementClient } from "../tags/_components/TagManagementClient";
+import type { TagWithUsage } from "../tags/actions";
 import { AvailabilitySelect } from "../plants/_components/AvailabilitySelect";
 import { DeleteButton } from "../plants/_components/DeleteButton";
 
@@ -53,7 +56,8 @@ export type AdminTab =
   | "orders"
   | "storefront"
   | "sales"
-  | "settings";
+  | "settings"
+  | "tags";
 
 interface UnifiedAdminConsoleProps {
   siteSettings: SiteSettings | null;
@@ -165,6 +169,13 @@ export function UnifiedAdminConsole({
     return tags.some(
       (t) => t.name.toLowerCase() === plantCategoryFilter.toLowerCase()
     );
+  });
+
+  const tagsWithUsage: TagWithUsage[] = allTags.map((t) => {
+    const usageCount = Object.values(plantTagsMap).reduce((count, tagList) => {
+      return count + (tagList.some((tag) => tag.id === t.id) ? 1 : 0);
+    }, 0);
+    return { ...t, usage_count: usageCount };
   });
 
   const businessName = siteSettings?.business_name || "Haritham Garden";
@@ -306,6 +317,21 @@ export function UnifiedAdminConsole({
             >
               <Sun className="w-4 h-4 text-amber-500 hidden dark:block" />
               <Moon className="w-4 h-4 text-stone-600 block dark:hidden" />
+            </button>
+
+            {/* Tags Button */}
+            <button
+              type="button"
+              onClick={() => switchTab("tags")}
+              className={`h-11 px-3.5 rounded-xl border transition-all flex items-center gap-2 ${
+                activeTab === "tags"
+                  ? "bg-botanical-800 dark:bg-botanical-600 text-white border-botanical-800"
+                  : "bg-stone-100 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600"
+              }`}
+              title="Tag Management"
+            >
+              <TagIcon className="w-4 h-4" />
+              <span className="text-xs font-semibold hidden xl:inline">Tags</span>
             </button>
 
             {/* Settings Button */}
@@ -866,6 +892,15 @@ export function UnifiedAdminConsole({
                 Site settings data not initialized.
               </div>
             )}
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* TAB 8: TAG MANAGEMENT */}
+        {/* =================================================================== */}
+        {activeTab === "tags" && (
+          <div className="space-y-6 animate-fadeIn">
+            <TagManagementClient initialTags={tagsWithUsage} />
           </div>
         )}
       </main>

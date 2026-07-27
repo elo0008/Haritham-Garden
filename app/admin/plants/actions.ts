@@ -34,9 +34,24 @@ async function generateUniqueSlug(
 
 // ── Tag actions ───────────────────────────────────────────────────────────────
 
-export async function createTag(name: string): Promise<Tag> {
+export async function createTag(
+  name: string
+): Promise<{ tag: Tag; isExisting: boolean }> {
   const supabase = await createClient();
-  const slug = slugify(name);
+  const trimmed = name.trim();
+
+  // Case-insensitive duplicate check
+  const { data: allTags } = await supabase.from("tags").select("*");
+  if (allTags) {
+    const existing = allTags.find(
+      (t) => t.name.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+    if (existing) {
+      return { tag: existing as Tag, isExisting: true };
+    }
+  }
+
+  const slug = slugify(trimmed);
 
   // Get next display_order
   const { data: maxRow } = await supabase
@@ -50,12 +65,13 @@ export async function createTag(name: string): Promise<Tag> {
 
   const { data, error } = await supabase
     .from("tags")
-    .insert({ name: name.trim(), slug, display_order: nextOrder })
+    .insert({ name: trimmed, slug, display_order: nextOrder })
     .select()
     .single();
 
   if (error) throw new Error(error.message);
-  return data as Tag;
+  revalidatePath("/admin/tags");
+  return { tag: data as Tag, isExisting: false };
 }
 
 export async function fetchAllTags(): Promise<Tag[]> {
