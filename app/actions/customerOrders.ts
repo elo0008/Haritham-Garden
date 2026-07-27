@@ -31,7 +31,6 @@ export async function fetchCustomerOrdersByUuids(uuids: string[]): Promise<Order
       .from("orders")
       .select("*")
       .in("id", validUuids)
-      .eq("deleted", false)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -136,3 +135,54 @@ export async function updateCustomerOrderItemsByCustomer(
   revalidatePath("/my-orders");
   revalidatePath("/admin/orders");
 }
+
+/**
+ * Soft-deletes an order initiated by customer cancellation.
+ * Sets deleted = true and cancelled_by_customer = true.
+ * Allowed only while order status is 'pending' or 'handled'.
+ */
+export async function cancelCustomerOrder(
+  orderId: string,
+  allowedUuids: string[]
+): Promise<void> {
+  if (!orderId || !UUID_REGEX.test(orderId)) {
+    throw new Error("Invalid order ID.");
+  }
+
+  const sanitizedAllowed = (allowedUuids || []).filter((id) => typeof id === "string" && UUID_REGEX.test(id));
+  if (!sanitizedAllowed.includes(orderId)) {
+    throw new Error("Unauthorized access: this order was not placed on this device.");
+  }
+
+  const supabase = await createClient();
+
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("status, deleted")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError || !order) {
+    throw new Error(fetchError?.message || "Order not found.");
+  }
+
+  if (order.status !== "pending" && order.status !== "handled") {
+    throw new Error("This order is already being processed and can no longer be cancelled directly.");
+  }
+
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update({
+      deleted: true,
+      cancelled_by_customer: true,
+    })
+    .eq("id", orderId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  revalidatePath("/my-orders");
+  revalidatePath("/admin/orders");
+}
+

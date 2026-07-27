@@ -6,7 +6,7 @@ import type { Order, OrderStatus, Plant, SiteSettings } from "@/lib/types";
 import { formatINR, formatDate } from "@/lib/utils";
 import { getEffectivePrice } from "@/lib/types";
 import { getLocalOrderUuids } from "@/lib/myOrdersStorage";
-import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer } from "@/app/actions/customerOrders";
+import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, cancelCustomerOrder } from "@/app/actions/customerOrders";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
@@ -28,6 +28,8 @@ import {
   CreditCard,
   AlertCircle,
   RefreshCw,
+  AlertTriangle,
+  XCircle,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
@@ -99,6 +101,34 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
 
   // Track order that was just updated to present WhatsApp notification banner
   const [justUpdatedOrder, setJustUpdatedOrder] = useState<Order | null>(null);
+
+  // Cancellation state
+  const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [justCancelledOrder, setJustCancelledOrder] = useState<Order | null>(null);
+
+  const handleConfirmCancelOrder = async () => {
+    if (!cancellingOrder) return;
+    setCancelError(null);
+    const localUuids = getLocalOrderUuids();
+
+    startTransition(async () => {
+      try {
+        await cancelCustomerOrder(cancellingOrder.id, localUuids);
+        setJustCancelledOrder(cancellingOrder);
+        setCancellingOrder(null);
+        await loadOrders();
+      } catch (err) {
+        setCancelError(err instanceof Error ? err.message : "Failed to cancel order.");
+      }
+    });
+  };
+
+  const generateWhatsAppCancelUrl = (order: Order) => {
+    const targetNumber = siteSettings?.whatsapp_number || "919497723456";
+    const message = `Hi! 👋 I'd like to cancel my order *${order.order_ref}*, please disregard it. Thank you!`;
+    return buildWhatsAppUrl(targetNumber, message);
+  };
 
   const loadOrders = async () => {
     setLoading(true);
@@ -239,6 +269,9 @@ Please confirm my updated order details. Thank you!`;
     return buildWhatsAppUrl(targetNumber, message);
   };
 
+  const activeOrders = orders.filter((o) => !o.deleted);
+  const cancelledOrders = orders.filter((o) => o.deleted);
+
   return (
     <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
       {/* Navbar Header */}
@@ -339,6 +372,44 @@ Please confirm my updated order details. Thank you!`;
           </div>
         )}
 
+        {/* WhatsApp Notification Banner (after order cancelled) */}
+        {justCancelledOrder && (
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 flex items-center justify-between flex-wrap gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/60 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-300">
+                <XCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-rose-950 dark:text-rose-100">
+                  Order {justCancelledOrder.order_ref} Cancelled
+                </h4>
+                <p className="text-xs text-rose-700 dark:text-rose-300">
+                  Optionally let us know on WhatsApp so we can update our records right away.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={generateWhatsAppCancelUrl(justCancelledOrder)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+              >
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>Notify Shop on WhatsApp</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setJustCancelledOrder(null)}
+                className="p-2 text-rose-600 hover:text-rose-800 text-xs font-bold"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Content States */}
         {loading ? (
           <div className="py-16 text-center text-stone-400 space-y-3">
@@ -368,8 +439,16 @@ Please confirm my updated order details. Thank you!`;
           </div>
         ) : (
           /* Orders List */
-          <div className="space-y-6">
-            {orders.map((order) => {
+          <div className="space-y-8">
+            {/* Active Orders Section */}
+            {activeOrders.length === 0 && cancelledOrders.length > 0 ? (
+              <div className="p-8 text-center bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 space-y-2">
+                <h4 className="font-bold text-base text-stone-800 dark:text-stone-200">No Active Orders</h4>
+                <p className="text-xs text-stone-500">All orders placed from this device have been cancelled.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {activeOrders.map((order) => {
               const statusCfg = CUSTOMER_STATUS_MAP[order.status] || CUSTOMER_STATUS_MAP.pending;
               const StatusIcon = statusCfg.icon;
               const canEdit = order.status === "pending" || order.status === "handled";
@@ -515,19 +594,30 @@ Please confirm my updated order details. Thank you!`;
                     ) : (
                       /* Read-Only Mode */
                       <div>
-                        <div className="flex justify-between items-center mb-2">
+                        <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
                           <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
                             Order Items ({order.items ? order.items.length : 0})
                           </span>
                           {canEdit ? (
-                            <button
-                              type="button"
-                              onClick={() => startEditing(order)}
-                              className="text-[11px] font-semibold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors flex items-center gap-1"
-                            >
-                              <Pencil className="w-3 h-3" />
-                              Edit Items
-                            </button>
+                            <div className="flex items-center gap-2.5">
+                              <button
+                                type="button"
+                                onClick={() => startEditing(order)}
+                                className="text-[11px] font-semibold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors flex items-center gap-1"
+                              >
+                                <Pencil className="w-3 h-3" />
+                                Edit Items
+                              </button>
+                              <span className="text-stone-300 dark:text-stone-700">|</span>
+                              <button
+                                type="button"
+                                onClick={() => setCancellingOrder(order)}
+                                className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline transition-colors flex items-center gap-1"
+                              >
+                                <XCircle className="w-3 h-3" />
+                                Cancel Order
+                              </button>
+                            </div>
                           ) : null}
                         </div>
 
@@ -595,7 +685,103 @@ Please confirm my updated order details. Thank you!`;
             })}
           </div>
         )}
+
+            {/* Cancelled Orders Section */}
+            {cancelledOrders.length > 0 && (
+              <div className="mt-12 pt-8 border-t border-stone-200 dark:border-stone-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading font-bold text-base text-stone-600 dark:text-stone-400 flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-stone-400" />
+                    Cancelled Orders ({cancelledOrders.length})
+                  </h3>
+                  <span className="text-xs text-stone-400 font-medium">History on this device</span>
+                </div>
+
+                <div className="space-y-4">
+                  {cancelledOrders.map((order) => (
+                    <div
+                      key={order.id}
+                      className="bg-white/60 dark:bg-stone-900/40 rounded-2xl border border-stone-200/80 dark:border-stone-800 p-5 space-y-3 opacity-80"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-heading font-bold text-sm text-stone-700 dark:text-stone-300">
+                            {order.order_ref}
+                          </span>
+                          <span className="text-[10px] font-bold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 px-2 py-0.5 rounded-full">
+                            🚫 Cancelled
+                          </span>
+                        </div>
+                        <span className="text-xs text-stone-400">{formatDate(order.created_at)}</span>
+                      </div>
+
+                      <ul className="text-xs text-stone-500 dark:text-stone-400 space-y-1">
+                        {order.items &&
+                          order.items.map((item, idx) => (
+                            <li key={idx} className="flex justify-between">
+                              <span>
+                                {item.name} × {item.qty}
+                              </span>
+                              <span className="font-mono">{formatINR(item.price * item.qty)}</span>
+                            </li>
+                          ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* Cancel Confirmation Modal */}
+      {cancellingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
+                  Cancel Order {cancellingOrder.order_ref}?
+                </h3>
+                <span className="text-xs text-stone-400">This action cannot be undone.</span>
+              </div>
+            </div>
+
+            {cancelError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                {cancelError}
+              </div>
+            )}
+
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              Are you sure you want to cancel order <strong>{cancellingOrder.order_ref}</strong>? This will remove it from active orders.
+            </p>
+
+            <div className="flex items-center gap-2 justify-end pt-2 border-t border-stone-100 dark:border-stone-800">
+              <button
+                type="button"
+                onClick={() => setCancellingOrder(null)}
+                disabled={isPending}
+                className="px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 rounded-xl font-semibold text-xs hover:bg-stone-200 min-h-[38px]"
+              >
+                Keep Order
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancelOrder}
+                disabled={isPending}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px]"
+              >
+                {isPending ? "Cancelling…" : "Yes, Cancel Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
