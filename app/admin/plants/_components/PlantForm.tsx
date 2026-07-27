@@ -76,6 +76,9 @@ export function PlantForm({
   const [price, setPrice] = useState(
     initialData?.price != null ? String(initialData.price) : ""
   );
+  const [salePrice, setSalePrice] = useState(
+    initialData?.sale_price != null ? String(initialData.sale_price) : ""
+  );
   const [availability, setAvailability] = useState<PlantAvailability>(
     initialData?.availability ?? "available"
   );
@@ -149,8 +152,22 @@ export function PlantForm({
     }
     const parsedPrice = parseFloat(price);
     if (!price || isNaN(parsedPrice) || parsedPrice < 0) {
-      setError("A valid price is required.");
+      setError("A valid regular price is required.");
       return;
+    }
+
+    let parsedSalePrice: number | null = null;
+    if (salePrice.trim() !== "") {
+      const pSale = parseFloat(salePrice);
+      if (isNaN(pSale) || pSale < 0) {
+        setError("Sale price must be a valid non-negative number.");
+        return;
+      }
+      if (pSale >= parsedPrice) {
+        setError("Sale price must be less than regular price.");
+        return;
+      }
+      parsedSalePrice = pSale;
     }
 
     setSaving(true);
@@ -189,6 +206,7 @@ export function PlantForm({
         sunlight,
         watering,
         price: parsedPrice,
+        sale_price: parsedSalePrice,
         availability,
         shippable,
         photos,
@@ -253,24 +271,26 @@ export function PlantForm({
         </div>
       </div>
 
-      {/* ── Row 2: Tags + Price ───────────────────────────────────────────── */}
+      {/* ── Row 2: Tags ─────────────────────────────────────────────────── */}
+      <div>
+        <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+          Tags <span className="text-red-500">*</span>
+        </label>
+        <TagPicker
+          allTags={allTags}
+          selectedTagIds={selectedTagIds}
+          onChange={setSelectedTagIds}
+          onCreateTag={handleCreateTag}
+          disabled={saving}
+          placeholder="Search or add tags…"
+        />
+      </div>
+
+      {/* ── Row 3: Regular Price + Sale Price ────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
-            Tags <span className="text-red-500">*</span>
-          </label>
-          <TagPicker
-            allTags={allTags}
-            selectedTagIds={selectedTagIds}
-            onChange={setSelectedTagIds}
-            onCreateTag={handleCreateTag}
-            disabled={saving}
-            placeholder="Search or add tags…"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
-            Price (₹) <span className="text-red-500">*</span>
+            Regular Price (₹) <span className="text-red-500">*</span>
           </label>
           <input
             type="number"
@@ -278,7 +298,25 @@ export function PlantForm({
             onChange={(e) => setPrice(e.target.value)}
             min={0}
             step={0.01}
-            placeholder="0"
+            placeholder="e.g. 200"
+            disabled={saving}
+            className={inputCls}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
+            Sale Price (₹){" "}
+            <span className="font-normal text-stone-400 dark:text-stone-500">
+              (optional — leave empty for no sale)
+            </span>
+          </label>
+          <input
+            type="number"
+            value={salePrice}
+            onChange={(e) => setSalePrice(e.target.value)}
+            min={0}
+            step={0.01}
+            placeholder="e.g. 150"
             disabled={saving}
             className={inputCls}
           />

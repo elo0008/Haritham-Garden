@@ -213,11 +213,11 @@ export function UnifiedAdminConsole({
           </div>
 
           {/* ZONE 2: CENTER PRIMARY NAVIGATION TABS (Desktop) */}
-          <nav className="hidden lg:flex items-center gap-1.5 bg-stone-100/90 dark:bg-stone-800/90 p-1.5 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
+          <nav className="hidden lg:flex items-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
             <button
               type="button"
               onClick={() => switchTab("overview")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 activeTab === "overview"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs"
                   : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
@@ -230,7 +230,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("plants")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 activeTab === "plants"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs"
                   : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
@@ -243,7 +243,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("orders")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 activeTab === "orders"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs"
                   : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
@@ -261,7 +261,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("storefront")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 activeTab === "storefront"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs"
                   : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
@@ -274,7 +274,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("sales")}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 activeTab === "sales"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs"
                   : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
@@ -291,7 +291,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2.5 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center"
+              className="lg:hidden h-11 w-11 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center"
               title="Toggle Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -301,7 +301,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2.5 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center min-h-[44px] min-w-[44px]"
+              className="h-11 w-11 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center"
               title="Toggle Dark/Light Mode"
             >
               <Sun className="w-4 h-4 text-amber-500 hidden dark:block" />
@@ -312,7 +312,7 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("settings")}
-              className={`p-2.5 rounded-xl border transition-all flex items-center gap-2 min-h-[44px] ${
+              className={`h-11 px-3.5 rounded-xl border transition-all flex items-center gap-2 ${
                 activeTab === "settings"
                   ? "bg-botanical-800 dark:bg-botanical-600 text-white border-botanical-800"
                   : "bg-stone-100 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600"

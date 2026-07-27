@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import type { Plant } from "@/lib/types";
+import { getEffectivePrice } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { Sun, Droplet, Compass, ShoppingBag, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface PlantBottomSheetProps {
   plant: Plant | null;
+  isOpen?: boolean;
   onClose: () => void;
   onAddToCart?: (plant: Plant, qty: number) => void;
 }
@@ -24,15 +26,17 @@ const WATERING_LABELS: Record<string, string> = {
   high: "High Water",
 };
 
-export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomSheetProps) {
+export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAddToCart }: PlantBottomSheetProps) {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
   // Reset internal state when a new plant is opened
   useEffect(() => {
-    setActivePhotoIndex(0);
-    setQuantity(1);
-  }, [plant?.id]);
+    if (isOpen) {
+      setActivePhotoIndex(0);
+      setQuantity(1);
+    }
+  }, [isOpen, plant?.id]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -49,6 +53,13 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
 
   const isUnavailable = plant?.availability === "unavailable";
   const photos = plant?.photos && plant.photos.length > 0 ? plant.photos : [];
+
+  const hasSalePrice =
+    plant?.sale_price !== null &&
+    plant?.sale_price !== undefined &&
+    plant?.price !== undefined &&
+    plant.sale_price < plant.price;
+  const effectivePrice = plant ? getEffectivePrice(plant) : 0;
 
   const handleAddToCart = () => {
     if (!plant) return;
@@ -133,6 +144,11 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
                   <span className="text-xs font-bold uppercase tracking-wider text-botanical-600 dark:text-botanical-100 bg-botanical-50 dark:bg-stone-800 px-3 py-1 rounded-md border border-botanical-100 dark:border-stone-700 inline-block">
                     {plant.tags && plant.tags.length > 0 ? plant.tags[0].name : "Plant"}
                   </span>
+                  {hasSalePrice && (
+                    <span className="text-xs font-bold uppercase tracking-wider bg-terracotta text-white px-3 py-1 rounded-full shadow-sm">
+                      SALE
+                    </span>
+                  )}
                   {isUnavailable && (
                     <span className="text-xs font-bold uppercase tracking-wider bg-rose-600 text-white px-3 py-1 rounded-full shadow-sm">
                       Out of Stock
@@ -149,9 +165,20 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
                   </p>
                 )}
 
-                <span className="font-heading font-bold text-2xl text-stone-900 dark:text-stone-100 block my-3">
-                  {formatINR(plant.price)}
-                </span>
+                {hasSalePrice ? (
+                  <div className="flex items-baseline gap-2.5 my-3">
+                    <span className="font-heading font-bold text-2xl text-terracotta dark:text-terracotta">
+                      {formatINR(effectivePrice)}
+                    </span>
+                    <span className="text-stone-400 dark:text-stone-500 line-through text-lg font-medium">
+                      {formatINR(plant.price)}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="font-heading font-bold text-2xl text-stone-900 dark:text-stone-100 block my-3">
+                    {formatINR(plant.price)}
+                  </span>
+                )}
 
                 {/* Plant Care Attributes Grid */}
                 <div className="grid grid-cols-3 gap-2.5 mb-6">
@@ -221,7 +248,7 @@ export function PlantBottomSheet({ plant, onClose, onAddToCart }: PlantBottomShe
                     >
                       <ShoppingBag className="w-5 h-5" />
                       <span>
-                        Add to Bag — <strong>{formatINR(plant.price * quantity)}</strong>
+                        Add to Bag — <strong>{formatINR(effectivePrice * quantity)}</strong>
                       </span>
                     </button>
                   </>

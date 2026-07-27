@@ -24,6 +24,7 @@ export interface Plant {
   sunlight: PlantSunlight;
   watering: PlantWatering;
   price: number;
+  sale_price?: number | null;
   availability: PlantAvailability;
   shippable: boolean;
   created_at: string;
@@ -40,9 +41,27 @@ export type PlantWriteData = {
   sunlight: PlantSunlight;
   watering: PlantWatering;
   price: number;
+  sale_price?: number | null;
   availability: PlantAvailability;
   shippable: boolean;
 };
+
+/**
+ * Returns the active/real transactional price for a plant.
+ * If sale_price is present and strictly less than regular price, sale_price is returned.
+ * Otherwise, regular price is returned.
+ */
+export function getEffectivePrice(plant: { price: number; sale_price?: number | null }): number {
+  if (
+    plant.sale_price !== null &&
+    plant.sale_price !== undefined &&
+    plant.sale_price < plant.price &&
+    plant.sale_price >= 0
+  ) {
+    return plant.sale_price;
+  }
+  return plant.price;
+}
 
 // ── Cart ──────────────────────────────────────────────────────────────────────
 
@@ -50,6 +69,7 @@ export type CartItem = {
   plant_id: string;
   name: string;
   price: number;
+  original_price?: number;
   qty: number;
   photo?: string;
   slug?: string;

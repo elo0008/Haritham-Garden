@@ -15,6 +15,7 @@ import {
   type ManualOrderInput,
   type ManualOrderItemInput,
 } from "../actions";
+import { getEffectivePrice } from "@/lib/types";
 import {
   Package,
   CheckCircle2,
@@ -189,6 +190,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
   const handleAddPlantToManualOrder = (plant: Plant) => {
     if (plant.availability === "unavailable") return;
+    const effectivePrice = getEffectivePrice(plant);
     setManualSelectedItems((prev) => {
       const existing = prev.find((i) => i.plant_id === plant.id);
       if (existing) {
@@ -201,7 +203,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
         {
           plant_id: plant.id,
           name: plant.name,
-          price: plant.price,
+          price: effectivePrice,
           qty: 1,
           photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
         },
@@ -1338,9 +1340,16 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                                   <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
                                     {plant.name}
                                   </span>
-                                  <span className="text-[11px] text-stone-400 block font-mono">
-                                    {formatINR(plant.price)}
-                                  </span>
+                                  {plant.sale_price !== null && plant.sale_price !== undefined && plant.sale_price < plant.price ? (
+                                    <span className="text-[11px] block font-mono">
+                                      <span className="line-through text-stone-400 mr-1">{formatINR(plant.price)}</span>
+                                      <span className="text-terracotta font-bold">{formatINR(getEffectivePrice(plant))}</span>
+                                    </span>
+                                  ) : (
+                                    <span className="text-[11px] text-stone-400 block font-mono">
+                                      {formatINR(plant.price)}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Plant } from "@/lib/types";
+import { Plant, getEffectivePrice } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
@@ -15,6 +15,12 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
   const isLimited = plant.availability === "limited";
   const firstPhoto = plant.photos && plant.photos.length > 0 ? plant.photos[0] : null;
   const primaryTag = plant.tags && plant.tags.length > 0 ? plant.tags[0].name : null;
+
+  const hasSalePrice =
+    plant.sale_price !== null &&
+    plant.sale_price !== undefined &&
+    plant.sale_price < plant.price;
+  const effectivePrice = getEffectivePrice(plant);
 
   return (
     <div
@@ -40,17 +46,24 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
           </span>
         )}
 
-        {/* Availability Badges Top Right */}
-        {isUnavailable ? (
-          <span className="absolute top-3 right-3 z-10 bg-rose-600/90 text-white backdrop-blur-md text-[11px] font-bold px-3 py-1 rounded-full shadow-sm uppercase tracking-wider">
-            Out of Stock
-          </span>
-        ) : isLimited ? (
-          <span className="absolute top-3 right-3 z-10 bg-amber-600/90 text-white backdrop-blur-md text-[11px] font-bold px-3 py-1 rounded-full shadow-sm uppercase tracking-wider flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-            Limited
-          </span>
-        ) : null}
+        {/* Badges Top Right Container */}
+        <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1.5">
+          {hasSalePrice && (
+            <span className="bg-terracotta text-white backdrop-blur-md text-[11px] font-bold px-2.5 py-0.5 rounded-full shadow-sm uppercase tracking-wider">
+              SALE
+            </span>
+          )}
+          {isUnavailable ? (
+            <span className="bg-rose-600/90 text-white backdrop-blur-md text-[11px] font-bold px-3 py-1 rounded-full shadow-sm uppercase tracking-wider">
+              Out of Stock
+            </span>
+          ) : isLimited ? (
+            <span className="bg-amber-600/90 text-white backdrop-blur-md text-[11px] font-bold px-3 py-1 rounded-full shadow-sm uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+              Limited
+            </span>
+          ) : null}
+        </div>
 
         {firstPhoto ? (
           <img
@@ -82,15 +95,32 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
         <div className="mt-5 pt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
           <div>
             <span className="text-xs text-stone-400 dark:text-stone-500 block font-medium">Price</span>
-            <span
-              className={`font-heading font-bold text-xl ${
-                isUnavailable
-                  ? "text-stone-400 dark:text-stone-600 line-through"
-                  : "text-stone-900 dark:text-stone-100"
-              }`}
-            >
-              {formatINR(plant.price)}
-            </span>
+            {hasSalePrice ? (
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-stone-400 dark:text-stone-500 line-through text-xs font-semibold">
+                  {formatINR(plant.price)}
+                </span>
+                <span
+                  className={`font-heading font-bold text-xl ${
+                    isUnavailable
+                      ? "text-stone-400 dark:text-stone-600 line-through"
+                      : "text-terracotta dark:text-terracotta"
+                  }`}
+                >
+                  {formatINR(effectivePrice)}
+                </span>
+              </div>
+            ) : (
+              <span
+                className={`font-heading font-bold text-xl ${
+                  isUnavailable
+                    ? "text-stone-400 dark:text-stone-600 line-through"
+                    : "text-stone-900 dark:text-stone-100"
+                }`}
+              >
+                {formatINR(plant.price)}
+              </span>
+            )}
           </div>
 
           {/* Dedicated + Quick-Add Button */}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Plant, Tag } from "@/lib/types";
+import { getEffectivePrice } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { AvailabilitySelect } from "./AvailabilitySelect";
 import { DeleteButton } from "./DeleteButton";
@@ -142,6 +143,11 @@ export function AdminPlantsGrid({
             const tags = plantTagsMap[plant.id] ?? [];
             const tagIds = tags.map((t) => t.id);
             const photoUrl = plant.photos[0];
+            const hasSalePrice =
+              plant.sale_price !== null &&
+              plant.sale_price !== undefined &&
+              plant.sale_price < plant.price;
+            const effectivePrice = getEffectivePrice(plant);
 
             return (
               <div
@@ -176,8 +182,13 @@ export function AdminPlantsGrid({
                       )}
                     </div>
 
-                    {/* Overlaid Top-Right: Availability Status Badge */}
-                    <div className="absolute top-3 right-3 z-10">
+                    {/* Overlaid Top-Right: Badges (SALE + Availability) */}
+                    <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+                      {hasSalePrice && (
+                        <span className="bg-terracotta text-white backdrop-blur-md text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                          SALE
+                        </span>
+                      )}
                       {plant.availability === "available" && (
                         <span className="bg-emerald-600/90 text-white backdrop-blur-md text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
                           IN STOCK
@@ -202,9 +213,20 @@ export function AdminPlantsGrid({
                       <h3 className="font-heading font-bold text-base text-stone-900 dark:text-stone-100 truncate">
                         {plant.name}
                       </h3>
-                      <span className="font-heading font-bold text-base text-stone-900 dark:text-stone-100 shrink-0">
-                        {formatINR(plant.price)}
-                      </span>
+                      {hasSalePrice ? (
+                        <div className="flex items-baseline gap-1.5 shrink-0">
+                          <span className="text-stone-400 dark:text-stone-500 line-through text-xs font-semibold">
+                            {formatINR(plant.price)}
+                          </span>
+                          <span className="font-heading font-bold text-base text-terracotta dark:text-terracotta">
+                            {formatINR(effectivePrice)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="font-heading font-bold text-base text-stone-900 dark:text-stone-100 shrink-0">
+                          {formatINR(plant.price)}
+                        </span>
+                      )}
                     </div>
 
                     {plant.local_name && (

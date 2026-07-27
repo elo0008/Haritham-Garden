@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import type { Plant, CartItem } from "@/lib/types";
+import { getEffectivePrice } from "@/lib/types";
 import { CartToast, type ToastInfo } from "@/components/CartToast";
 
 interface CartContextType {
@@ -60,12 +61,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const addItem = (plant: Plant, qty: number) => {
     if (qty <= 0) return;
 
+    const effectivePrice = getEffectivePrice(plant);
+    const hasSale =
+      plant.sale_price !== null &&
+      plant.sale_price !== undefined &&
+      plant.sale_price < plant.price;
+
     setItems((prevItems) => {
       const existingIndex = prevItems.findIndex((item) => item.plant_id === plant.id);
       if (existingIndex > -1) {
         const updated = [...prevItems];
         updated[existingIndex] = {
           ...updated[existingIndex],
+          price: effectivePrice, // refresh in case sale status changed
+          original_price: hasSale ? plant.price : undefined,
           qty: updated[existingIndex].qty + qty,
         };
         return updated;
@@ -75,7 +84,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         {
           plant_id: plant.id,
           name: plant.name,
-          price: plant.price,
+          price: effectivePrice,
+          original_price: hasSale ? plant.price : undefined,
           qty,
           photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
           slug: plant.slug,

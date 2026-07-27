@@ -648,9 +648,16 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                               <h4 className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100 truncate">
                                 {item.name}
                               </h4>
-                              <span className="text-xs text-botanical-800 dark:text-botanical-100 font-semibold mt-0.5 block">
-                                {formatINR(item.price)}
-                              </span>
+                              <div className="flex items-baseline gap-1.5 mt-0.5">
+                                {item.original_price && item.original_price > item.price && (
+                                  <span className="text-[11px] text-stone-400 dark:text-stone-500 line-through">
+                                    {formatINR(item.original_price)}
+                                  </span>
+                                )}
+                                <span className="text-xs text-terracotta dark:text-terracotta font-semibold">
+                                  {formatINR(item.price)}
+                                </span>
+                              </div>
                               <div className="flex items-center gap-2 mt-2 border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 rounded-lg px-1.5 py-0.5 w-max">
                                 <button
                                   type="button"
