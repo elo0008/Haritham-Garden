@@ -9,6 +9,7 @@ import {
   deleteTagAction,
   reorderTagsAction,
 } from "../actions";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Tag as TagIcon,
   Plus,
@@ -349,63 +350,79 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {deletingTag && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
-                <AlertTriangle className="w-5 h-5" />
+      <AnimatePresence>
+        {deletingTag && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setDeletingTag(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-6 space-y-4"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
+                    Delete Tag '{deletingTag.name}'?
+                  </h3>
+                  <span className="text-xs text-stone-400">This action cannot be undone.</span>
+                </div>
               </div>
-              <div>
-                <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
-                  Delete Tag '{deletingTag.name}'?
-                </h3>
-                <span className="text-xs text-stone-400">This action cannot be undone.</span>
-              </div>
-            </div>
 
-            {deleteError && (
-              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-xs font-semibold text-rose-700 dark:text-rose-300">
-                {deleteError}
-              </div>
-            )}
+              {deleteError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                  {deleteError}
+                </div>
+              )}
 
-            {/* Warning Message based on plant usage count */}
-            {deletingTag.usage_count > 0 ? (
-              <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-normal">
-                ⚠️ <strong>Warning:</strong> This tag is used by{" "}
-                <strong>
-                  {deletingTag.usage_count} {deletingTag.usage_count === 1 ? "plant" : "plants"}
-                </strong>
-                . Deleting it will remove the tag from those plants, but the plants themselves will not be deleted.
-              </div>
-            ) : (
-              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                This tag is currently not assigned to any plants. Are you sure you want to permanently delete it?
-              </p>
-            )}
+              {/* Warning Message based on plant usage count */}
+              {deletingTag.usage_count > 0 ? (
+                <div className="p-3.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-900 dark:text-amber-200 leading-relaxed font-normal">
+                  ⚠️ <strong>Warning:</strong> This tag is used by{" "}
+                  <strong>
+                    {deletingTag.usage_count} {deletingTag.usage_count === 1 ? "plant" : "plants"}
+                  </strong>
+                  . Deleting it will remove the tag from those plants, but the plants themselves will not be deleted.
+                </div>
+              ) : (
+                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                  This tag is currently not assigned to any plants. Are you sure you want to permanently delete it?
+                </p>
+              )}
 
-            <div className="flex items-center gap-2 justify-end pt-2 border-t border-stone-100 dark:border-stone-800">
-              <button
-                type="button"
-                onClick={() => setDeletingTag(null)}
-                disabled={isPending}
-                className="px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 rounded-xl font-semibold text-xs hover:bg-stone-200 min-h-[38px]"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                disabled={isPending}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px]"
-              >
-                {isPending ? "Deleting…" : "Confirm Delete"}
-              </button>
-            </div>
+              <div className="flex items-center gap-2 justify-end pt-2 border-t border-stone-100 dark:border-stone-800">
+                <button
+                  type="button"
+                  onClick={() => setDeletingTag(null)}
+                  disabled={isPending}
+                  className="px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 rounded-xl font-semibold text-xs hover:bg-stone-200 min-h-[38px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={isPending}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px]"
+                >
+                  {isPending ? "Deleting…" : "Confirm Delete"}
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

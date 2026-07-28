@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Order, OrderStatus, Plant } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import {
@@ -1175,636 +1176,718 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       )}
 
       {/* ── MODAL 1: Customer Info Details Modal ──────────────────────────── */}
-      {customerModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setCustomerModalOrder(null)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
-            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
-              <h3 className="font-heading font-bold text-base flex items-center gap-2">
-                <User className="w-4 h-4 text-botanical-600" />
-                <span>Customer Info — {customerModalOrder.order_ref}</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setCustomerModalOrder(null)}
-                className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      <AnimatePresence>
+        {customerModalOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setCustomerModalOrder(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+            >
+              <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
+                <h3 className="font-heading font-bold text-base flex items-center gap-2">
+                  <User className="w-4 h-4 text-botanical-600" />
+                  <span>Customer Info — {customerModalOrder.order_ref}</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setCustomerModalOrder(null)}
+                  className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-            {!isEditingCustomerDetails ? (
-              /* Read-only view */
-              <div className="space-y-3 text-xs">
-                <div>
-                  <span className="text-stone-400 font-medium block">Full Name:</span>
-                  <span className="font-bold text-stone-800 dark:text-stone-200 text-sm">
-                    {customerModalOrder.customer_name || "Not provided"}
-                  </span>
-                </div>
+              {!isEditingCustomerDetails ? (
+                /* Read-only view */
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <span className="text-stone-400 font-medium block">Full Name:</span>
+                    <span className="font-bold text-stone-800 dark:text-stone-200 text-sm">
+                      {customerModalOrder.customer_name || "Not provided"}
+                    </span>
+                  </div>
 
-                <div>
-                  <span className="text-stone-400 font-medium block">Phone Number:</span>
-                  {customerModalOrder.customer_phone ? (
-                    <a
-                      href={`tel:${customerModalOrder.customer_phone}`}
-                      className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+                  <div>
+                    <span className="text-stone-400 font-medium block">Phone Number:</span>
+                    <span className="font-mono text-stone-800 dark:text-stone-200">
+                      {customerModalOrder.customer_phone || "Not provided"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-stone-400 font-medium block">Delivery Address:</span>
+                    <span className="text-stone-800 dark:text-stone-200">
+                      {customerModalOrder.customer_address || "Not provided"}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-stone-400 font-medium block">Pincode:</span>
+                    <span className="font-mono text-stone-800 dark:text-stone-200">
+                      {customerModalOrder.customer_pincode || "Not provided"}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-between items-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingCustomerDetails(true)}
+                      className="text-terracotta hover:underline text-xs font-semibold flex items-center gap-1"
                     >
-                      <Phone className="w-3.5 h-3.5" />
-                      <span>{customerModalOrder.customer_phone}</span>
-                    </a>
-                  ) : (
-                    <span className="text-stone-500 italic">Not provided</span>
-                  )}
-                </div>
-
-                <div>
-                  <span className="text-stone-400 font-medium block">Delivery Address:</span>
-                  {customerModalOrder.customer_address ? (
-                    <p className="font-medium text-stone-800 dark:text-stone-200 whitespace-pre-wrap mt-0.5">
-                      {customerModalOrder.customer_address}
-                    </p>
-                  ) : (
-                    <span className="text-stone-500 italic">Not provided</span>
-                  )}
-                </div>
-
-                <div>
-                  <span className="text-stone-400 font-medium block">Pincode:</span>
-                  <span className="font-mono font-semibold text-stone-800 dark:text-stone-200">
-                    {customerModalOrder.customer_pincode || "Not provided"}
-                  </span>
-                </div>
-
-                <div className="mt-6 pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-between items-center">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingCustomerDetails(true)}
-                    className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-terracotta text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 transition-colors"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                    <span>Edit Details</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setCustomerModalOrder(null)}
-                    className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-xl text-xs font-semibold"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Editable form view */
-              <div className="space-y-3 text-xs">
-                <div>
-                  <label className="block text-stone-400 font-semibold mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    value={customerEditForm.customer_name}
-                    onChange={(e) =>
-                      setCustomerEditForm({ ...customerEditForm, customer_name: e.target.value })
-                    }
-                    placeholder="Customer Name"
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-stone-400 font-semibold mb-1">Phone Number</label>
-                  <input
-                    type="tel"
-                    value={customerEditForm.customer_phone}
-                    onChange={(e) =>
-                      setCustomerEditForm({ ...customerEditForm, customer_phone: e.target.value })
-                    }
-                    placeholder="Phone Number"
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-stone-400 font-semibold mb-1">Delivery Address</label>
-                  <textarea
-                    rows={2}
-                    value={customerEditForm.customer_address}
-                    onChange={(e) =>
-                      setCustomerEditForm({ ...customerEditForm, customer_address: e.target.value })
-                    }
-                    placeholder="Shipping Address"
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-stone-400 font-semibold mb-1">Pincode</label>
-                  <input
-                    type="text"
-                    value={customerEditForm.customer_pincode}
-                    onChange={(e) =>
-                      setCustomerEditForm({ ...customerEditForm, customer_pincode: e.target.value })
-                    }
-                    placeholder="Pincode"
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta"
-                  />
-                </div>
-
-                <div className="mt-6 pt-3 border-t border-stone-100 dark:border-stone-800 flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingCustomerDetails(false)}
-                    disabled={isPending}
-                    className="bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 px-4 py-2 rounded-xl text-xs font-semibold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSaveCustomerDetails}
-                    disabled={isPending}
-                    className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md disabled:opacity-50"
-                  >
-                    {isPending ? "Saving..." : "Save Details"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL 2: Courier Charge Modal (Estimated or Final) ────────────── */}
-      {courierModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setCourierModalOrder(null)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
-            <h3 className="font-heading font-bold text-lg mb-1">
-              {courierTargetStatus === "handled"
-                ? "Set Estimated Courier Charge"
-                : "Confirm Final Courier Charge"}
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">
-              Order <span className="font-mono font-semibold">{courierModalOrder.order_ref}</span> · Items Subtotal: {formatINR(courierModalOrder.subtotal)}
-            </p>
-
-            {courierModalError && (
-              <div className="mb-3 rounded-xl bg-red-50 p-2.5 text-xs text-red-700 border border-red-200">
-                {courierModalError}
-              </div>
-            )}
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  {courierTargetStatus === "handled"
-                    ? "Estimated Courier Price (₹)"
-                    : "Final Courier Price (₹)"}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={courierInputValue}
-                  onChange={(e) => setCourierInputValue(e.target.value)}
-                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                  placeholder="0"
-                  autoFocus
-                />
-              </div>
-
-              {/* Quick "No Change" Button for Final Courier */}
-              {courierTargetStatus === "dispatched" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const est = courierModalOrder.estimated_courier_price ?? 0;
-                    handleSaveCourierModal(est);
-                  }}
-                  className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 py-2 rounded-xl text-xs font-semibold transition-colors"
-                >
-                  ⚡ No Change (Reuse Estimated: {formatINR(courierModalOrder.estimated_courier_price ?? 0)})
-                </button>
-              )}
-
-              {/* Calculated Total Preview */}
-              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3 text-xs flex justify-between items-center text-emerald-950 dark:text-emerald-300">
-                <span className="font-medium">Calculated Order Total:</span>
-                <span className="text-sm font-bold">
-                  {formatINR(
-                    courierModalOrder.subtotal - (courierModalOrder.discount_amount_applied ?? 0) + (parseFloat(courierInputValue) || 0)
-                  )}
-                </span>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setCourierModalOrder(null)}
-                  disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSaveCourierModal()}
-                  disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
-                >
-                  {isPending ? "Saving..." : "Save & Update Stage"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── MODAL 3: Add Manual Order Form Modal ──────────────────────────── */}
-      {showManualModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setShowManualModal(false)}
-          />
-          <div className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
-              <h3 className="font-heading font-bold text-lg flex items-center gap-2">
-                <Plus className="w-5 h-5 text-terracotta" />
-                <span>Create Manual Order (Phone / In-Person)</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowManualModal(false)}
-                className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {manualError && (
-              <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
-                {manualError}
-              </div>
-            )}
-
-            <form onSubmit={handleCreateManualOrderSubmit} className="space-y-4 text-xs">
-              {/* Customer Name */}
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Customer Name
-                </label>
-                <input
-                  type="text"
-                  value={manualForm.customerName || ""}
-                  onChange={(e) =>
-                    setManualForm({ ...manualForm, customerName: e.target.value })
-                  }
-                  placeholder="e.g. Ramesh Kumar"
-                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                />
-              </div>
-
-              {/* Customer Phone */}
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Customer Phone
-                </label>
-                <input
-                  type="tel"
-                  value={manualForm.customerPhone || ""}
-                  onChange={(e) =>
-                    setManualForm({ ...manualForm, customerPhone: e.target.value })
-                  }
-                  placeholder="e.g. 9847012345"
-                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                />
-              </div>
-
-              {/* Delivery Address */}
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Delivery Address
-                </label>
-                <textarea
-                  rows={2}
-                  value={manualForm.customerAddress || ""}
-                  onChange={(e) =>
-                    setManualForm({ ...manualForm, customerAddress: e.target.value })
-                  }
-                  placeholder="e.g. House No. 12, MG Road, Ernakulam"
-                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
-                />
-              </div>
-
-              {/* Pincode */}
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Pincode
-                </label>
-                <input
-                  type="text"
-                  value={manualForm.customerPincode || ""}
-                  onChange={(e) =>
-                    setManualForm({ ...manualForm, customerPincode: e.target.value })
-                  }
-                  placeholder="e.g. 682001"
-                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                />
-              </div>
-
-              {/* Plant Search & Select Picker */}
-              <div>
-                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Select Plants from Catalogue <span className="text-red-500">*</span>
-                </label>
-
-                <PlantSearchPicker
-                  plants={plants || []}
-                  onSelectPlant={handleAddPlantToManualOrder}
-                  collapsible={false}
-                  placeholder="Type plant name to search…"
-                />
-              </div>
-
-              {/* Selected Items List */}
-              {manualSelectedItems.length > 0 ? (
-                <div className="space-y-2">
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300">
-                    Selected Plants ({manualSelectedItems.length})
-                  </label>
-
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {manualSelectedItems.map((item) => (
-                      <div
-                        key={item.plant_id}
-                        className="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          {item.photo ? (
-                            <img
-                              src={item.photo}
-                              alt={item.name}
-                              className="w-10 h-10 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-sm shrink-0">
-                              🌿
-                            </div>
-                          )}
-                          <div className="truncate">
-                            <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
-                              {item.name}
-                            </span>
-                            <span className="text-[11px] text-stone-400 font-mono">
-                              {formatINR(item.price)} each
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          {/* Quantity Stepper */}
-                          <div className="flex items-center gap-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-1.5 py-0.5">
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateManualItemQty(item.plant_id, item.qty - 1)}
-                              className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs"
-                            >
-                              -
-                            </button>
-                            <span className="font-bold text-xs w-4 text-center text-stone-900 dark:text-stone-100">
-                              {item.qty}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateManualItemQty(item.plant_id, item.qty + 1)}
-                              className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs"
-                            >
-                              +
-                            </button>
-                          </div>
-
-                          <span className="font-mono font-bold text-xs text-stone-900 dark:text-stone-100 w-16 text-right">
-                            {formatINR(item.price * item.qty)}
-                          </span>
-
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateManualItemQty(item.plant_id, 0)}
-                            className="p-1 text-stone-400 hover:text-red-500 transition-colors"
-                            title="Remove plant"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      <Pencil className="w-3 h-3" />
+                      <span>Edit Customer Details</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCustomerModalOrder(null)}
+                      className="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-semibold"
+                    >
+                      Close
+                    </button>
                   </div>
                 </div>
               ) : (
-                <div className="p-3 text-center border border-dashed border-stone-300 dark:border-stone-700 rounded-2xl text-stone-400 text-xs">
-                  No plants selected yet. Search above to add items.
+                /* Edit Form */
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={customerEditForm.customer_name}
+                      onChange={(e) => setCustomerEditForm({ ...customerEditForm, customer_name: e.target.value })}
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      value={customerEditForm.customer_phone}
+                      onChange={(e) => setCustomerEditForm({ ...customerEditForm, customer_phone: e.target.value })}
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Delivery Address
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={customerEditForm.customer_address}
+                      onChange={(e) => setCustomerEditForm({ ...customerEditForm, customer_address: e.target.value })}
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Pincode
+                    </label>
+                    <input
+                      type="text"
+                      value={customerEditForm.customer_pincode}
+                      onChange={(e) => setCustomerEditForm({ ...customerEditForm, customer_pincode: e.target.value })}
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                    />
+                  </div>
+
+                  <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditingCustomerDetails(false)}
+                      className="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-semibold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveCustomerDetails}
+                      disabled={isPending}
+                      className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md disabled:opacity-50"
+                    >
+                      {isPending ? "Saving..." : "Save Details"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL 2: Courier Charge Modal (Estimated or Final) ────────────── */}
+      <AnimatePresence>
+        {courierModalOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setCourierModalOrder(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+            >
+              <h3 className="font-heading font-bold text-lg mb-1">
+                {courierTargetStatus === "handled"
+                  ? "Set Estimated Courier Charge"
+                  : "Confirm Final Courier Charge"}
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">
+                Order <span className="font-mono font-semibold">{courierModalOrder.order_ref}</span> · Items Subtotal: {formatINR(courierModalOrder.subtotal)}
+              </p>
+
+              {courierModalError && (
+                <div className="mb-3 rounded-xl bg-red-50 p-2.5 text-xs text-red-700 border border-red-200">
+                  {courierModalError}
                 </div>
               )}
 
-              {/* Auto-Calculated Subtotal Box & Initial Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 p-3 text-xs text-emerald-950 dark:text-emerald-300">
-                  <div className="flex justify-between items-center">
-                    <span className="font-semibold text-[11px]">Auto Subtotal:</span>
-                    <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
-                      {formatINR(manualSubtotal)}
-                    </span>
-                  </div>
-                  {manualDiscountAmount > 0 && (
-                    <div className="flex justify-between items-center mt-1 text-rose-600 dark:text-rose-400">
-                      <span className="font-semibold text-[11px]">
-                        Discount ({manualDiscountType === 'percentage' ? `${manualDiscountValue}%` : `₹${manualDiscountValue}`}):
-                      </span>
-                      <span className="font-bold text-[11px]">−{formatINR(manualDiscountAmount)}</span>
-                    </div>
-                  )}
-                  {manualDiscountAmount > 0 && (
-                    <div className="flex justify-between items-center mt-1 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40">
-                      <span className="font-bold text-[11px]">After Discount:</span>
-                      <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
-                        {formatINR(manualSubtotal - manualDiscountAmount)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-
+              <div className="space-y-4">
                 <div>
-                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Initial Status
-                  </label>
-                  <select
-                    value={manualForm.status}
-                    onChange={(e) =>
-                      setManualForm({
-                        ...manualForm,
-                        status: e.target.value as OrderStatus,
-                      })
-                    }
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                  >
-                    <option value="pending">1. Pending Review</option>
-                    <option value="handled">2. Handled / Confirmed</option>
-                    <option value="paid">3. Paid (Verified)</option>
-                    <option value="packaged">4. Packaged</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Conditional Estimated Courier Field (shown for Handled, Paid, or Packaged) */}
-              {manualForm.status !== "pending" && (
-                <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1.5 animate-fadeIn">
-                  <label className="block font-semibold text-stone-800 dark:text-stone-200 text-xs">
-                    Estimated Courier Charge (₹)
+                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    {courierTargetStatus === "handled"
+                      ? "Estimated Courier Price (₹)"
+                      : "Final Courier Price (₹)"}
                   </label>
                   <input
                     type="number"
                     min="0"
                     step="1"
-                    value={manualEstimatedCourier}
-                    onChange={(e) => setManualEstimatedCourier(e.target.value)}
-                    placeholder="e.g. 80"
-                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 font-mono"
+                    value={courierInputValue}
+                    onChange={(e) => setCourierInputValue(e.target.value)}
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                    placeholder="0"
+                    autoFocus
                   />
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                    Courier fee quote provided to customer during phone/in-person sale.
-                  </p>
                 </div>
-              )}
 
-              {/* Optional Discount (collapsed by default) */}
-              {!manualDiscountEnabled ? (
-                <div>
+                {/* Quick "No Change" Button for Final Courier */}
+                {courierTargetStatus === "dispatched" && (
                   <button
                     type="button"
-                    onClick={() => setManualDiscountEnabled(true)}
-                    className="text-[11px] text-stone-400 dark:text-stone-500 hover:text-terracotta dark:hover:text-terracotta transition-colors font-medium flex items-center gap-1"
+                    onClick={() => {
+                      const est = courierModalOrder.estimated_courier_price ?? 0;
+                      handleSaveCourierModal(est);
+                    }}
+                    className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 py-2 rounded-xl text-xs font-semibold transition-colors"
                   >
-                    <Tag className="w-3 h-3" />
-                    + Add Discount
+                    ⚡ No Change (Reuse Estimated: {formatINR(courierModalOrder.estimated_courier_price ?? 0)})
+                  </button>
+                )}
+
+                {/* Calculated Total Preview */}
+                <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 p-3 text-xs flex justify-between items-center text-emerald-950 dark:text-emerald-300">
+                  <span className="font-medium">Calculated Order Total:</span>
+                  <span className="text-sm font-bold">
+                    {formatINR(
+                      courierModalOrder.subtotal - (courierModalOrder.discount_amount_applied ?? 0) + (parseFloat(courierInputValue) || 0)
+                    )}
+                  </span>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCourierModalOrder(null)}
+                    disabled={isPending}
+                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSaveCourierModal()}
+                    disabled={isPending}
+                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                  >
+                    {isPending ? "Saving..." : "Save & Update Stage"}
                   </button>
                 </div>
-              ) : (
-                <div className="p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-800/40 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1">
-                      <Tag className="w-3 h-3" />
-                      Discount
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setManualDiscountEnabled(false);
-                        setManualDiscountValue('');
-                      }}
-                      className="text-stone-400 hover:text-red-500 p-0.5"
-                      title="Remove discount"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
-                      <button
-                        type="button"
-                        onClick={() => setManualDiscountType('flat')}
-                        className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
-                          manualDiscountType === 'flat'
-                            ? 'bg-terracotta text-white'
-                            : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
-                        }`}
-                      >
-                        ₹ Flat
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setManualDiscountType('percentage')}
-                        className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
-                          manualDiscountType === 'percentage'
-                            ? 'bg-terracotta text-white'
-                            : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
-                        }`}
-                      >
-                        % Percent
-                      </button>
-                    </div>
-                    <input
-                      type="number"
-                      min="0"
-                      step={manualDiscountType === 'percentage' ? '1' : '0.01'}
-                      max={manualDiscountType === 'percentage' ? '100' : undefined}
-                      value={manualDiscountValue}
-                      onChange={(e) => setManualDiscountValue(e.target.value)}
-                      placeholder={manualDiscountType === 'flat' ? 'Amount (₹)' : 'Percent (%)'}
-                      className="flex-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-[11px] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta w-20"
-                    />
-                  </div>
-                </div>
-              )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
-              {/* Submit Actions */}
-              <div className="flex gap-2 pt-3">
+      {/* ── MODAL 3: Add Manual Order Form Modal ──────────────────────────── */}
+      <AnimatePresence>
+        {showManualModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setShowManualModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
+                <h3 className="font-heading font-bold text-lg flex items-center gap-2">
+                  <Plus className="w-5 h-5 text-terracotta" />
+                  <span>Create Manual Order (Phone / In-Person)</span>
+                </h3>
                 <button
                   type="button"
                   onClick={() => setShowManualModal(false)}
-                  disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                  className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
-                >
-                  {isPending ? "Creating..." : "Create Order"}
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            </form>
+
+              {manualError && (
+                <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-950/40 p-3 text-xs text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">
+                  {manualError}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateManualOrderSubmit} className="space-y-4 text-xs">
+                {/* Customer Name */}
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Customer Name
+                  </label>
+                  <input
+                    type="text"
+                    value={manualForm.customerName || ""}
+                    onChange={(e) =>
+                      setManualForm({ ...manualForm, customerName: e.target.value })
+                    }
+                    placeholder="e.g. Ramesh Kumar"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                  />
+                </div>
+
+                {/* Customer Phone */}
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Customer Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={manualForm.customerPhone || ""}
+                    onChange={(e) =>
+                      setManualForm({ ...manualForm, customerPhone: e.target.value })
+                    }
+                    placeholder="e.g. 9847012345"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                  />
+                </div>
+
+                {/* Delivery Address */}
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Delivery Address
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={manualForm.customerAddress || ""}
+                    onChange={(e) =>
+                      setManualForm({ ...manualForm, customerAddress: e.target.value })
+                    }
+                    placeholder="e.g. House No. 12, MG Road, Ernakulam"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
+                  />
+                </div>
+
+                {/* Pincode */}
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Pincode
+                  </label>
+                  <input
+                    type="text"
+                    value={manualForm.customerPincode || ""}
+                    onChange={(e) =>
+                      setManualForm({ ...manualForm, customerPincode: e.target.value })
+                    }
+                    placeholder="e.g. 682001"
+                    className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                  />
+                </div>
+
+                {/* Plant Search & Select Picker */}
+                <div>
+                  <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Select Plants from Catalogue <span className="text-red-500">*</span>
+                  </label>
+
+                  <PlantSearchPicker
+                    plants={plants || []}
+                    onSelectPlant={handleAddPlantToManualOrder}
+                    collapsible={false}
+                    placeholder="Type plant name to search…"
+                  />
+                </div>
+
+                {/* Selected Items List */}
+                {manualSelectedItems.length > 0 ? (
+                  <div className="space-y-2">
+                    <label className="block font-semibold text-stone-700 dark:text-stone-300">
+                      Selected Plants ({manualSelectedItems.length})
+                    </label>
+
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {manualSelectedItems.map((item) => (
+                        <div
+                          key={item.plant_id}
+                          className="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {item.photo ? (
+                              <img
+                                src={item.photo}
+                                alt={item.name}
+                                className="w-10 h-10 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
+                              />
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center text-sm shrink-0">
+                                🌿
+                              </div>
+                            )}
+                            <div className="truncate">
+                              <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
+                                {item.name}
+                              </span>
+                              <span className="text-[11px] text-stone-400 font-mono">
+                                {formatINR(item.price)} each
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            {/* Quantity Stepper */}
+                            <div className="flex items-center gap-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-1.5 py-0.5">
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateManualItemQty(item.plant_id, item.qty - 1)}
+                                className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs"
+                              >
+                                -
+                              </button>
+                              <span className="font-bold text-xs w-4 text-center text-stone-900 dark:text-stone-100">
+                                {item.qty}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleUpdateManualItemQty(item.plant_id, item.qty + 1)}
+                                className="w-5 h-5 flex items-center justify-center font-bold text-stone-600 dark:text-stone-300 hover:text-stone-900 text-xs"
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            <span className="font-mono font-bold text-xs text-stone-900 dark:text-stone-100 w-16 text-right">
+                              {formatINR(item.price * item.qty)}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateManualItemQty(item.plant_id, 0)}
+                              className="p-1 text-stone-400 hover:text-red-500 transition-colors"
+                              title="Remove plant"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-3 text-center border border-dashed border-stone-300 dark:border-stone-700 rounded-2xl text-stone-400 text-xs">
+                    No plants selected yet. Search above to add items.
+                  </div>
+                )}
+
+                {/* Auto-Calculated Subtotal Box & Initial Status */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                  <div className="rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/40 p-3 text-xs text-emerald-950 dark:text-emerald-300">
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-[11px]">Auto Subtotal:</span>
+                      <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                        {formatINR(manualSubtotal)}
+                      </span>
+                    </div>
+                    {manualDiscountAmount > 0 && (
+                      <div className="flex justify-between items-center mt-1 text-rose-600 dark:text-rose-400">
+                        <span className="font-semibold text-[11px]">
+                          Discount ({manualDiscountType === 'percentage' ? `${manualDiscountValue}%` : `₹${manualDiscountValue}`}):
+                        </span>
+                        <span className="font-bold text-[11px]">−{formatINR(manualDiscountAmount)}</span>
+                      </div>
+                    )}
+                    {manualDiscountAmount > 0 && (
+                      <div className="flex justify-between items-center mt-1 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40">
+                        <span className="font-bold text-[11px]">After Discount:</span>
+                        <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                          {formatINR(manualSubtotal - manualDiscountAmount)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                      Initial Status
+                    </label>
+                    <select
+                      value={manualForm.status}
+                      onChange={(e) =>
+                        setManualForm({
+                          ...manualForm,
+                          status: e.target.value as OrderStatus,
+                        })
+                      }
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                    >
+                      <option value="pending">1. Pending Review</option>
+                      <option value="handled">2. Handled / Confirmed</option>
+                      <option value="paid">3. Paid (Verified)</option>
+                      <option value="packaged">4. Packaged</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Conditional Estimated Courier Field (shown for Handled, Paid, or Packaged) */}
+                {manualForm.status !== "pending" && (
+                  <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 space-y-1.5 animate-fadeIn">
+                    <label className="block font-semibold text-stone-800 dark:text-stone-200 text-xs">
+                      Estimated Courier Charge (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={manualEstimatedCourier}
+                      onChange={(e) => setManualEstimatedCourier(e.target.value)}
+                      placeholder="e.g. 80"
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 font-mono"
+                    />
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                      Courier fee quote provided to customer during phone/in-person sale.
+                    </p>
+                  </div>
+                )}
+
+                {/* Optional Discount (collapsed by default) */}
+                {!manualDiscountEnabled ? (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setManualDiscountEnabled(true)}
+                      className="text-[11px] text-stone-400 dark:text-stone-500 hover:text-terracotta dark:hover:text-terracotta transition-colors font-medium flex items-center gap-1"
+                    >
+                      <Tag className="w-3 h-3" />
+                      + Add Discount
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-xl bg-rose-50/80 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-800/40 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-rose-700 dark:text-rose-400 flex items-center gap-1">
+                        <Tag className="w-3 h-3" />
+                        Discount
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setManualDiscountEnabled(false);
+                          setManualDiscountValue('');
+                        }}
+                        className="text-stone-400 hover:text-red-500 p-0.5"
+                        title="Remove discount"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => setManualDiscountType('flat')}
+                          className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                            manualDiscountType === 'flat'
+                              ? 'bg-terracotta text-white'
+                              : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                          }`}
+                        >
+                          ₹ Flat
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setManualDiscountType('percentage')}
+                          className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                            manualDiscountType === 'percentage'
+                              ? 'bg-terracotta text-white'
+                              : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                          }`}
+                        >
+                          % Percent
+                        </button>
+                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        step={manualDiscountType === 'percentage' ? '1' : '0.01'}
+                        max={manualDiscountType === 'percentage' ? '100' : undefined}
+                        value={manualDiscountValue}
+                        onChange={(e) => setManualDiscountValue(e.target.value)}
+                        placeholder={manualDiscountType === 'flat' ? 'Amount (₹)' : 'Percent (%)'}
+                        className="flex-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-2.5 py-1.5 text-[11px] text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-1 focus:ring-terracotta w-20"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Submit Actions */}
+                <div className="flex gap-2 pt-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowManualModal(false)}
+                    disabled={isPending}
+                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending}
+                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                  >
+                    {isPending ? "Creating..." : "Create Order"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* ── MODAL 4: Admin Notes Modal ───────────────────────────────────── */}
-      {editingNoteOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setEditingNoteOrder(null)}
-          />
-          <div className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
-            <h3 className="font-heading font-bold text-base mb-1">
-              Admin Note — {editingNoteOrder.order_ref}
-            </h3>
-            <p className="text-xs text-stone-500 mb-4">
-              Internal note (e.g. delivery preferences, customer requests). Only visible to admin.
-            </p>
+      <AnimatePresence>
+        {editingNoteOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setEditingNoteOrder(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+            >
+              <h3 className="font-heading font-bold text-base mb-1">
+                Admin Note — {editingNoteOrder.order_ref}
+              </h3>
+              <p className="text-xs text-stone-500 mb-4">
+                Internal note (e.g. delivery preferences, customer requests). Only visible to admin.
+              </p>
 
-            <div className="space-y-4">
-              <textarea
-                value={noteInput}
-                onChange={(e) => setNoteInput(e.target.value)}
-                rows={4}
-                placeholder="e.g. Customer requested delivery after 6pm..."
-                className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
-                autoFocus
-              />
+              <div className="space-y-4">
+                <textarea
+                  value={noteInput}
+                  onChange={(e) => setNoteInput(e.target.value)}
+                  rows={4}
+                  placeholder="e.g. Customer requested delivery after 6pm..."
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
+                  autoFocus
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditingNoteOrder(null)}
+                    disabled={isPending}
+                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveNote}
+                    disabled={isPending}
+                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                  >
+                    {isPending ? "Saving..." : "Save Note"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL 5: Soft Delete Confirmation Modal ───────────────────────── */}
+      <AnimatePresence>
+        {deletingOrder && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setDeletingOrder(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+            >
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
+                ⚠️
+              </div>
+              <h3 className="font-heading font-bold text-base mb-1">
+                Delete order {deletingOrder.order_ref}?
+              </h3>
+              <p className="text-xs text-stone-500 mb-6">
+                This will hide order <span className="font-mono font-semibold">{deletingOrder.order_ref}</span> from the active list.
+              </p>
 
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditingNoteOrder(null)}
+                  onClick={() => setDeletingOrder(null)}
                   disabled={isPending}
                   className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
                 >
@@ -1812,57 +1895,17 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={handleSaveNote}
+                  onClick={handleConfirmDelete}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                  className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
                 >
-                  {isPending ? "Saving..." : "Save Note"}
+                  {isPending ? "Deleting..." : "Confirm Delete"}
                 </button>
               </div>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
-
-      {/* ── MODAL 5: Soft Delete Confirmation Modal ───────────────────────── */}
-      {deletingOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
-            onClick={() => setDeletingOrder(null)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
-              ⚠️
-            </div>
-            <h3 className="font-heading font-bold text-base mb-1">
-              Delete order {deletingOrder.order_ref}?
-            </h3>
-            <p className="text-xs text-stone-500 mb-6">
-              This will hide order <span className="font-mono font-semibold">{deletingOrder.order_ref}</span> from the active list.
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDeletingOrder(null)}
-                disabled={isPending}
-                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                disabled={isPending}
-                className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
-              >
-                {isPending ? "Deleting..." : "Confirm Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }

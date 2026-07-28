@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
+import { motion, AnimatePresence } from "framer-motion";
 import { signOut } from "../actions";
 import type {
   Plant,
@@ -189,7 +190,7 @@ export function UnifiedAdminConsole({
       <header className="sticky top-0 z-40 bg-white/85 dark:bg-stone-900/85 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* ZONE 1: LEFT BRAND & ADMIN BADGE */}
-          <div className="flex-1 flex items-center gap-3 shrink-0 justify-start">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={() => switchTab("overview")}
@@ -224,7 +225,7 @@ export function UnifiedAdminConsole({
           </div>
 
           {/* ZONE 2: CENTER PRIMARY NAVIGATION TABS (Desktop) */}
-          <nav className="hidden lg:flex items-center justify-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner mx-auto">
+          <nav className="hidden lg:flex items-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
             <button
               type="button"
               onClick={() => switchTab("overview")}
@@ -297,7 +298,7 @@ export function UnifiedAdminConsole({
           </nav>
 
           {/* ZONE 3: RIGHT UTILITIES & USER ACCOUNT CONTROLS */}
-          <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {/* Mobile Hamburger Button */}
             <button
               type="button"
@@ -377,91 +378,107 @@ export function UnifiedAdminConsole({
         </div>
 
         {/* RESPONSIVE MOBILE MENU DROPDOWN */}
-        {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-stone-200 dark:border-stone-800 bg-white/95 dark:bg-stone-900/95 px-4 py-3.5 space-y-1.5 shadow-xl backdrop-blur-md transition-all">
-            <button
-              type="button"
-              onClick={() => switchTab("overview")}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
-                activeTab === "overview"
-                  ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100"
-                  : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="lg:hidden border-t border-stone-200 dark:border-stone-800 bg-white/95 dark:bg-stone-900/95 px-4 py-3.5 space-y-1.5 shadow-xl backdrop-blur-md overflow-hidden"
             >
-              <LayoutDashboard className="w-4 h-4 text-botanical-800 dark:text-botanical-100" />
-              <span>Overview</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab("plants")}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
-                activeTab === "plants"
-                  ? "bg-emerald-50 dark:bg-stone-800 text-emerald-800 dark:text-emerald-300"
-                  : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
-            >
-              <Sprout className="w-4 h-4 text-emerald-600" />
-              <span>Catalogue</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab("orders")}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between ${
-                activeTab === "orders"
-                  ? "bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300"
-                  : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Package className="w-4 h-4 text-amber-600" />
-                <span>Orders Management</span>
-              </div>
-              <span className="bg-terracotta text-white font-bold text-[10px] px-2 py-0.5 rounded-full">
-                {activeOrdersCount} Active
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab("storefront")}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
-                activeTab === "storefront"
-                  ? "bg-stone-100 dark:bg-stone-800 text-terracotta"
-                  : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
-            >
-              <LayoutTemplate className="w-4 h-4 text-terracotta" />
-              <span>Storefront CMS</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab("sales")}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
-                activeTab === "sales"
-                  ? "bg-emerald-50 dark:bg-stone-800 text-emerald-800 dark:text-emerald-300"
-                  : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
-            >
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-              <span>Sales Analytics</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => switchTab("settings")}
-              className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 border-t border-stone-100 dark:border-stone-800 pt-3 mt-1 ${
-                activeTab === "settings"
-                  ? "bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-white"
-                  : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
-              }`}
-            >
-              <Settings className="w-4 h-4 text-stone-400" />
-              <span>Site Settings</span>
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => switchTab("overview")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                  activeTab === "overview"
+                    ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <LayoutDashboard className="w-4 h-4 text-botanical-800 dark:text-botanical-100" />
+                <span>Overview</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("plants")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                  activeTab === "plants"
+                    ? "bg-emerald-50 dark:bg-stone-800 text-emerald-800 dark:text-emerald-300"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <Sprout className="w-4 h-4 text-emerald-600" />
+                <span>Catalogue</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("orders")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-between ${
+                  activeTab === "orders"
+                    ? "bg-amber-50 dark:bg-stone-800 text-amber-800 dark:text-amber-300"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Package className="w-4 h-4 text-amber-600" />
+                  <span>Orders Management</span>
+                </div>
+                <span className="bg-terracotta text-white font-bold text-[10px] px-2 py-0.5 rounded-full">
+                  {activeOrdersCount} Active
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("storefront")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                  activeTab === "storefront"
+                    ? "bg-stone-100 dark:bg-stone-800 text-terracotta"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <LayoutTemplate className="w-4 h-4 text-terracotta" />
+                <span>Storefront CMS</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("sales")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                  activeTab === "sales"
+                    ? "bg-emerald-50 dark:bg-stone-800 text-emerald-800 dark:text-emerald-300"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <TrendingUp className="w-4 h-4 text-emerald-600" />
+                <span>Sales Analytics</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("settings")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 border-t border-stone-100 dark:border-stone-800 pt-3 mt-1 ${
+                  activeTab === "settings"
+                    ? "bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-white"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <Settings className="w-4 h-4 text-stone-400" />
+                <span>Site Settings</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* MAIN CONTAINER */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+          >
         {/* =================================================================== */}
         {/* TAB 1: OVERVIEW DASHBOARD */}
         {/* =================================================================== */}
@@ -831,34 +848,44 @@ export function UnifiedAdminConsole({
               </button>
             </div>
 
-            {/* Sub-tab 1: Hero Banner */}
-            {storefrontSubTab === "hero" && (
-              <div>
-                {heroBanner ? (
-                  <HeroBannerForm banner={heroBanner} />
-                ) : (
-                  <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
-                    Hero banner data not initialized.
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={storefrontSubTab}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+              >
+                {/* Sub-tab 1: Hero Banner */}
+                {storefrontSubTab === "hero" && (
+                  <div>
+                    {heroBanner ? (
+                      <HeroBannerForm banner={heroBanner} />
+                    ) : (
+                      <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
+                        Hero banner data not initialized.
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* Sub-tab 2: Carousel Section */}
-            {storefrontSubTab === "carousel" && (
-              <div>
-                {carouselSettings ? (
-                  <CarouselAdminClient
-                    settings={carouselSettings}
-                    slides={carouselSlides}
-                  />
-                ) : (
-                  <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
-                    Carousel section settings not initialized.
+                {/* Sub-tab 2: Carousel Section */}
+                {storefrontSubTab === "carousel" && (
+                  <div>
+                    {carouselSettings ? (
+                      <CarouselAdminClient
+                        settings={carouselSettings}
+                        slides={carouselSlides}
+                      />
+                    ) : (
+                      <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
+                        Carousel section settings not initialized.
+                      </div>
+                    )}
                   </div>
                 )}
-              </div>
-            )}
+              </motion.div>
+            </AnimatePresence>
           </div>
         )}
 
@@ -903,6 +930,8 @@ export function UnifiedAdminConsole({
             <TagManagementClient initialTags={tagsWithUsage} />
           </div>
         )}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import {
   updateCarouselSectionSettings,
@@ -436,185 +437,213 @@ export function CarouselAdminClient({ settings, slides }: Props) {
       </div>
 
       {/* ── Slide Add / Edit Modal ─────────────────────────────────────────── */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs" onClick={closeModal} />
-          <form
-            onSubmit={handleSaveSlide}
-            className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-6 sm:p-8 shadow-xl space-y-4 text-stone-900 dark:text-stone-100"
-          >
-            <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
-              {activeModal === "edit" ? "Edit Slide" : "Add New Slide"}
-            </h3>
+      <AnimatePresence>
+        {activeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={closeModal}
+            />
+            <motion.form
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              onSubmit={handleSaveSlide}
+              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-6 sm:p-8 shadow-xl space-y-4 text-stone-900 dark:text-stone-100"
+            >
+              <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
+                {activeModal === "edit" ? "Edit Slide" : "Add New Slide"}
+              </h3>
 
-            {/* Tag Label */}
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Slide Tag Label <span className="font-normal text-stone-400 dark:text-stone-500">(optional, e.g. "NURSERY HERITAGE")</span>
-              </label>
-              <input
-                type="text"
-                value={slideTagLabel}
-                onChange={(e) => setSlideTagLabel(e.target.value)}
-                placeholder="e.g. NURSERY HERITAGE"
-                disabled={savingSlide}
-                className={inputCls}
-              />
-            </div>
+              {/* Tag Label */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Slide Tag Label <span className="font-normal text-stone-400 dark:text-stone-500">(optional, e.g. "NURSERY HERITAGE")</span>
+                </label>
+                <input
+                  type="text"
+                  value={slideTagLabel}
+                  onChange={(e) => setSlideTagLabel(e.target.value)}
+                  placeholder="e.g. NURSERY HERITAGE"
+                  disabled={savingSlide}
+                  className={inputCls}
+                />
+              </div>
 
-            {/* Title */}
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Slide Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={slideTitle}
-                onChange={(e) => setSlideTitle(e.target.value)}
-                placeholder="Slide title..."
-                required
-                disabled={savingSlide}
-                className={inputCls}
-              />
-            </div>
+              {/* Title */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Slide Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={slideTitle}
+                  onChange={(e) => setSlideTitle(e.target.value)}
+                  placeholder="Slide title..."
+                  required
+                  disabled={savingSlide}
+                  className={inputCls}
+                />
+              </div>
 
-            {/* Description */}
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Slide Description <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                value={slideDescription}
-                onChange={(e) => setSlideDescription(e.target.value)}
-                rows={3}
-                placeholder="Slide description..."
-                required
-                disabled={savingSlide}
-                className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent resize-none"
-              />
-            </div>
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Slide Description <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  value={slideDescription}
+                  onChange={(e) => setSlideDescription(e.target.value)}
+                  rows={3}
+                  placeholder="Slide description..."
+                  required
+                  disabled={savingSlide}
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 p-3 text-sm text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent resize-none"
+                />
+              </div>
 
-            {/* Background Image Upload */}
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Background Image <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
-              </label>
+              {/* Background Image Upload */}
+              <div>
+                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Background Image <span className="font-normal text-stone-400 dark:text-stone-500">(optional)</span>
+                </label>
 
-              {slideBgImage && (
-                <div className="relative mb-2 inline-block">
-                  <img
-                    src={slideBgImage}
-                    alt="Preview"
-                    className="h-20 w-auto rounded-xl border border-stone-200 dark:border-stone-700 object-cover"
-                  />
+                {slideBgImage && (
+                  <div className="relative mb-2 inline-block">
+                    <img
+                      src={slideBgImage}
+                      alt="Preview"
+                      className="h-20 w-auto rounded-xl border border-stone-200 dark:border-stone-700 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setSlideBgImage(null)}
+                      className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageUpload}
+                />
+                <div>
                   <button
                     type="button"
-                    onClick={() => setSlideBgImage(null)}
-                    className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={savingSlide || uploadingImage}
+                    className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200"
                   >
-                    ×
+                    {uploadingImage ? "Uploading…" : slideBgImage ? "Replace Image" : "+ Upload Image"}
                   </button>
                 </div>
-              )}
+              </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageUpload}
-              />
-              <div>
+              {/* Active Toggle */}
+              <div className="flex items-center justify-between pt-2">
+                <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">Slide Active</span>
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={savingSlide || uploadingImage}
-                  className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200"
+                  onClick={() => setSlideActive(!slideActive)}
+                  disabled={savingSlide}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ${
+                    slideActive ? "bg-terracotta" : "bg-stone-300 dark:bg-stone-700"
+                  }`}
+                  role="switch"
+                  aria-checked={slideActive}
                 >
-                  {uploadingImage ? "Uploading…" : slideBgImage ? "Replace Image" : "+ Upload Image"}
+                  <span
+                    className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
+                      slideActive ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
                 </button>
               </div>
-            </div>
 
-            {/* Active Toggle */}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-xs font-semibold text-stone-700 dark:text-stone-300">Slide Active</span>
-              <button
-                type="button"
-                onClick={() => setSlideActive(!slideActive)}
-                disabled={savingSlide}
-                className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors duration-200 ${
-                  slideActive ? "bg-terracotta" : "bg-stone-300 dark:bg-stone-700"
-                }`}
-                role="switch"
-                aria-checked={slideActive}
-              >
-                <span
-                  className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-xs transition-transform duration-200 ${
-                    slideActive ? "translate-x-6" : "translate-x-1"
-                  }`}
-                />
-              </button>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex gap-2 pt-4 border-t border-stone-100 dark:border-stone-800">
-              <button
-                type="button"
-                onClick={closeModal}
-                disabled={savingSlide}
-                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={savingSlide || uploadingImage}
-                className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-md disabled:opacity-50"
-              >
-                {savingSlide ? "Saving..." : activeModal === "edit" ? "Update Slide" : "Add Slide"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+              {/* Modal Actions */}
+              <div className="flex gap-2 pt-4 border-t border-stone-100 dark:border-stone-800">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  disabled={savingSlide}
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingSlide || uploadingImage}
+                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-md disabled:opacity-50"
+                >
+                  {savingSlide ? "Saving..." : activeModal === "edit" ? "Update Slide" : "Add Slide"}
+                </button>
+              </div>
+            </motion.form>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ── Slide Delete Confirmation Modal ───────────────────────────────── */}
-      {deletingSlide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs" onClick={() => setDeletingSlide(null)} />
-          <div className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100">
-            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 text-xl">
-              ⚠️
-            </div>
-            <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
-              Delete slide &quot;{deletingSlide.title}&quot;?
-            </h3>
-            <p className="text-xs text-stone-500 dark:text-stone-400 mb-6">
-              This will permanently delete this slide from the carousel.
-            </p>
+      <AnimatePresence>
+        {deletingSlide && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 bg-stone-900/60 backdrop-blur-xs"
+              onClick={() => setDeletingSlide(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100"
+            >
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 text-xl">
+                ⚠️
+              </div>
+              <h3 className="text-base font-bold text-stone-900 dark:text-stone-100 mb-1">
+                Delete slide &quot;{deletingSlide.title}&quot;?
+              </h3>
+              <p className="text-xs text-stone-500 dark:text-stone-400 mb-6">
+                This will permanently delete this slide from the carousel.
+              </p>
 
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setDeletingSlide(null)}
-                disabled={isDeleting}
-                className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                disabled={isDeleting}
-                className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50 shadow-md"
-              >
-                {isDeleting ? "Deleting..." : "Confirm Delete"}
-              </button>
-            </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingSlide(null)}
+                  disabled={isDeleting}
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50 shadow-md"
+                >
+                  {isDeleting ? "Deleting..." : "Confirm Delete"}
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </div>
   );
 }
