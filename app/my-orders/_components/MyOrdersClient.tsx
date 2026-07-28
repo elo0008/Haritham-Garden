@@ -7,6 +7,7 @@ import { formatINR, formatDate } from "@/lib/utils";
 import { getEffectivePrice } from "@/lib/types";
 import { getLocalOrderUuids } from "@/lib/myOrdersStorage";
 import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, cancelCustomerOrder, hideOrderForCustomer } from "@/app/actions/customerOrders";
+import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
@@ -165,6 +166,22 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
 
   useEffect(() => {
     loadOrders();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("customer-orders-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        () => {
+          loadOrders();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const [editingOrderUpdatedAt, setEditingOrderUpdatedAt] = useState<string | null>(null);
