@@ -9,21 +9,151 @@ import {
   deleteTagAction,
   reorderTagsAction,
 } from "../actions";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
 import {
   Tag as TagIcon,
   Plus,
   Pencil,
   Trash2,
-  ChevronUp,
-  ChevronDown,
   Check,
   X,
   AlertTriangle,
+  GripVertical,
 } from "lucide-react";
 
 interface TagManagementClientProps {
   initialTags: TagWithUsage[];
+}
+
+interface TagRowItemProps {
+  tag: TagWithUsage;
+  isEditing: boolean;
+  editName: string;
+  renameError: string | null;
+  isPending: boolean;
+  onStartRename: (tag: TagWithUsage) => void;
+  onCancelRename: () => void;
+  onSaveRename: (id: string) => void;
+  onSetEditName: (name: string) => void;
+  onSetDeletingTag: (tag: TagWithUsage) => void;
+}
+
+function TagRowItem({
+  tag,
+  isEditing,
+  editName,
+  renameError,
+  isPending,
+  onStartRename,
+  onCancelRename,
+  onSaveRename,
+  onSetEditName,
+  onSetDeletingTag,
+}: TagRowItemProps) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      key={tag.id}
+      value={tag}
+      dragControls={dragControls}
+      dragListener={false}
+      className="p-4 sm:px-6 flex items-center justify-between gap-4 bg-white dark:bg-stone-900 hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition-colors select-none"
+    >
+      {/* Drag Handle Grip Icon */}
+      <div
+        onPointerDown={(e) => dragControls.start(e)}
+        className="p-1.5 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 touch-none shrink-0"
+        title="Drag to reorder"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+
+      {/* Tag Information / Edit Mode */}
+      <div className="flex-grow min-w-0">
+        {isEditing ? (
+          <div className="space-y-1.5">
+            {renameError && (
+              <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
+                {renameError}
+              </p>
+            )}
+            <div className="flex items-center gap-2 max-w-sm">
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => onSetEditName(e.target.value)}
+                className="flex-grow px-3 py-1.5 rounded-xl border border-terracotta bg-white dark:bg-stone-900 text-xs font-semibold text-stone-900 dark:text-stone-100 focus:outline-none"
+                autoFocus
+              />
+              <button
+                type="button"
+                onClick={() => onSaveRename(tag.id)}
+                disabled={isPending}
+                className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                title="Save"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onCancelRename}
+                className="p-1.5 rounded-lg bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-300"
+                title="Cancel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="font-heading font-bold text-base text-stone-900 dark:text-stone-100 truncate">
+              {tag.name}
+            </span>
+            <span className="text-[11px] font-mono text-stone-400 dark:text-stone-500 hidden sm:inline">
+              ({tag.slug})
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Usage Badge & Actions */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Live Usage Count Badge */}
+        <span
+          className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
+            tag.usage_count > 0
+              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+              : "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700"
+          }`}
+        >
+          {tag.usage_count} {tag.usage_count === 1 ? "plant" : "plants"}
+        </span>
+
+        {/* Actions */}
+        {!isEditing && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onStartRename(tag)}
+              className="p-2 text-stone-400 hover:text-botanical-800 dark:hover:text-botanical-100 transition-colors"
+              title="Rename tag"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetDeletingTag(tag)}
+              className="p-2 text-stone-400 hover:text-rose-600 transition-colors"
+              title="Delete tag"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+      </div>
+    </Reorder.Item>
+  );
 }
 
 export function TagManagementClient({ initialTags }: TagManagementClientProps) {
@@ -113,29 +243,16 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
     });
   };
 
-  const handleMoveOrder = (index: number, direction: "up" | "down") => {
-    const newTags = [...tags];
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
+  const handleReorder = (newTags: TagWithUsage[]) => {
+    setTags(newTags);
 
-    if (targetIndex < 0 || targetIndex >= newTags.length) return;
-
-    // Swap elements
-    const temp = newTags[index];
-    newTags[index] = newTags[targetIndex];
-    newTags[targetIndex] = temp;
-
-    // Update display_order
     const reordered = newTags.map((t, idx) => ({
-      ...t,
-      display_order: idx + 1,
+      id: t.id,
+      position: idx + 1,
     }));
 
-    setTags(reordered);
-
     startTransition(async () => {
-      await reorderTagsAction(
-        reordered.map((t) => ({ id: t.id, display_order: t.display_order }))
-      );
+      await reorderTagsAction(reordered);
       router.refresh();
     });
   };
@@ -150,7 +267,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
             Tag Management
           </h1>
           <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-            Organize plant categories, check plant assignments, and manage tag order.
+            Drag and drop tags using the grip handle to reorder them across the app.
           </p>
         </div>
 
@@ -220,7 +337,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
         </form>
       )}
 
-      {/* Tags List */}
+      {/* Tags List with Drag-and-Drop Reordering */}
       <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs overflow-hidden">
         {tags.length === 0 ? (
           <div className="p-12 text-center text-stone-400 space-y-2">
@@ -228,124 +345,28 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
             <p className="text-sm font-semibold">No tags found in database.</p>
           </div>
         ) : (
-          <div className="divide-y divide-stone-100 dark:divide-stone-800">
-            {tags.map((tag, index) => {
-              const isEditing = editingId === tag.id;
-
-              return (
-                <div
-                  key={tag.id}
-                  className="p-4 sm:px-6 flex items-center justify-between gap-4 hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition-colors"
-                >
-                  {/* Reorder Arrows */}
-                  <div className="flex flex-col items-center shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleMoveOrder(index, "up")}
-                      disabled={index === 0 || isPending}
-                      className="p-1 text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-20 transition-all"
-                      title="Move tag up"
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMoveOrder(index, "down")}
-                      disabled={index === tags.length - 1 || isPending}
-                      className="p-1 text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 disabled:opacity-20 transition-all"
-                      title="Move tag down"
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  {/* Tag Information / Edit Mode */}
-                  <div className="flex-grow min-w-0">
-                    {isEditing ? (
-                      <div className="space-y-1.5">
-                        {renameError && (
-                          <p className="text-[11px] font-semibold text-rose-600 dark:text-rose-400">
-                            {renameError}
-                          </p>
-                        )}
-                        <div className="flex items-center gap-2 max-w-sm">
-                          <input
-                            type="text"
-                            value={editName}
-                            onChange={(e) => setEditName(e.target.value)}
-                            className="flex-grow px-3 py-1.5 rounded-xl border border-terracotta bg-white dark:bg-stone-900 text-xs font-semibold text-stone-900 dark:text-stone-100 focus:outline-none"
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleSaveRename(tag.id)}
-                            disabled={isPending}
-                            className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
-                            title="Save"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelRename}
-                            className="p-1.5 rounded-lg bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-300"
-                            title="Cancel"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-3">
-                        <span className="font-heading font-bold text-base text-stone-900 dark:text-stone-100 truncate">
-                          {tag.name}
-                        </span>
-                        <span className="text-[11px] font-mono text-stone-400 dark:text-stone-500 hidden sm:inline">
-                          ({tag.slug})
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Usage Badge & Actions */}
-                  <div className="flex items-center gap-3 shrink-0">
-                    {/* Live Usage Count Badge */}
-                    <span
-                      className={`text-[11px] font-bold px-3 py-1 rounded-full border ${
-                        tag.usage_count > 0
-                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                          : "bg-stone-100 dark:bg-stone-800 text-stone-500 dark:text-stone-400 border-stone-200 dark:border-stone-700"
-                      }`}
-                    >
-                      {tag.usage_count} {tag.usage_count === 1 ? "plant" : "plants"}
-                    </span>
-
-                    {/* Actions */}
-                    {!isEditing && (
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => startRename(tag)}
-                          className="p-2 text-stone-400 hover:text-botanical-800 dark:hover:text-botanical-100 transition-colors"
-                          title="Rename tag"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingTag(tag)}
-                          className="p-2 text-stone-400 hover:text-rose-600 transition-colors"
-                          title="Delete tag"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <Reorder.Group
+            axis="y"
+            values={tags}
+            onReorder={handleReorder}
+            className="divide-y divide-stone-100 dark:divide-stone-800"
+          >
+            {tags.map((tag) => (
+              <TagRowItem
+                key={tag.id}
+                tag={tag}
+                isEditing={editingId === tag.id}
+                editName={editName}
+                renameError={renameError}
+                isPending={isPending}
+                onStartRename={startRename}
+                onCancelRename={cancelRename}
+                onSaveRename={handleSaveRename}
+                onSetEditName={setEditName}
+                onSetDeletingTag={setDeletingTag}
+              />
+            ))}
+          </Reorder.Group>
         )}
       </div>
 

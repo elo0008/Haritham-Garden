@@ -28,10 +28,11 @@ export default async function HomePage({ searchParams }: PageProps) {
     console.error("Error fetching plants:", plantsError.message);
   }
 
-  // Fetch all tags (ordered by display_order for chip rendering)
+  // Fetch all tags (ordered by position for chip rendering)
   const { data: tags, error: tagsError } = await supabase
     .from("tags")
     .select("*")
+    .order("position", { ascending: true, nullsFirst: false })
     .order("display_order", { ascending: true });
 
   if (tagsError) {

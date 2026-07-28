@@ -5,6 +5,7 @@ export interface Tag {
   name: string;
   slug: string;
   display_order: number;
+  position?: number;
   created_at: string;
 }
 

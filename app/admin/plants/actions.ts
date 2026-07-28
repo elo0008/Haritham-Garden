@@ -53,19 +53,19 @@ export async function createTag(
 
   const slug = slugify(trimmed);
 
-  // Get next display_order
+  // Get next position
   const { data: maxRow } = await supabase
     .from("tags")
-    .select("display_order")
-    .order("display_order", { ascending: false })
+    .select("position, display_order")
+    .order("position", { ascending: false, nullsFirst: false })
     .limit(1)
     .maybeSingle();
 
-  const nextOrder = (maxRow?.display_order ?? 0) + 1;
+  const nextOrder = ((maxRow?.position ?? maxRow?.display_order) ?? 0) + 1;
 
   const { data, error } = await supabase
     .from("tags")
-    .insert({ name: trimmed, slug, display_order: nextOrder })
+    .insert({ name: trimmed, slug, position: nextOrder, display_order: nextOrder })
     .select()
     .single();
 
@@ -79,6 +79,7 @@ export async function fetchAllTags(): Promise<Tag[]> {
   const { data, error } = await supabase
     .from("tags")
     .select("*")
+    .order("position", { ascending: true, nullsFirst: false })
     .order("display_order", { ascending: true });
 
   if (error) throw new Error(error.message);

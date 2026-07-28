@@ -18,6 +18,7 @@ export async function fetchTagsWithUsage(): Promise<TagWithUsage[]> {
   const { data: tags, error: tagErr } = await supabase
     .from("tags")
     .select("*")
+    .order("position", { ascending: true, nullsFirst: false })
     .order("display_order", { ascending: true });
 
   if (tagErr) throw new Error(tagErr.message);
@@ -69,19 +70,19 @@ export async function createTagStandalone(
 
   const slug = slugify(trimmed);
 
-  // 2. Get next display_order
+  // 2. Get next position
   const { data: maxRow } = await supabase
     .from("tags")
-    .select("display_order")
-    .order("display_order", { ascending: false })
+    .select("position, display_order")
+    .order("position", { ascending: false, nullsFirst: false })
     .limit(1)
     .maybeSingle();
 
-  const nextOrder = (maxRow?.display_order ?? 0) + 1;
+  const nextOrder = ((maxRow?.position ?? maxRow?.display_order) ?? 0) + 1;
 
   const { data: newTag, error: insertErr } = await supabase
     .from("tags")
-    .insert({ name: trimmed, slug, display_order: nextOrder })
+    .insert({ name: trimmed, slug, position: nextOrder, display_order: nextOrder })
     .select()
     .single();
 
@@ -159,17 +160,17 @@ export async function deleteTagAction(id: string): Promise<void> {
 }
 
 /**
- * Reorders tags display_order.
+ * Reorders tags position.
  */
 export async function reorderTagsAction(
-  items: { id: string; display_order: number }[]
+  items: { id: string; position: number }[]
 ): Promise<void> {
   const supabase = await createClient();
 
   for (const item of items) {
     await supabase
       .from("tags")
-      .update({ display_order: item.display_order })
+      .update({ position: item.position, display_order: item.position })
       .eq("id", item.id);
   }
 

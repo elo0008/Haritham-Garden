@@ -38,6 +38,7 @@ export default async function AdminPage() {
   const { data: allTags } = await supabase
     .from("tags")
     .select("*")
+    .order("position", { ascending: true, nullsFirst: false })
     .order("display_order", { ascending: true });
 
   const { data: plantTags } = await supabase

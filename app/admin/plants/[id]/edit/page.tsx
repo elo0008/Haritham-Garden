@@ -26,6 +26,7 @@ export default async function EditPlantPage({ params }: Props) {
   const { data: allTags } = await supabase
     .from("tags")
     .select("*")
+    .order("position", { ascending: true, nullsFirst: false })
     .order("display_order", { ascending: true });
 
   // Fetch this plant's current tag links
