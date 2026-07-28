@@ -189,7 +189,7 @@ export function UnifiedAdminConsole({
       <header className="sticky top-0 z-40 bg-white/85 dark:bg-stone-900/85 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all shadow-2xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
           {/* ZONE 1: LEFT BRAND & ADMIN BADGE */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex-1 flex items-center gap-3 shrink-0 justify-start">
             <button
               type="button"
               onClick={() => switchTab("overview")}
@@ -224,7 +224,7 @@ export function UnifiedAdminConsole({
           </div>
 
           {/* ZONE 2: CENTER PRIMARY NAVIGATION TABS (Desktop) */}
-          <nav className="hidden lg:flex items-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
+          <nav className="hidden lg:flex items-center justify-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner mx-auto">
             <button
               type="button"
               onClick={() => switchTab("overview")}
@@ -297,7 +297,7 @@ export function UnifiedAdminConsole({
           </nav>
 
           {/* ZONE 3: RIGHT UTILITIES & USER ACCOUNT CONTROLS */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex-1 flex items-center justify-end gap-2 sm:gap-3 shrink-0">
             {/* Mobile Hamburger Button */}
             <button
               type="button"
