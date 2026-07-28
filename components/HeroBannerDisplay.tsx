@@ -30,7 +30,7 @@ export function HeroBannerDisplay({ banner }: HeroBannerDisplayProps) {
       )}
 
       {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-botanical-900/95 via-botanical-900/80 to-botanical-800/70" />
+      <div className="absolute inset-0 bg-gradient-to-r from-botanical-900/45 via-botanical-900/40 to-botanical-800/35" />
 
       {/* Content */}
       <div className="relative z-10 max-w-xl">
