@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { TagWithUsage } from "../actions";
 import {
@@ -163,6 +163,11 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
   const [tags, setTags] = useState<TagWithUsage[]>(initialTags);
   const [isPending, startTransition] = useTransition();
 
+  // Sync state if initialTags prop changes (e.g. from server component revalidation)
+  useEffect(() => {
+    setTags(initialTags);
+  }, [initialTags]);
+
   // Create Tag state
   const [isCreating, setIsCreating] = useState(false);
   const [newTagName, setNewTagName] = useState("");
@@ -192,6 +197,14 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
       if (!res.success) {
         setCreateError(res.error || "Failed to create tag.");
       } else {
+        if (res.tag) {
+          const newTagItem: TagWithUsage = {
+            ...res.tag,
+            position: res.tag.position ?? (tags.length + 1),
+            usage_count: 0,
+          };
+          setTags((prev) => [...prev, newTagItem]);
+        }
         showToast("Tag Created", `Created category tag '${res.tag?.name || newTagName}'`);
         setNewTagName("");
         setIsCreating(false);
@@ -214,15 +227,21 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
 
   const handleSaveRename = (id: string) => {
     setRenameError(null);
-    if (!editName.trim()) {
+    const trimmed = editName.trim();
+    if (!trimmed) {
       setRenameError("Tag name cannot be empty.");
       return;
     }
 
     startTransition(async () => {
       try {
-        await renameTagAction(id, editName);
-        showToast("Tag Renamed", `Tag renamed to '${editName.trim()}'`);
+        await renameTagAction(id, trimmed);
+        setTags((prev) =>
+          prev.map((t) =>
+            t.id === id ? { ...t, name: trimmed, slug: trimmed.toLowerCase().replace(/\s+/g, "-") } : t
+          )
+        );
+        showToast("Tag Renamed", `Tag renamed to '${trimmed}'`);
         setEditingId(null);
         setEditName("");
         router.refresh();
@@ -234,11 +253,13 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
 
   const handleConfirmDelete = () => {
     if (!deletingTag) return;
+    const deletedId = deletingTag.id;
     setDeleteError(null);
 
     startTransition(async () => {
       try {
-        await deleteTagAction(deletingTag.id);
+        await deleteTagAction(deletedId);
+        setTags((prev) => prev.filter((t) => t.id !== deletedId));
         showToast("Tag Deleted", `Tag '${deletingTag.name}' removed`);
         setDeletingTag(null);
         router.refresh();
