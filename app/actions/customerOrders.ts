@@ -31,6 +31,7 @@ export async function fetchCustomerOrdersByUuids(uuids: string[]): Promise<Order
       .from("orders")
       .select("*")
       .in("id", validUuids)
+      .or("hidden_by_customer.is.null,hidden_by_customer.eq.false")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -43,6 +44,42 @@ export async function fetchCustomerOrdersByUuids(uuids: string[]): Promise<Order
     console.error("Unexpected error fetching customer orders:", err);
     return [];
   }
+}
+
+/**
+ * Hides an order from the customer's "My Orders" view by setting hidden_by_customer = true.
+ * Does NOT delete the database row or alter the order for the admin.
+ */
+export async function hideOrderForCustomer(
+  orderId: string,
+  allowedUuids: string[]
+): Promise<void> {
+  if (!orderId || !UUID_REGEX.test(orderId)) {
+    throw new Error("Invalid order ID.");
+  }
+
+  const sanitizedAllowed = (allowedUuids || []).filter(
+    (id) => typeof id === "string" && UUID_REGEX.test(id)
+  );
+  if (!sanitizedAllowed.includes(orderId)) {
+    throw new Error("Unauthorized access: this order was not placed on this device.");
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("orders")
+    .update({
+      hidden_by_customer: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", orderId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  revalidatePath("/my-orders");
 }
 
 /**

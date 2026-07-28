@@ -6,7 +6,7 @@ import type { Order, OrderStatus, Plant, SiteSettings } from "@/lib/types";
 import { formatINR, formatDate } from "@/lib/utils";
 import { getEffectivePrice } from "@/lib/types";
 import { getLocalOrderUuids } from "@/lib/myOrdersStorage";
-import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, cancelCustomerOrder } from "@/app/actions/customerOrders";
+import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, cancelCustomerOrder, hideOrderForCustomer } from "@/app/actions/customerOrders";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
@@ -107,6 +107,10 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [justCancelledOrder, setJustCancelledOrder] = useState<Order | null>(null);
 
+  // Hide / Remove order state
+  const [hidingOrder, setHidingOrder] = useState<Order | null>(null);
+  const [hideError, setHideError] = useState<string | null>(null);
+
   const handleConfirmCancelOrder = async () => {
     if (!cancellingOrder) return;
     setCancelError(null);
@@ -120,6 +124,22 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
         await loadOrders();
       } catch (err) {
         setCancelError(err instanceof Error ? err.message : "Failed to cancel order.");
+      }
+    });
+  };
+
+  const handleConfirmHideOrder = async () => {
+    if (!hidingOrder) return;
+    setHideError(null);
+    const localUuids = getLocalOrderUuids();
+
+    startTransition(async () => {
+      try {
+        await hideOrderForCustomer(hidingOrder.id, localUuids);
+        setOrders((prev) => prev.filter((o) => o.id !== hidingOrder.id));
+        setHidingOrder(null);
+      } catch (err) {
+        setHideError(err instanceof Error ? err.message : "Failed to remove order.");
       }
     });
   };
@@ -602,27 +622,39 @@ Please confirm my updated order details. Thank you!`;
                           <span className="text-[11px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500">
                             Order Items ({order.items ? order.items.length : 0})
                           </span>
-                          {canEdit ? (
-                            <div className="flex items-center gap-2.5">
-                              <button
-                                type="button"
-                                onClick={() => startEditing(order)}
-                                className="text-[11px] font-semibold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors flex items-center gap-1"
-                              >
-                                <Pencil className="w-3 h-3" />
-                                Edit Items
-                              </button>
-                              <span className="text-stone-300 dark:text-stone-700">|</span>
-                              <button
-                                type="button"
-                                onClick={() => setCancellingOrder(order)}
-                                className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline transition-colors flex items-center gap-1"
-                              >
-                                <XCircle className="w-3 h-3" />
-                                Cancel Order
-                              </button>
-                            </div>
-                          ) : null}
+                          <div className="flex items-center gap-2.5">
+                            {canEdit && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditing(order)}
+                                  className="text-[11px] font-semibold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors flex items-center gap-1"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                  Edit Items
+                                </button>
+                                <span className="text-stone-300 dark:text-stone-700">|</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setCancellingOrder(order)}
+                                  className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:underline transition-colors flex items-center gap-1"
+                                >
+                                  <XCircle className="w-3 h-3" />
+                                  Cancel Order
+                                </button>
+                                <span className="text-stone-300 dark:text-stone-700">|</span>
+                              </>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => setHidingOrder(order)}
+                              className="text-[11px] font-semibold text-stone-400 dark:text-stone-500 hover:text-rose-600 dark:hover:text-rose-400 transition-colors flex items-center gap-1"
+                              title="Remove order from your history"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Remove
+                            </button>
+                          </div>
                         </div>
 
                         <ul className="space-y-1.5 text-xs text-stone-800 dark:text-stone-200">
@@ -716,7 +748,18 @@ Please confirm my updated order details. Thank you!`;
                             🚫 Cancelled
                           </span>
                         </div>
-                        <span className="text-xs text-stone-400">{formatDate(order.created_at)}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-stone-400">{formatDate(order.created_at)}</span>
+                          <button
+                            type="button"
+                            onClick={() => setHidingOrder(order)}
+                            className="text-xs text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors flex items-center gap-1 font-medium"
+                            title="Remove order from your history"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Remove
+                          </button>
+                        </div>
                       </div>
 
                       <ul className="text-xs text-stone-500 dark:text-stone-400 space-y-1">
@@ -781,6 +824,54 @@ Please confirm my updated order details. Thank you!`;
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px]"
               >
                 {isPending ? "Cancelling…" : "Yes, Cancel Order"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove / Hide Order Confirmation Modal */}
+      {hidingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center shrink-0 text-stone-600 dark:text-stone-300">
+                <Trash2 className="w-5 h-5 text-stone-500 dark:text-stone-400" />
+              </div>
+              <div>
+                <h3 className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
+                  Remove Order {hidingOrder.order_ref}?
+                </h3>
+                <span className="text-xs text-stone-400">Remove from your device's history</span>
+              </div>
+            </div>
+
+            {hideError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                {hideError}
+              </div>
+            )}
+
+            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+              Remove <strong>{hidingOrder.order_ref}</strong> from your "My Orders" list? This will only hide it from your view — it will not delete or cancel your order with Haritham Garden.
+            </p>
+
+            <div className="flex items-center gap-2 justify-end pt-2 border-t border-stone-100 dark:border-stone-800">
+              <button
+                type="button"
+                onClick={() => setHidingOrder(null)}
+                disabled={isPending}
+                className="px-4 py-2 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 rounded-xl font-semibold text-xs hover:bg-stone-200 min-h-[38px]"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmHideOrder}
+                disabled={isPending}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px]"
+              >
+                {isPending ? "Removing…" : "Remove from View"}
               </button>
             </div>
           </div>

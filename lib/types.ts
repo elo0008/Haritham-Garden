@@ -116,6 +116,7 @@ export interface Order {
   discount_amount_applied?: number | null;
   items_edited_at?: string | null;
   cancelled_by_customer?: boolean | null;
+  hidden_by_customer?: boolean | null;
   updated_at?: string | null;
   created_at: string;
 }
