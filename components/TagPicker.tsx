@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Tag } from "@/lib/types";
+import { useAdminToast } from "@/components/AdminToast";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -87,18 +88,21 @@ export function TagPicker({
     [selectedTagIds, onChange]
   );
 
+  const { showToast } = useAdminToast();
+
   const handleCreateTag = useCallback(async () => {
     if (!onCreateTag || !trimmedQuery || creating) return;
     setCreating(true);
     try {
       const newTag = await onCreateTag(trimmedQuery);
       addTag(newTag.id);
+      showToast("Tag Created", `Created category tag '${newTag.name}'`);
     } catch (err) {
       console.error("Failed to create tag:", err);
     } finally {
       setCreating(false);
     }
-  }, [onCreateTag, trimmedQuery, creating, addTag]);
+  }, [onCreateTag, trimmedQuery, creating, addTag, showToast]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Backspace" && query === "" && selectedTagIds.length > 0) {

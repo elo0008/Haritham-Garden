@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { updateSiteSettings } from "../actions";
 import type { SiteSettings } from "@/lib/types";
+import { useAdminToast } from "@/components/AdminToast";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
@@ -17,6 +18,7 @@ interface Props {
 
 export function SettingsForm({ settings }: Props) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Branding fields
@@ -93,6 +95,7 @@ export function SettingsForm({ settings }: Props) {
         secondary_social_url: secondarySocialUrl,
       });
       setSuccess(true);
+      showToast("Settings Saved", "Storefront settings updated successfully");
       router.refresh();
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {

@@ -10,6 +10,7 @@ import {
   reorderTagsAction,
 } from "../actions";
 import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
+import { useAdminToast } from "@/components/AdminToast";
 import {
   Tag as TagIcon,
   Plus,
@@ -158,6 +159,7 @@ function TagRowItem({
 
 export function TagManagementClient({ initialTags }: TagManagementClientProps) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const [tags, setTags] = useState<TagWithUsage[]>(initialTags);
   const [isPending, startTransition] = useTransition();
 
@@ -190,6 +192,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
       if (!res.success) {
         setCreateError(res.error || "Failed to create tag.");
       } else {
+        showToast("Tag Created", `Created category tag '${res.tag?.name || newTagName}'`);
         setNewTagName("");
         setIsCreating(false);
         router.refresh();
@@ -219,6 +222,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
     startTransition(async () => {
       try {
         await renameTagAction(id, editName);
+        showToast("Tag Renamed", `Tag renamed to '${editName.trim()}'`);
         setEditingId(null);
         setEditName("");
         router.refresh();
@@ -235,6 +239,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
     startTransition(async () => {
       try {
         await deleteTagAction(deletingTag.id);
+        showToast("Tag Deleted", `Tag '${deletingTag.name}' removed`);
         setDeletingTag(null);
         router.refresh();
       } catch (err) {
@@ -253,6 +258,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
 
     startTransition(async () => {
       await reorderTagsAction(reordered);
+      showToast("Tag Order Saved", "Updated tag display positions");
       router.refresh();
     });
   };

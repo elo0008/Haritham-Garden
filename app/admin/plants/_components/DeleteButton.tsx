@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deletePlant } from "../actions";
+import { useAdminToast } from "@/components/AdminToast";
 
 interface Props {
   plantId: string;
@@ -12,6 +13,7 @@ interface Props {
 
 export function DeleteButton({ plantId, plantName, photoUrls }: Props) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
@@ -20,6 +22,7 @@ export function DeleteButton({ plantId, plantName, photoUrls }: Props) {
     startTransition(async () => {
       try {
         await deletePlant(plantId, photoUrls);
+        showToast("Plant Deleted", `'${plantName}' removed from catalogue`);
         router.refresh();
       } catch (err) {
         alert(

@@ -12,6 +12,7 @@ import {
   reorderCarouselSlides,
 } from "../actions";
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
+import { useAdminToast } from "@/components/AdminToast";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
@@ -25,6 +26,7 @@ interface Props {
 
 export function CarouselAdminClient({ settings, slides }: Props) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Section Settings State ────────────────────────────────────────────────
@@ -72,6 +74,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
         header_subtitle: headerSubtitle,
       });
       setSettingsSuccess(true);
+      showToast("Carousel Settings Saved", "Carousel section settings updated successfully");
       router.refresh();
       setTimeout(() => setSettingsSuccess(false), 3000);
     } catch (err) {
@@ -152,6 +155,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           background_image: slideBgImage,
           active: slideActive,
         });
+        showToast("Carousel Slide Updated", `'${slideTitle.trim()}' updated successfully`);
       } else {
         await createCarouselSlide({
           tag_label: slideTagLabel.trim() || null,
@@ -160,6 +164,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           background_image: slideBgImage,
           active: slideActive,
         });
+        showToast("Carousel Slide Created", `'${slideTitle.trim()}' created successfully`);
       }
 
       closeModal();
@@ -180,6 +185,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
 
     try {
       await deleteCarouselSlide(deletingSlide.id);
+      showToast("Slide Deleted", `'${deletingSlide.title}' removed from carousel`);
       setDeletingSlide(null);
       router.refresh();
     } catch (err) {
@@ -207,6 +213,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
 
     try {
       await reorderCarouselSlides(reordered);
+      showToast("Slide Order Saved", "Updated slide display sequence");
       router.refresh();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to reorder slides.");

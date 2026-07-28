@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAdminToast } from "@/components/AdminToast";
 import type { Order, OrderStatus, Plant } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import {
@@ -107,6 +108,7 @@ const STATUS_CONFIG: Record<
 
 export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const [isPending, startTransition] = useTransition();
 
   // Active Filter Tab
@@ -146,6 +148,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
           customer_pincode: customerEditForm.customer_pincode.trim() || null,
         });
         setIsEditingCustomerDetails(false);
+        showToast("Customer Details Saved", `Updated details for ${customerModalOrder.order_ref}`);
         router.refresh();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to update customer details");
@@ -355,6 +358,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
         setEditingItemsOrderId(null);
         setEditingOrderUpdatedAt(null);
         setEditingItemsDraft([]);
+        showToast("Order Items Saved", "Updated plant items list");
         router.refresh();
       } catch (err) {
         setEditingItemsError(err instanceof Error ? err.message : "Failed to update order items.");
@@ -411,6 +415,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       startTransition(async () => {
         try {
           await updateOrderStatus(order.id, nextStatus, undefined, undefined, order.updated_at);
+          showToast("Order Status Updated", `Order ${order.order_ref} set to ${STATUS_CONFIG[nextStatus]?.label || nextStatus}`);
           router.refresh();
         } catch (err) {
           alert(err instanceof Error ? err.message : "Failed to update status");
@@ -433,8 +438,10 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       try {
         if (courierTargetStatus === "handled") {
           await updateOrderStatus(courierModalOrder.id, "handled", parsed, null, courierModalOrder.updated_at);
+          showToast("Courier Fee Saved", `Updated estimated courier fee for ${courierModalOrder.order_ref}`);
         } else {
           await updateOrderStatus(courierModalOrder.id, "dispatched", undefined, parsed, courierModalOrder.updated_at);
+          showToast("Order Dispatched", `Final courier fee saved for ${courierModalOrder.order_ref}`);
         }
         setCourierModalOrder(null);
         router.refresh();
@@ -480,6 +487,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       if (!res.success) {
         setManualError(res.error || "Failed to create manual order.");
       } else {
+        showToast("Manual Order Created", "Manual order created successfully");
         setShowManualModal(false);
         setManualSelectedItems([]);
         setManualEstimatedCourier("");
@@ -504,6 +512,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     startTransition(async () => {
       try {
         await updateOrderNotes(editingNoteOrder.id, noteInput);
+        showToast("Admin Note Saved", `Note updated for ${editingNoteOrder.order_ref}`);
         setEditingNoteOrder(null);
         router.refresh();
       } catch (err) {
@@ -518,6 +527,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     startTransition(async () => {
       try {
         await softDeleteOrder(deletingOrder.id);
+        showToast("Order Deleted", `Order ${deletingOrder.order_ref} has been removed`);
         setDeletingOrder(null);
         router.refresh();
       } catch (err) {
@@ -525,6 +535,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       }
     });
   };
+
   // Apply Discount to Order
   const handleApplyDiscount = (orderId: string) => {
     const val = parseFloat(discountFormValue);
@@ -536,6 +547,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     startTransition(async () => {
       try {
         await applyOrderDiscount(orderId, discountFormType, val, targetOrder?.updated_at);
+        showToast("Discount Applied", `Discount added to order ${targetOrder?.order_ref || ''}`);
         setDiscountEditingOrderId(null);
         setDiscountFormValue('');
         router.refresh();
@@ -551,6 +563,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     startTransition(async () => {
       try {
         await removeOrderDiscount(orderId, targetOrder?.updated_at);
+        showToast("Discount Removed", `Discount removed from order ${targetOrder?.order_ref || ''}`);
         router.refresh();
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to remove discount");
@@ -1111,13 +1124,13 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       onChange={(e) =>
                         initiateStatusTransition(order, e.target.value as OrderStatus)
                       }
-                      className="appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2378716c%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1rem_1rem] bg-[right_0.65rem_center] bg-no-repeat pl-3.5 pr-8 py-2 min-h-[36px] rounded-xl bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-100 shadow-2xs hover:border-stone-400 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-terracotta cursor-pointer transition-all"
+                      className="px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-100 focus:outline-none cursor-pointer"
                     >
-                      <option value="pending" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">1. Pending Review</option>
-                      <option value="handled" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">2. Handled (Quote Sent)</option>
-                      <option value="paid" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">3. Payment Received</option>
-                      <option value="packaged" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">4. Packaged & Ready</option>
-                      <option value="dispatched" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">5. Dispatched (Completed)</option>
+                      <option value="pending">1. Pending Review</option>
+                      <option value="handled">2. Handled (Quote Sent)</option>
+                      <option value="paid">3. Payment Received</option>
+                      <option value="packaged">4. Packaged & Ready</option>
+                      <option value="dispatched">5. Dispatched (Completed)</option>
                     </select>
 
                     {/* Step Advance Button */}
@@ -1670,12 +1683,12 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                           status: e.target.value as OrderStatus,
                         })
                       }
-                      className="w-full appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2218%22%20height%3D%2218%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2378716c%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.15rem_1.15rem] bg-[right_0.75rem_center] bg-no-repeat pl-3.5 pr-10 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-semibold text-stone-900 dark:text-stone-100 shadow-2xs hover:border-stone-400 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-botanical-600 transition-all cursor-pointer"
+                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
                     >
-                      <option value="pending" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">1. Pending Review</option>
-                      <option value="handled" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">2. Handled / Confirmed</option>
-                      <option value="paid" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">3. Paid (Verified)</option>
-                      <option value="packaged" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">4. Packaged</option>
+                      <option value="pending">1. Pending Review</option>
+                      <option value="handled">2. Handled / Confirmed</option>
+                      <option value="paid">3. Paid (Verified)</option>
+                      <option value="packaged">4. Packaged</option>
                     </select>
                   </div>
                 </div>

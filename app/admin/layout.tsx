@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminToastProvider } from "@/components/AdminToast";
 
 export const metadata: Metadata = {
   title: "Admin Console — Haritham Garden",
@@ -10,5 +11,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <AdminToastProvider>{children}</AdminToastProvider>;
 }

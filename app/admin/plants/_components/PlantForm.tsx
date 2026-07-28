@@ -14,6 +14,8 @@ import type {
   PlantWriteData,
 } from "@/lib/types";
 
+import { useAdminToast } from "@/components/AdminToast";
+
 // ── Option Maps ───────────────────────────────────────────────────────────────
 
 const SUNLIGHT_OPTIONS: { value: PlantSunlight; label: string }[] = [
@@ -41,12 +43,6 @@ const inputCls =
   "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
   "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
 
-const selectCls =
-  "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 pl-3.5 pr-10 py-2.5 text-sm font-medium text-stone-900 dark:text-stone-100 shadow-2xs " +
-  "hover:border-stone-400 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
-  "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px] appearance-none cursor-pointer transition-all " +
-  "bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2378716c%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem_1.25rem] bg-[right_0.75rem_center] bg-no-repeat";
-
 interface PlantFormProps {
   initialData?: Plant;
   /** All available tags from the database */
@@ -67,6 +63,7 @@ export function PlantForm({
   onCancel,
 }: PlantFormProps) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Field State ──────────────────────────────────────────────────────────────
@@ -231,8 +228,10 @@ export function PlantForm({
 
       if (initialData) {
         await updatePlant(initialData.id, plantData, removedPhotos, selectedTagIds);
+        showToast("Plant Updated", `'${name.trim()}' successfully updated`);
       } else {
         await createPlant(plantData, selectedTagIds);
+        showToast("Plant Created", `'${name.trim()}' added to catalogue`);
       }
 
       router.refresh();
@@ -355,10 +354,10 @@ export function PlantForm({
             value={sunlight}
             onChange={(e) => setSunlight(e.target.value as PlantSunlight)}
             disabled={saving}
-            className={selectCls}
+            className={inputCls}
           >
             {SUNLIGHT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">
+              <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
@@ -372,10 +371,10 @@ export function PlantForm({
             value={watering}
             onChange={(e) => setWatering(e.target.value as PlantWatering)}
             disabled={saving}
-            className={selectCls}
+            className={inputCls}
           >
             {WATERING_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">
+              <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
@@ -395,10 +394,10 @@ export function PlantForm({
               setAvailability(e.target.value as PlantAvailability)
             }
             disabled={saving}
-            className={selectCls}
+            className={inputCls}
           >
             {AVAILABILITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value} className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">
+              <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}

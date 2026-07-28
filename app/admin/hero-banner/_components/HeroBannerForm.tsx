@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { updateHeroBanner } from "../actions";
 import type { HeroBanner } from "@/lib/types";
+import { useAdminToast } from "@/components/AdminToast";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
@@ -17,6 +18,7 @@ interface Props {
 
 export function HeroBannerForm({ banner }: Props) {
   const router = useRouter();
+  const { showToast } = useAdminToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [tagLabel, setTagLabel] = useState(banner.tag_label ?? "");
@@ -81,6 +83,7 @@ export function HeroBannerForm({ banner }: Props) {
       });
 
       setSuccess(true);
+      showToast("Hero Banner Updated", "Hero banner settings saved successfully");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save banner.");
