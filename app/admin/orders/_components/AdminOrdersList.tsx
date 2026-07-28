@@ -791,7 +791,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       )}
 
                       {/* Items Stepper List */}
-                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      <div className="space-y-2">
                         {editingItemsDraft.map((item) => (
                           <div
                             key={item.plant_id || item.name}
@@ -1558,7 +1558,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       Selected Plants ({manualSelectedItems.length})
                     </label>
 
-                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <div className="space-y-2">
                       {manualSelectedItems.map((item) => (
                         <div
                           key={item.plant_id}

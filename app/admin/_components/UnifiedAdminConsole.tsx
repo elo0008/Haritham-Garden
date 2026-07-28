@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
 import { signOut } from "../actions";
 import type {
   Plant,
@@ -137,47 +136,6 @@ export function UnifiedAdminConsole({
       setActiveTab(tabFromUrl);
     }
   }, [searchParams]);
-
-  // Set up Supabase Realtime Subscriptions for live updates on orders, plants, and tags
-  useEffect(() => {
-    const supabase = createClient();
-
-    const channel = supabase
-      .channel("admin-console-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "plants" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "tags" },
-        () => {
-          router.refresh();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "plant_tags" },
-        () => {
-          router.refresh();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [router]);
 
   const switchTab = (tab: AdminTab) => {
     setActiveTab(tab);
