@@ -538,7 +538,7 @@ Please confirm my updated order details. Thank you!`;
                           </div>
                         )}
 
-                        <div className="space-y-2">
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                           {editingDraft.map((item) => (
                             <div
                               key={item.plant_id || item.name}
