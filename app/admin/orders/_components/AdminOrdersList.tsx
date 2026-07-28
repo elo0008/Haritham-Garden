@@ -791,7 +791,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       )}
 
                       {/* Items Stepper List */}
-                      <div className="space-y-2">
+                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                         {editingItemsDraft.map((item) => (
                           <div
                             key={item.plant_id || item.name}
@@ -1111,13 +1111,13 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       onChange={(e) =>
                         initiateStatusTransition(order, e.target.value as OrderStatus)
                       }
-                      className="px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-100 focus:outline-none cursor-pointer"
+                      className="appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2378716c%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1rem_1rem] bg-[right_0.65rem_center] bg-no-repeat pl-3.5 pr-8 py-2 min-h-[36px] rounded-xl bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-100 shadow-2xs hover:border-stone-400 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-terracotta cursor-pointer transition-all"
                     >
-                      <option value="pending">1. Pending Review</option>
-                      <option value="handled">2. Handled (Quote Sent)</option>
-                      <option value="paid">3. Payment Received</option>
-                      <option value="packaged">4. Packaged & Ready</option>
-                      <option value="dispatched">5. Dispatched (Completed)</option>
+                      <option value="pending" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">1. Pending Review</option>
+                      <option value="handled" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">2. Handled (Quote Sent)</option>
+                      <option value="paid" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">3. Payment Received</option>
+                      <option value="packaged" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">4. Packaged & Ready</option>
+                      <option value="dispatched" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">5. Dispatched (Completed)</option>
                     </select>
 
                     {/* Step Advance Button */}
@@ -1558,7 +1558,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       Selected Plants ({manualSelectedItems.length})
                     </label>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                       {manualSelectedItems.map((item) => (
                         <div
                           key={item.plant_id}
@@ -1670,12 +1670,12 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                           status: e.target.value as OrderStatus,
                         })
                       }
-                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
+                      className="w-full appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2218%22%20height%3D%2218%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2378716c%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.15rem_1.15rem] bg-[right_0.75rem_center] bg-no-repeat pl-3.5 pr-10 py-2.5 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 text-xs font-semibold text-stone-900 dark:text-stone-100 shadow-2xs hover:border-stone-400 dark:hover:border-stone-600 focus:outline-none focus:ring-2 focus:ring-botanical-600 transition-all cursor-pointer"
                     >
-                      <option value="pending">1. Pending Review</option>
-                      <option value="handled">2. Handled / Confirmed</option>
-                      <option value="paid">3. Paid (Verified)</option>
-                      <option value="packaged">4. Packaged</option>
+                      <option value="pending" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">1. Pending Review</option>
+                      <option value="handled" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">2. Handled / Confirmed</option>
+                      <option value="paid" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">3. Paid (Verified)</option>
+                      <option value="packaged" className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium">4. Packaged</option>
                     </select>
                   </div>
                 </div>

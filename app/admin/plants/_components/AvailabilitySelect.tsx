@@ -49,15 +49,13 @@ export function AvailabilitySelect({ plantId, current }: Props) {
       value={value}
       onChange={handleChange}
       disabled={isPending}
-      className={`text-xs font-semibold rounded-xl border px-3 py-1.5 min-h-[36px]
-                  focus:outline-none focus:ring-2 focus:ring-terracotta
-                  disabled:opacity-60 cursor-pointer transition-colors ${STYLES[value]}`}
+      className={`appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2378716c%22%20stroke-width%3D%222.5%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1rem_1rem] bg-[right_0.65rem_center] bg-no-repeat pl-3 pr-8 py-1.5 min-h-[36px] text-xs font-bold rounded-xl border shadow-2xs focus:outline-none focus:ring-2 focus:ring-terracotta disabled:opacity-60 cursor-pointer transition-all ${STYLES[value]}`}
     >
       {(Object.keys(LABELS) as PlantAvailability[]).map((v) => (
         <option
           key={v}
           value={v}
-          className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100"
+          className="bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 py-1 font-medium"
         >
           {LABELS[v]}
         </option>
