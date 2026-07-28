@@ -29,14 +29,21 @@ const WATERING_LABELS: Record<string, string> = {
 export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAddToCart }: PlantBottomSheetProps) {
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
 
   // Reset internal state when a new plant is opened
   useEffect(() => {
     if (isOpen) {
       setActivePhotoIndex(0);
       setQuantity(1);
+      setIsImageLoaded(false);
     }
   }, [isOpen, plant?.id]);
+
+  // Reset image loading state when active photo changes
+  useEffect(() => {
+    setIsImageLoaded(false);
+  }, [activePhotoIndex]);
 
   // Handle ESC key to close
   useEffect(() => {
@@ -104,13 +111,27 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
             </button>
 
             {/* Left Side: Photo Gallery */}
-            <div className="md:w-1/2 relative bg-stone-100 dark:bg-stone-800 min-h-[260px] sm:min-h-[340px] md:min-h-full flex items-center justify-center">
+            <div className="md:w-1/2 relative bg-stone-100 dark:bg-stone-800 min-h-[260px] sm:min-h-[340px] md:min-h-full flex items-center justify-center overflow-hidden">
               {photos.length > 0 ? (
-                <img
-                  src={photos[activePhotoIndex]}
-                  alt={plant.name}
-                  className="w-full h-full object-cover absolute inset-0 transition-opacity duration-300"
-                />
+                <>
+                  {/* Skeleton Shimmer Loading Placeholder */}
+                  {!isImageLoaded && (
+                    <div className="absolute inset-0 bg-stone-200 dark:bg-stone-700 animate-pulse flex items-center justify-center z-0">
+                      <div className="w-12 h-12 rounded-2xl bg-stone-300/60 dark:bg-stone-600/60 flex items-center justify-center text-stone-400 dark:text-stone-500 text-xl">
+                        🌿
+                      </div>
+                    </div>
+                  )}
+                  <img
+                    key={`${plant.id}-${activePhotoIndex}`}
+                    src={photos[activePhotoIndex]}
+                    alt={plant.name}
+                    onLoad={() => setIsImageLoaded(true)}
+                    className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 z-0 ${
+                      isImageLoaded ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                </>
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-stone-300 dark:text-stone-600 text-6xl">
                   🌿
