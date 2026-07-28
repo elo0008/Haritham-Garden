@@ -93,23 +93,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
       ];
     });
 
-    // Fire or update Toast notification
-    setToast((prev) => {
-      if (prev && prev.plantId === plant.id) {
+    // Fire or update Toast notification only if cart panel is not open
+    if (!isOpen) {
+      setToast((prev) => {
+        if (prev && prev.plantId === plant.id) {
+          return {
+            id: Date.now().toString(),
+            plantId: plant.id,
+            plantName: plant.name,
+            qty: prev.qty + qty,
+          };
+        }
         return {
           id: Date.now().toString(),
           plantId: plant.id,
           plantName: plant.name,
-          qty: prev.qty + qty,
+          qty: qty,
         };
-      }
-      return {
-        id: Date.now().toString(),
-        plantId: plant.id,
-        plantName: plant.name,
-        qty: qty,
-      };
-    });
+      });
+    }
   };
 
   const updateQuantity = (plant_id: string, qty: number) => {
@@ -133,9 +135,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalItems = items.reduce((sum, item) => sum + item.qty, 0);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
 
-  const openCart = () => setIsOpen(true);
-  const closeCart = () => setIsOpen(false);
-  const toggleCart = () => setIsOpen((prev) => !prev);
+  const openCart = useCallback(() => {
+    setToast(null);
+    setIsOpen(true);
+  }, []);
+
+  const closeCart = useCallback(() => {
+    setIsOpen(false);
+  }, []);
+
+  const toggleCart = useCallback(() => {
+    setToast(null);
+    setIsOpen((prev) => !prev);
+  }, []);
 
   return (
     <CartContext.Provider
@@ -156,7 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      <CartToast toast={toast} onDismiss={dismissToast} />
+      <CartToast toast={toast} onDismiss={dismissToast} onOpenBag={openCart} />
     </CartContext.Provider>
   );
 }
