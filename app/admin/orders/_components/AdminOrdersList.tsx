@@ -1205,17 +1205,17 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+              className="relative z-10 w-full max-w-sm sm:max-w-md rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
             >
-              <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
-                <h3 className="font-heading font-bold text-base flex items-center gap-2">
-                  <User className="w-4 h-4 text-botanical-600" />
-                  <span>Customer Info — {customerModalOrder.order_ref}</span>
+              <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4 min-w-0">
+                <h3 className="font-heading font-bold text-sm sm:text-base flex items-center gap-2 min-w-0 pr-2">
+                  <User className="w-4 h-4 text-botanical-600 shrink-0" />
+                  <span className="truncate">Customer Info — {customerModalOrder.order_ref}</span>
                 </h3>
                 <button
                   type="button"
                   onClick={() => setCustomerModalOrder(null)}
-                  className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1"
+                  className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1 shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1223,31 +1223,31 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
               {!isEditingCustomerDetails ? (
                 /* Read-only view */
-                <div className="space-y-3 text-xs">
-                  <div>
+                <div className="space-y-3 text-xs min-w-0">
+                  <div className="min-w-0">
                     <span className="text-stone-400 font-medium block">Full Name:</span>
-                    <span className="font-bold text-stone-800 dark:text-stone-200 text-sm">
+                    <span className="font-bold text-stone-800 dark:text-stone-200 text-sm block break-words min-w-0">
                       {customerModalOrder.customer_name || "Not provided"}
                     </span>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-stone-400 font-medium block">Phone Number:</span>
-                    <span className="font-mono text-stone-800 dark:text-stone-200">
+                    <span className="font-mono text-stone-800 dark:text-stone-200 block break-words min-w-0">
                       {customerModalOrder.customer_phone || "Not provided"}
                     </span>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-stone-400 font-medium block">Delivery Address:</span>
-                    <span className="text-stone-800 dark:text-stone-200">
+                    <span className="text-stone-800 dark:text-stone-200 block break-words min-w-0 whitespace-pre-wrap">
                       {customerModalOrder.customer_address || "Not provided"}
                     </span>
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-stone-400 font-medium block">Pincode:</span>
-                    <span className="font-mono text-stone-800 dark:text-stone-200">
+                    <span className="font-mono text-stone-800 dark:text-stone-200 block break-words min-w-0">
                       {customerModalOrder.customer_pincode || "Not provided"}
                     </span>
                   </div>
@@ -1362,7 +1362,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
             >
               <h3 className="font-heading font-bold text-lg mb-1">
                 {courierTargetStatus === "handled"
@@ -1463,7 +1463,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto"
+              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
             >
               <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
                 <h3 className="font-heading font-bold text-lg flex items-center gap-2">
@@ -1575,9 +1575,9 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       {manualSelectedItems.map((item) => (
                         <div
                           key={item.plant_id}
-                          className="flex items-center justify-between p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700"
+                          className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 p-2.5 rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200/80 dark:border-stone-700 min-w-0"
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             {item.photo ? (
                               <img
                                 src={item.photo}
@@ -1589,17 +1589,17 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                                 🌿
                               </div>
                             )}
-                            <div className="truncate">
+                            <div className="truncate min-w-0">
                               <span className="font-bold text-stone-900 dark:text-stone-100 block truncate">
                                 {item.name}
                               </span>
-                              <span className="text-[11px] text-stone-400 font-mono">
+                              <span className="text-[11px] text-stone-400 font-mono block">
                                 {formatINR(item.price)} each
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3 shrink-0">
+                          <div className="flex items-center gap-2.5 shrink-0 ml-auto sm:ml-0">
                             {/* Quantity Stepper */}
                             <div className="flex items-center gap-1 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl px-1.5 py-0.5">
                               <button
@@ -1825,9 +1825,9 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+              className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
             >
-              <h3 className="font-heading font-bold text-base mb-1">
+              <h3 className="font-heading font-bold text-base mb-1 truncate">
                 Admin Note — {editingNoteOrder.order_ref}
               </h3>
               <p className="text-xs text-stone-500 mb-4">
@@ -1885,7 +1885,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800"
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
             >
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
                 ⚠️

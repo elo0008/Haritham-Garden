@@ -131,24 +131,26 @@ export function PlantCatalog({
     <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
       {/* Sticky Header / Navbar */}
       <header className="sticky top-0 z-40 bg-stone-50/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo Component */}
-          <Logo
-            showTagline={true}
-            businessName={siteSettings?.business_name}
-            tagline={siteSettings?.tagline}
-            logoUrl={siteSettings?.logo_url}
-            href="/"
-          />
+          <div className="min-w-0 flex-1 max-w-[55%] xs:max-w-[65%] sm:max-w-none">
+            <Logo
+              showTagline={true}
+              businessName={siteSettings?.business_name}
+              tagline={siteSettings?.tagline}
+              logoUrl={siteSettings?.logo_url}
+              href="/"
+            />
+          </div>
 
           {/* Header Actions: Theme Toggle + My Orders + Bag Button */}
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               href="/my-orders"
-              className="relative p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 px-3.5 min-h-[44px]"
+              className="relative p-2 sm:p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 px-2.5 sm:px-3.5 min-h-[40px] sm:min-h-[44px]"
               title="My Orders"
             >
-              <PackageCheck className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              <PackageCheck className="w-5 h-5 text-botanical-800 dark:text-botanical-100 shrink-0" />
               <span className="text-sm font-semibold hidden sm:inline">My Orders</span>
             </Link>
 
@@ -158,14 +160,14 @@ export function PlantCatalog({
             <button
               type="button"
               onClick={openCart}
-              className="relative p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-2 px-4 min-h-[44px]"
+              className="relative p-2 sm:p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 min-h-[40px] sm:min-h-[44px]"
               aria-label={`Shopping Bag with ${totalItems} items`}
             >
-              <ShoppingBag className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              <ShoppingBag className="w-5 h-5 text-botanical-800 dark:text-botanical-100 shrink-0" />
               <span className="text-sm font-semibold hidden sm:inline">Bag</span>
               <span
                 key={totalItems}
-                className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center animate-badge-bounce"
+                className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center animate-badge-bounce shrink-0"
               >
                 {totalItems}
               </span>

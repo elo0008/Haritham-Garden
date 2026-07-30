@@ -34,7 +34,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${plusJakarta.variable} ${outfit.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300">
+      <body className="min-h-full flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300 overflow-x-hidden w-full max-w-full">
         <ThemeProvider>
           <DisableNumberInputScroll />
           <CartProvider>{children}</CartProvider>

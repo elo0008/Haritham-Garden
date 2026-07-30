@@ -183,20 +183,20 @@ export function UnifiedAdminConsole({
   const logoUrl = siteSettings?.logo_url;
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased transition-colors duration-300 w-full max-w-full overflow-x-hidden">
       {/* ========================================== */}
       {/* STICKY TOP NAVIGATION (3-ZONE ARCHITECTURE) */}
       {/* ========================================== */}
       <header className="sticky top-0 z-40 bg-white/85 dark:bg-stone-900/85 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           {/* ZONE 1: LEFT BRAND & ADMIN BADGE */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 max-w-[45%] xs:max-w-[55%] sm:max-w-none">
             <button
               type="button"
               onClick={() => switchTab("overview")}
-              className="flex items-center gap-3 group text-left"
+              className="flex items-center gap-2 sm:gap-3 group text-left min-w-0 flex-1"
             >
-              <div className="w-11 h-11 rounded-xl bg-botanical-100 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 flex items-center justify-center group-hover:bg-botanical-800 dark:group-hover:bg-botanical-600 group-hover:text-white transition-all shadow-xs overflow-hidden">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl bg-botanical-100 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 flex items-center justify-center group-hover:bg-botanical-800 dark:group-hover:bg-botanical-600 group-hover:text-white transition-all shadow-xs overflow-hidden shrink-0">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
@@ -204,20 +204,20 @@ export function UnifiedAdminConsole({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <Leaf className="w-6 h-6" />
+                  <Leaf className="w-5 h-5 sm:w-6 sm:h-6" />
                 )}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-heading font-bold text-xl tracking-tight text-botanical-900 dark:text-botanical-100 leading-none">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="font-heading font-bold text-sm sm:text-xl tracking-tight text-botanical-900 dark:text-botanical-100 leading-none truncate whitespace-nowrap">
                     {businessName}
                   </span>
-                  <span className="bg-terracotta/10 dark:bg-terracotta/20 text-terracotta border border-terracotta/30 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <span className="bg-terracotta/10 dark:bg-terracotta/20 text-terracotta border border-terracotta/30 text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full uppercase tracking-wider hidden xs:flex items-center gap-1 shrink-0">
                     <span className="w-1.5 h-1.5 rounded-full bg-terracotta animate-pulse" />
                     Admin
                   </span>
                 </div>
-                <span className="text-xs text-stone-500 dark:text-stone-400 font-medium mt-1 block">
+                <span className="text-[11px] sm:text-xs text-stone-500 dark:text-stone-400 font-medium mt-0.5 block truncate whitespace-nowrap hidden sm:block">
                   Nursery Management Console
                 </span>
               </div>
@@ -298,22 +298,22 @@ export function UnifiedAdminConsole({
           </nav>
 
           {/* ZONE 3: RIGHT UTILITIES & USER ACCOUNT CONTROLS */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
             {/* Mobile Hamburger Button */}
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden h-11 w-11 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center"
+              className="lg:hidden h-9 w-9 sm:h-11 sm:w-11 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center shrink-0"
               title="Toggle Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-4 h-4 sm:w-5 sm:h-5" /> : <Menu className="w-4 h-4 sm:w-5 sm:h-5" />}
             </button>
 
             {/* Theme Toggle Button */}
             <button
               type="button"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-11 w-11 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center"
+              className="h-9 w-9 sm:h-11 sm:w-11 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all flex items-center justify-center shrink-0"
               title="Toggle Dark/Light Mode"
             >
               <Sun className="w-4 h-4 text-amber-500 hidden dark:block" />
@@ -324,14 +324,14 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("tags")}
-              className={`h-11 px-3.5 rounded-xl border transition-all flex items-center gap-2 ${
+              className={`h-9 sm:h-11 px-2.5 sm:px-3.5 rounded-xl border transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 ${
                 activeTab === "tags"
                   ? "bg-botanical-800 dark:bg-botanical-600 text-white border-botanical-800"
                   : "bg-stone-100 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600"
               }`}
               title="Tag Management"
             >
-              <TagIcon className="w-4 h-4" />
+              <TagIcon className="w-4 h-4 shrink-0" />
               <span className="text-xs font-semibold hidden xl:inline">Tags</span>
             </button>
 
@@ -339,21 +339,21 @@ export function UnifiedAdminConsole({
             <button
               type="button"
               onClick={() => switchTab("settings")}
-              className={`h-11 px-3.5 rounded-xl border transition-all flex items-center gap-2 ${
+              className={`h-9 sm:h-11 px-2.5 sm:px-3.5 rounded-xl border transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 ${
                 activeTab === "settings"
                   ? "bg-botanical-800 dark:bg-botanical-600 text-white border-botanical-800"
                   : "bg-stone-100 dark:bg-stone-800 border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-200 hover:border-botanical-600"
               }`}
               title="Site Settings"
             >
-              <Settings className="w-4 h-4" />
+              <Settings className="w-4 h-4 shrink-0" />
               <span className="text-xs font-semibold hidden xl:inline">Settings</span>
             </button>
 
             <div className="h-6 w-[1px] bg-stone-200 dark:bg-stone-800 hidden sm:block" />
 
             {/* Profile & Logout */}
-            <div className="flex items-center gap-2 pl-1 sm:pl-2">
+            <div className="flex items-center gap-1 sm:gap-2 pl-0.5 sm:pl-2 shrink-0">
               {userEmail && (
                 <div className="hidden xl:block text-right">
                   <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block leading-tight truncate max-w-[140px]">
@@ -367,10 +367,10 @@ export function UnifiedAdminConsole({
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="p-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center min-h-[44px] min-w-[44px]"
+                  className="p-2 sm:p-2.5 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-200/60 dark:border-red-900/40 hover:bg-red-600 hover:text-white transition-all flex items-center justify-center h-9 w-9 sm:h-11 sm:w-11 shrink-0"
                   title="Sign Out"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-4 h-4 shrink-0" />
                 </button>
               </form>
             </div>
@@ -454,8 +454,20 @@ export function UnifiedAdminConsole({
               </button>
               <button
                 type="button"
-                onClick={() => switchTab("settings")}
+                onClick={() => switchTab("tags")}
                 className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 border-t border-stone-100 dark:border-stone-800 pt-3 mt-1 ${
+                  activeTab === "tags"
+                    ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <TagIcon className="w-4 h-4 text-botanical-600 dark:text-botanical-400" />
+                <span>Tag Management</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => switchTab("settings")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
                   activeTab === "settings"
                     ? "bg-stone-100 dark:bg-stone-800 text-stone-900 dark:text-white"
                     : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
@@ -470,7 +482,7 @@ export function UnifiedAdminConsole({
       </header>
 
       {/* MAIN CONTAINER */}
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-grow max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 w-full overflow-x-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -701,7 +713,7 @@ export function UnifiedAdminConsole({
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
                     <thead>
                       <tr className="border-b border-stone-100 dark:border-stone-800 text-[11px] font-bold uppercase tracking-wider text-stone-400">
                         <th className="pb-3 pl-2">Order Ref</th>

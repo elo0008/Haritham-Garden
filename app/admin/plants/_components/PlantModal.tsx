@@ -35,7 +35,7 @@ export function PlantModal({
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
           {/* Click backdrop to close */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -53,12 +53,12 @@ export function PlantModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative z-10 max-w-2xl w-full max-h-[90vh] bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-y-auto flex flex-col p-6 sm:p-8"
+            className="relative z-10 max-w-2xl w-full max-h-[90vh] bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-y-auto flex flex-col p-4 sm:p-8 max-w-[calc(100vw-1.5rem)] min-w-0"
           >
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-6 shrink-0">
-              <div>
-                <h2 className="font-heading font-bold text-xl sm:text-2xl text-stone-900 dark:text-stone-100">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-6 shrink-0 min-w-0">
+              <div className="min-w-0 flex-1 pr-2">
+                <h2 className="font-heading font-bold text-lg sm:text-2xl text-stone-900 dark:text-stone-100 truncate min-w-0">
                   {initialData ? `Edit Plant — ${initialData.name}` : "Add New Plant"}
                 </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">

@@ -215,7 +215,7 @@ export function SalesAnalytics({ orders }: SalesAnalyticsProps) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[650px]">
               <thead>
                 <tr className="border-b border-stone-100 dark:border-stone-800 text-[11px] font-bold uppercase tracking-wider text-stone-400">
                   <th className="pb-3 pl-2">Order Ref</th>
