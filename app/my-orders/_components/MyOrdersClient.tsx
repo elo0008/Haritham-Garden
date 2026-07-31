@@ -6,7 +6,7 @@ import type { Order, OrderStatus, Plant, SiteSettings } from "@/lib/types";
 import { formatINR, formatDate } from "@/lib/utils";
 import { getEffectivePrice } from "@/lib/types";
 import { getLocalOrderUuids } from "@/lib/myOrdersStorage";
-import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, cancelCustomerOrder, hideOrderForCustomer } from "@/app/actions/customerOrders";
+import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, updateCustomerOrderAddressByCustomer, cancelCustomerOrder, hideOrderForCustomer } from "@/app/actions/customerOrders";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
@@ -30,6 +30,8 @@ import {
   RefreshCw,
   AlertTriangle,
   XCircle,
+  MapPin,
+  X,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
@@ -101,6 +103,89 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
 
   // Track order that was just updated to present WhatsApp notification banner
   const [justUpdatedOrder, setJustUpdatedOrder] = useState<Order | null>(null);
+
+  // Address Editing state
+  const [editingAddressOrder, setEditingAddressOrder] = useState<Order | null>(null);
+  const [editingAddressUpdatedAt, setEditingAddressUpdatedAt] = useState<string | null>(null);
+  const [addressForm, setAddressForm] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_address: "",
+    customer_pincode: "",
+  });
+  const [saveAsDefaultAddress, setSaveAsDefaultAddress] = useState(false);
+  const [addressEditError, setAddressEditError] = useState<string | null>(null);
+  const [justUpdatedAddressOrder, setJustUpdatedAddressOrder] = useState<Order | null>(null);
+
+  const startEditingAddress = (order: Order) => {
+    setEditingAddressOrder(order);
+    setEditingAddressUpdatedAt(order.updated_at || null);
+    setAddressEditError(null);
+    setSaveAsDefaultAddress(false);
+    setAddressForm({
+      customer_name: order.customer_name || "",
+      customer_phone: order.customer_phone || "",
+      customer_address: order.customer_address || "",
+      customer_pincode: order.customer_pincode || "",
+    });
+  };
+
+  const handleSaveAddress = async () => {
+    if (!editingAddressOrder) return;
+    if (
+      !addressForm.customer_name.trim() ||
+      !addressForm.customer_phone.trim() ||
+      !addressForm.customer_address.trim() ||
+      !addressForm.customer_pincode.trim()
+    ) {
+      setAddressEditError("Full Name, Phone Number, Delivery Address, and Pincode are all required.");
+      return;
+    }
+
+    const localUuids = getLocalOrderUuids();
+
+    startTransition(async () => {
+      try {
+        await updateCustomerOrderAddressByCustomer(
+          editingAddressOrder.id,
+          localUuids,
+          addressForm,
+          editingAddressUpdatedAt
+        );
+
+        if (saveAsDefaultAddress) {
+          try {
+            localStorage.setItem(
+              "haritham_customer_info",
+              JSON.stringify({
+                name: addressForm.customer_name.trim(),
+                phone: addressForm.customer_phone.trim(),
+                address: addressForm.customer_address.trim(),
+                pincode: addressForm.customer_pincode.trim(),
+              })
+            );
+          } catch (e) {
+            console.error("Failed to save default address to localStorage", e);
+          }
+        }
+
+        const updatedOrderObj: Order = {
+          ...editingAddressOrder,
+          customer_name: addressForm.customer_name.trim(),
+          customer_phone: addressForm.customer_phone.trim(),
+          customer_address: addressForm.customer_address.trim(),
+          customer_pincode: addressForm.customer_pincode.trim(),
+        };
+
+        setJustUpdatedAddressOrder(updatedOrderObj);
+        setEditingAddressOrder(null);
+        setAddressEditError(null);
+        await loadOrders();
+      } catch (err) {
+        setAddressEditError(err instanceof Error ? err.message : "Failed to update delivery address.");
+      }
+    });
+  };
 
   // Cancellation state
   const [cancellingOrder, setCancellingOrder] = useState<Order | null>(null);
@@ -293,6 +378,21 @@ Please confirm my updated order details. Thank you!`;
     return buildWhatsAppUrl(targetNumber, message);
   };
 
+  const generateWhatsAppAddressEditUrl = (order: Order) => {
+    const targetNumber = siteSettings?.whatsapp_number || "919497723456";
+    const message = `Hello! 👋 I just updated my delivery address for order *${order.order_ref}* on your website.
+
+New Delivery Address Details:
+• Name: ${order.customer_name || "N/A"}
+• Phone: ${order.customer_phone || "N/A"}
+• Address: ${order.customer_address || "N/A"}
+• Pincode: ${order.customer_pincode || "N/A"}
+
+Please update my shipping destination. Thank you!`;
+
+    return buildWhatsAppUrl(targetNumber, message);
+  };
+
   const activeOrders = orders.filter((o) => !o.deleted);
   const cancelledOrders = orders.filter((o) => o.deleted);
 
@@ -391,6 +491,44 @@ Please confirm my updated order details. Thank you!`;
               <button
                 type="button"
                 onClick={() => setJustUpdatedOrder(null)}
+                className="p-2 text-emerald-600 hover:text-emerald-800 text-xs font-bold"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* WhatsApp Address Notification Banner (after address edit saved) */}
+        {justUpdatedAddressOrder && (
+          <div className="mb-6 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 flex items-center justify-between flex-wrap gap-3 animate-fade-in">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/60 flex items-center justify-center shrink-0 text-emerald-600 dark:text-emerald-300">
+                ✓
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-emerald-950 dark:text-emerald-100">
+                  Delivery Address Updated!
+                </h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                  Notify us on WhatsApp so we can verify your updated shipping destination right away.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <a
+                href={generateWhatsAppAddressEditUrl(justUpdatedAddressOrder)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+              >
+                <MessageCircle className="w-4 h-4 fill-white" />
+                <span>Notify Shop on WhatsApp</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setJustUpdatedAddressOrder(null)}
                 className="p-2 text-emerald-600 hover:text-emerald-800 text-xs font-bold"
               >
                 Dismiss
@@ -688,6 +826,43 @@ Please confirm my updated order details. Thank you!`;
                       </div>
                     )}
 
+                    {/* Delivery Address & Contact Section */}
+                    <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200/60 dark:border-stone-700/60 text-xs space-y-1">
+                      <div className="flex justify-between items-center flex-wrap gap-2">
+                        <span className="font-semibold text-stone-500 dark:text-stone-400 text-[11px] uppercase tracking-wider flex items-center gap-1">
+                          <MapPin className="w-3.5 h-3.5 text-botanical-600 dark:text-botanical-400" />
+                          Delivery Address & Contact
+                        </span>
+                        {order.status !== "dispatched" && (
+                          <button
+                            type="button"
+                            onClick={() => startEditingAddress(order)}
+                            className="text-[11px] font-semibold text-botanical-800 dark:text-botanical-100 hover:text-terracotta transition-colors flex items-center gap-1"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Edit Delivery Address
+                          </button>
+                        )}
+                      </div>
+                      {(order.customer_name || order.customer_phone || order.customer_address) ? (
+                        <div className="text-stone-800 dark:text-stone-200 space-y-0.5 pt-1">
+                          {order.customer_name && (
+                            <div className="font-bold text-stone-900 dark:text-stone-100">{order.customer_name}</div>
+                          )}
+                          {order.customer_phone && (
+                            <div className="font-mono text-stone-600 dark:text-stone-400">{order.customer_phone}</div>
+                          )}
+                          {order.customer_address && (
+                            <div className="text-stone-700 dark:text-stone-300 break-words whitespace-pre-wrap">{order.customer_address}{order.customer_pincode ? ` - ${order.customer_pincode}` : ""}</div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-stone-400 dark:text-stone-500 italic text-[11px] pt-1">
+                          No delivery address provided yet.
+                        </div>
+                      )}
+                    </div>
+
                     {/* Financial Summary */}
                     <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 space-y-1.5 text-xs">
                       <div className="flex justify-between text-stone-600 dark:text-stone-400 font-medium">
@@ -876,6 +1051,118 @@ Please confirm my updated order details. Thank you!`;
               >
                 {isPending ? "Removing…" : "Remove from View"}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Address Editing Modal */}
+      {editingAddressOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0">
+            <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 min-w-0">
+              <h3 className="font-heading font-bold text-base flex items-center gap-2 min-w-0 pr-2">
+                <MapPin className="w-4 h-4 text-botanical-600 shrink-0" />
+                <span className="truncate">Edit Delivery Address — {editingAddressOrder.order_ref}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingAddressOrder(null)}
+                className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 p-1 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {addressEditError && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs font-semibold text-rose-700 dark:text-rose-300">
+                {addressEditError}
+              </div>
+            )}
+
+            <div className="space-y-4 text-xs">
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Full Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={addressForm.customer_name}
+                  onChange={(e) => setAddressForm({ ...addressForm, customer_name: e.target.value })}
+                  placeholder="e.g. Ramesh Kumar"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 min-h-[44px]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Phone Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={addressForm.customer_phone}
+                  onChange={(e) => setAddressForm({ ...addressForm, customer_phone: e.target.value })}
+                  placeholder="e.g. 9847012345"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 min-h-[44px]"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Delivery Address <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={addressForm.customer_address}
+                  onChange={(e) => setAddressForm({ ...addressForm, customer_address: e.target.value })}
+                  placeholder="House/Building Name, Street, Area..."
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={addressForm.customer_pincode}
+                  onChange={(e) => setAddressForm({ ...addressForm, customer_pincode: e.target.value })}
+                  placeholder="e.g. 682001"
+                  className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600 min-h-[44px]"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  id="saveAsDefault"
+                  type="checkbox"
+                  checked={saveAsDefaultAddress}
+                  onChange={(e) => setSaveAsDefaultAddress(e.target.checked)}
+                  className="w-4 h-4 rounded border-stone-300 text-terracotta focus:ring-terracotta cursor-pointer"
+                />
+                <label htmlFor="saveAsDefault" className="text-xs text-stone-600 dark:text-stone-400 cursor-pointer">
+                  Save as my default checkout address
+                </label>
+              </div>
+
+              <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingAddressOrder(null)}
+                  disabled={isPending}
+                  className="px-4 py-2.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-semibold hover:bg-stone-200 min-h-[44px]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveAddress}
+                  disabled={isPending}
+                  className="px-5 py-2.5 bg-terracotta hover:bg-[#b04a25] text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50 min-h-[44px]"
+                >
+                  {isPending ? "Saving…" : "Save Address"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

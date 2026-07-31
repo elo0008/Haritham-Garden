@@ -178,6 +178,10 @@ export async function updateOrderStatus(
     updated_at: new Date().toISOString(),
   };
 
+  if (estimatedCourierPrice !== undefined || finalCourierPrice !== undefined) {
+    updatePayload.address_changed_after_estimate = false;
+  }
+
   if (isHandledOrBeyond && !order.handled) {
     updatePayload.handled_at = new Date().toISOString();
   } else if (newStatus === "pending") {

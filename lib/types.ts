@@ -32,6 +32,10 @@ export interface Plant {
   updated_at: string;
   // Joined from plant_tags → tags (populated by queries that join)
   tags?: Tag[];
+  // Pre-computed popularity scores across time windows
+  popularity_30d?: number;
+  popularity_90d?: number;
+  popularity_all?: number;
 }
 
 export type PlantWriteData = {
@@ -118,6 +122,7 @@ export interface Order {
   items_edited_at?: string | null;
   cancelled_by_customer?: boolean | null;
   hidden_by_customer?: boolean | null;
+  address_changed_after_estimate?: boolean | null;
   updated_at?: string | null;
   created_at: string;
 }

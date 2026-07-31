@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 
 interface CarouselSectionProps {
   settings?: CarouselSectionSettings;
@@ -89,12 +90,20 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
     touchEndX.current = null;
   };
 
+  const shouldReduceMotion = useReducedMotion();
+
   const headerTag = settings.header_tag?.trim();
   const headerTitle = settings.header_title?.trim();
   const headerSubtitle = settings.header_subtitle?.trim();
 
   return (
-    <section className="mb-16 pt-8 border-t border-stone-200 dark:border-stone-800">
+    <motion.section
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.1 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className="mb-16 pt-8 border-t border-stone-200 dark:border-stone-800"
+    >
       {/* ── Section Header ────────────────────────────────────────────────── */}
       {(headerTag || headerTitle || headerSubtitle) && (
         <div className="text-center max-w-2xl mx-auto mb-10">
@@ -202,6 +211,6 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
           </div>
         )}
       </div>
-    </section>
+    </motion.section>
   );
 }

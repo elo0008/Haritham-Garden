@@ -750,6 +750,17 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       </span>
                     )}
 
+                    {/* Address Changed After Estimate Warning Badge */}
+                    {order.address_changed_after_estimate && (
+                      <span
+                        className="text-[10px] font-bold text-amber-900 dark:text-amber-200 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700/80 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 animate-pulse"
+                        title="Customer updated their delivery address after courier estimate was set. Please verify shipping fee."
+                      >
+                        <MapPin className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
+                        <span>Address changed — re-check courier estimate</span>
+                      </span>
+                    )}
+
                     {/* Customer Name Trigger Link/Badge */}
                     {order.customer_name ? (
                       <button

@@ -11,7 +11,7 @@ import type {
 } from "@/lib/types";
 
 interface PageProps {
-  searchParams?: Promise<{ plant?: string }>;
+  searchParams?: Promise<{ plant?: string; sort?: string }>;
 }
 
 export default async function HomePage({ searchParams }: PageProps) {
@@ -54,15 +54,62 @@ export default async function HomePage({ searchParams }: PageProps) {
     tagMap.set(tag.id, tag);
   }
 
-  // Attach tags to each plant
-  const plantsWithTags: Plant[] = ((plants as Plant[]) ?? []).map((plant) => {
+  // Calculate popularity scores for plants across 3 time windows (30d, 90d, all-time) in a single query
+  const now = Date.now();
+  const cutoff30d = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff90d = new Date(now - 90 * 24 * 60 * 60 * 1000).toISOString();
+
+  const popMap30d = new Map<string, number>();
+  const popMap90d = new Map<string, number>();
+  const popMapAll = new Map<string, number>();
+
+  try {
+    const { data: ordersData, error: ordersError } = await supabase
+      .from("orders")
+      .select("items, created_at")
+      .or("deleted.is.null,deleted.eq.false");
+
+    if (ordersError) {
+      console.error("Error fetching orders for popularity scores:", ordersError.message);
+    } else if (ordersData) {
+      for (const order of ordersData) {
+        const createdAt = order.created_at || "";
+        const isWithin30d = createdAt >= cutoff30d;
+        const isWithin90d = createdAt >= cutoff90d;
+        const items = (order.items || []) as Array<{ plant_id?: string; name?: string; qty?: number }>;
+
+        for (const item of items) {
+          const qty = Number(item.qty) || 0;
+          if (qty <= 0) continue;
+
+          const plantId = item.plant_id || "";
+          if (plantId) {
+            popMapAll.set(plantId, (popMapAll.get(plantId) || 0) + qty);
+            if (isWithin90d) popMap90d.set(plantId, (popMap90d.get(plantId) || 0) + qty);
+            if (isWithin30d) popMap30d.set(plantId, (popMap30d.get(plantId) || 0) + qty);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Unexpected error calculating popularity scores:", err);
+  }
+
+  // Attach tags and popularity scores to each plant
+  const plantsWithData: Plant[] = ((plants as Plant[]) ?? []).map((plant) => {
     const plantTagLinks = (plantTags ?? []).filter(
       (pt: { plant_id: string; tag_id: string }) => pt.plant_id === plant.id
     );
     const attachedTags = plantTagLinks
       .map((pt: { plant_id: string; tag_id: string }) => tagMap.get(pt.tag_id))
       .filter(Boolean) as Tag[];
-    return { ...plant, tags: attachedTags };
+    return {
+      ...plant,
+      tags: attachedTags,
+      popularity_30d: popMap30d.get(plant.id) || 0,
+      popularity_90d: popMap90d.get(plant.id) || 0,
+      popularity_all: popMapAll.get(plant.id) || 0,
+    };
   });
 
   // Fetch hero banner safely (singleton)
@@ -127,9 +174,10 @@ export default async function HomePage({ searchParams }: PageProps) {
   return (
     <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
       <PlantCatalog
-        plants={plantsWithTags}
+        plants={plantsWithData}
         tags={(tags as Tag[]) ?? []}
         initialPlantSlug={resolvedParams.plant}
+        initialSort={resolvedParams.sort}
         heroBanner={heroBanner}
         siteSettings={siteSettings}
         carouselSettings={carouselSettings}

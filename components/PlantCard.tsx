@@ -33,8 +33,10 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
           onSelect?.(plant);
         }
       }}
-      className={`group bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 overflow-hidden shadow-xs hover:shadow-xl dark:hover:shadow-stone-950/50 transition-all duration-300 flex flex-col justify-between ${
-        isUnavailable ? "opacity-85" : "hover:-translate-y-1.5"
+      className={`group bg-white dark:bg-stone-900 rounded-2xl border border-stone-200/80 dark:border-stone-800/80 overflow-hidden shadow-xs transition-all duration-300 flex flex-col justify-between ${
+        isUnavailable
+          ? "opacity-85"
+          : "hover:-translate-y-1.5 hover:shadow-xl dark:hover:shadow-stone-950/60 hover:border-stone-300 dark:hover:border-stone-700"
       }`}
     >
       {/* Aspect Square Image Container */}

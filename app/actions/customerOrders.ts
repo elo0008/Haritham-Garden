@@ -250,3 +250,90 @@ export async function cancelCustomerOrder(
   revalidatePath("/admin/orders");
 }
 
+/**
+ * Customer-facing action to edit an order's delivery address & contact info.
+ * Allowed while status is 'pending', 'handled', 'paid', or 'packaged' — locks ONLY when 'dispatched'.
+ * Sets address_changed_after_estimate = true if status is 'handled' or later (handled, paid, packaged)
+ * and address/name/phone/pincode changed from existing values.
+ */
+export async function updateCustomerOrderAddressByCustomer(
+  orderId: string,
+  allowedUuids: string[],
+  details: {
+    customer_name: string;
+    customer_phone: string;
+    customer_address: string;
+    customer_pincode: string;
+  },
+  expectedUpdatedAt?: string | null
+): Promise<void> {
+  if (!orderId || !UUID_REGEX.test(orderId)) {
+    throw new Error("Invalid order ID.");
+  }
+
+  const sanitizedAllowed = (allowedUuids || []).filter((id) => typeof id === "string" && UUID_REGEX.test(id));
+  if (!sanitizedAllowed.includes(orderId)) {
+    throw new Error("Unauthorized access: this order was not placed on this device.");
+  }
+
+  const name = details.customer_name?.trim();
+  const phone = details.customer_phone?.trim();
+  const address = details.customer_address?.trim();
+  const pincode = details.customer_pincode?.trim();
+
+  if (!name || !phone || !address || !pincode) {
+    throw new Error("Full Name, Phone Number, Delivery Address, and Pincode are all required.");
+  }
+
+  const supabase = await createClient();
+
+  const { data: order, error: fetchError } = await supabase
+    .from("orders")
+    .select("status, customer_name, customer_phone, customer_address, customer_pincode, address_changed_after_estimate, updated_at")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchError || !order) {
+    throw new Error(fetchError?.message || "Order not found.");
+  }
+
+  verifyOrderNotModified(order.updated_at, expectedUpdatedAt);
+
+  // Edit window constraint: allowed in pending, handled, paid, packaged. Locks ONLY when dispatched.
+  if (order.status === "dispatched") {
+    throw new Error("This order has already been dispatched and its delivery address can no longer be edited.");
+  }
+
+  const hasAddressDetailsChanged =
+    (order.customer_name || "") !== name ||
+    (order.customer_phone || "") !== phone ||
+    (order.customer_address || "") !== address ||
+    (order.customer_pincode || "") !== pincode;
+
+  const isHandledOrLater = order.status !== "pending";
+
+  const updatePayload: Record<string, any> = {
+    customer_name: name,
+    customer_phone: phone,
+    customer_address: address,
+    customer_pincode: pincode,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (hasAddressDetailsChanged && isHandledOrLater) {
+    updatePayload.address_changed_after_estimate = true;
+  }
+
+  const { error: updateError } = await supabase
+    .from("orders")
+    .update(updatePayload)
+    .eq("id", orderId);
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  revalidatePath("/my-orders");
+  revalidatePath("/admin/orders");
+}
+
