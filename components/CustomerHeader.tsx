@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
-import { scrollToTarget } from "@/lib/scroll";
 import type { SiteSettings } from "@/lib/types";
 import { Home, Sprout, Sparkles, PackageCheck, ShoppingBag, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -68,17 +67,34 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
   const handleNavClick = (target: "home" | "catalogue" | "carousel") => {
     setIsMobileMenuOpen(false);
 
-    const targetIdMap: Record<"home" | "catalogue" | "carousel", string> = {
-      home: "top",
-      catalogue: "filter-bar",
-      carousel: "carousel-section",
-    };
-    const targetId = targetIdMap[target];
-
     if (isHomePage) {
-      scrollToTarget(targetId);
+      if (target === "home") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (target === "catalogue") {
+        const el = document.getElementById("filter-bar");
+        if (el) {
+          const isMobile = window.innerWidth < 640;
+          const headerHeight = isMobile ? 64 : 80;
+          const offset = el.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
+          window.scrollTo({ top: offset, behavior: "smooth" });
+        }
+      } else if (target === "carousel") {
+        const el = document.getElementById("carousel-section");
+        if (el) {
+          const isMobile = window.innerWidth < 640;
+          const headerHeight = isMobile ? 64 : 80;
+          const offset = el.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
+          window.scrollTo({ top: offset, behavior: "smooth" });
+        }
+      }
     } else {
-      router.push(`/?scroll=${targetId}`);
+      if (target === "home") {
+        router.push("/?scroll=top");
+      } else if (target === "catalogue") {
+        router.push("/?scroll=filter-bar");
+      } else if (target === "carousel") {
+        router.push("/?scroll=carousel-section");
+      }
     }
   };
 
@@ -202,15 +218,15 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="lg:hidden bg-stone-50/95 dark:bg-stone-950/95 backdrop-blur-md border-b border-stone-200/40 dark:border-stone-800/40 px-4 py-3.5 space-y-1.5 overflow-hidden font-sans shadow-xl"
+            className="lg:hidden bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 py-3.5 space-y-1.5 overflow-hidden font-sans shadow-xl"
           >
             <button
               type="button"
               onClick={() => handleNavClick("home")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 isHomePage && activeSection === "home"
-                  ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
-                  : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200/50 dark:hover:bg-stone-800/50"
+                  ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                  : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >
               <Home className="w-4 h-4 text-botanical-800 dark:text-botanical-100" />
@@ -220,10 +236,10 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             <button
               type="button"
               onClick={() => handleNavClick("catalogue")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 isHomePage && activeSection === "catalogue"
-                  ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
-                  : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200/50 dark:hover:bg-stone-800/50"
+                  ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                  : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >
               <Sprout className="w-4 h-4 text-emerald-600" />
@@ -234,10 +250,10 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
               <button
                 type="button"
                 onClick={() => handleNavClick("carousel")}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                   isHomePage && activeSection === "carousel"
-                    ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
-                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200/50 dark:hover:bg-stone-800/50"
+                    ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
                 }`}
               >
                 <Sparkles className="w-4 h-4 text-terracotta" />
@@ -248,10 +264,10 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             <Link
               href="/my-orders"
               onClick={() => setIsMobileMenuOpen(false)}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 isOrdersPage
-                  ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
-                  : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white hover:bg-stone-200/50 dark:hover:bg-stone-800/50"
+                  ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                  : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
               }`}
             >
               <PackageCheck className="w-4 h-4 text-botanical-600 dark:text-botanical-400" />

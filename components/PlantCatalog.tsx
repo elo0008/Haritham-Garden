@@ -23,7 +23,6 @@ import Link from "next/link";
 import { ShoppingBag, PackageCheck, ArrowUpDown, Check, Menu, X, Home, Sprout, Sparkles } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CustomDropdown } from "./CustomDropdown";
-import { scrollToTarget } from "@/lib/scroll";
 
 interface PlantCatalogProps {
   plants: Plant[];
@@ -102,10 +101,32 @@ export function PlantCatalog({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [carouselSettings?.enabled]);
 
+  const handleScrollToTarget = (targetId: string) => {
+    setIsMobileMenuOpen(false);
+    if (targetId === "top") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const element = document.getElementById(targetId);
+    if (element) {
+      const isMobile = window.innerWidth < 640;
+      const headerHeight = isMobile ? 64 : 80;
+      const offsetPosition =
+        element.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
   useEffect(() => {
     const scrollParam = searchParams.get("scroll");
     if (scrollParam) {
-      scrollToTarget(scrollParam);
+      const timer = setTimeout(() => {
+        handleScrollToTarget(scrollParam);
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
