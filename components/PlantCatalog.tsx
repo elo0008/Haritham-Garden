@@ -378,7 +378,7 @@ export function PlantCatalog({
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
                     transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute right-0 top-full mt-2 z-50 min-w-[210px] py-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-xl overflow-hidden text-stone-900 dark:text-stone-100 font-sans"
+                    className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50 min-w-[200px] w-max max-w-[calc(100vw-32px)] py-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-hidden text-stone-900 dark:text-stone-100 font-sans"
                     role="listbox"
                     aria-label="Sort options"
                   >
@@ -404,9 +404,9 @@ export function PlantCatalog({
                               : "text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/40"
                           }`}
                         >
-                          <span>{opt.label}</span>
+                          <span className="whitespace-nowrap">{opt.label}</span>
                           {isSelected && (
-                            <Check className="w-4 h-4 text-botanical-600 dark:text-botanical-400 shrink-0 ml-2" />
+                            <Check className="w-4 h-4 text-botanical-600 dark:text-botanical-400 shrink-0 ml-3" />
                           )}
                         </button>
                       );
