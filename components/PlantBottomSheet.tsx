@@ -26,15 +26,33 @@ const WATERING_LABELS: Record<string, string> = {
   high: "High Water",
 };
 
+const imageSlideVariants = {
+  enter: (direction: number) => ({
+    x: direction > 0 ? "100%" : direction < 0 ? "-100%" : "0%",
+    opacity: 0,
+  }),
+  center: {
+    x: 0,
+    opacity: 1,
+  },
+  exit: (direction: number) => ({
+    x: direction < 0 ? "100%" : "-100%",
+    opacity: 0,
+  }),
+};
+
 export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAddToCart }: PlantBottomSheetProps) {
-  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [[page, direction], setPage] = useState([0, 0]);
   const [quantity, setQuantity] = useState(1);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+
+  const photos = plant?.photos && plant.photos.length > 0 ? plant.photos : [];
+  const activePhotoIndex = photos.length > 0 ? ((page % photos.length) + photos.length) % photos.length : 0;
 
   // Reset internal state when a new plant is opened
   useEffect(() => {
     if (isOpen) {
-      setActivePhotoIndex(0);
+      setPage([0, 0]);
       setQuantity(1);
       setIsImageLoaded(false);
     }
@@ -45,21 +63,35 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
     setIsImageLoaded(false);
   }, [activePhotoIndex]);
 
-  // Handle ESC key to close
+  const paginate = (newDirection: number) => {
+    if (photos.length <= 1) return;
+    setPage([page + newDirection, newDirection]);
+  };
+
+  const jumpToPhoto = (targetIndex: number) => {
+    if (photos.length <= 1 || targetIndex === activePhotoIndex) return;
+    const dir = targetIndex > activePhotoIndex ? 1 : -1;
+    setPage([page + (targetIndex - activePhotoIndex), dir]);
+  };
+
+  // Handle ESC key to close and Arrow keys for photo pagination
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
+      } else if (e.key === "ArrowRight" && photos.length > 1) {
+        paginate(1);
+      } else if (e.key === "ArrowLeft" && photos.length > 1) {
+        paginate(-1);
       }
     };
     if (plant) {
       window.addEventListener("keydown", handleKeyDown);
     }
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [plant, onClose]);
+  }, [plant, onClose, photos.length, page]);
 
   const isUnavailable = plant?.availability === "unavailable";
-  const photos = plant?.photos && plant.photos.length > 0 ? plant.photos : [];
 
   const hasSalePrice =
     plant?.sale_price !== null &&
@@ -110,8 +142,8 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
               <X className="w-5 h-5" />
             </button>
 
-            {/* Left Side: Photo Gallery */}
-            <div className="md:w-1/2 relative bg-stone-100 dark:bg-stone-800 min-h-[260px] sm:min-h-[340px] md:min-h-full flex items-center justify-center overflow-hidden">
+            {/* Left Side: Photo Gallery with Swipe/Drag Gesture & Slide Animation */}
+            <div className="md:w-1/2 relative bg-stone-100 dark:bg-stone-800 min-h-[260px] sm:min-h-[340px] md:min-h-full flex items-center justify-center overflow-hidden touch-pan-y">
               {photos.length > 0 ? (
                 <>
                   {/* Skeleton Shimmer Loading Placeholder */}
@@ -122,15 +154,49 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
                       </div>
                     </div>
                   )}
-                  <img
-                    key={`${plant.id}-${activePhotoIndex}`}
-                    src={photos[activePhotoIndex]}
-                    alt={plant.name}
-                    onLoad={() => setIsImageLoaded(true)}
-                    className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 z-0 ${
-                      isImageLoaded ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
+
+                  {photos.length > 1 ? (
+                    <AnimatePresence initial={false} custom={direction} mode="popLayout">
+                      <motion.img
+                        key={`${plant.id}-${activePhotoIndex}`}
+                        src={photos[activePhotoIndex]}
+                        alt={plant.name}
+                        custom={direction}
+                        variants={imageSlideVariants}
+                        initial="enter"
+                        animate="center"
+                        exit="exit"
+                        transition={{
+                          x: { type: "spring", stiffness: 350, damping: 32 },
+                          opacity: { duration: 0.2 },
+                        }}
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.2}
+                        onDragEnd={(_, { offset, velocity }) => {
+                          if (offset.x < -40 || velocity.x < -400) {
+                            paginate(1);
+                          } else if (offset.x > 40 || velocity.x > 400) {
+                            paginate(-1);
+                          }
+                        }}
+                        onLoad={() => setIsImageLoaded(true)}
+                        className={`w-full h-full object-cover absolute inset-0 cursor-grab active:cursor-grabbing select-none transition-opacity duration-300 ${
+                          isImageLoaded ? "opacity-100" : "opacity-0"
+                        }`}
+                      />
+                    </AnimatePresence>
+                  ) : (
+                    <img
+                      key={`${plant.id}-0`}
+                      src={photos[0]}
+                      alt={plant.name}
+                      onLoad={() => setIsImageLoaded(true)}
+                      className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 ${
+                        isImageLoaded ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                  )}
                 </>
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-stone-300 dark:text-stone-600 text-6xl">
@@ -140,11 +206,12 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
 
               {/* Photo Dots Nav if multiple photos */}
               {photos.length > 1 && (
-                <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 z-10">
+                <div className="absolute bottom-4 left-0 right-0 flex items-center justify-center gap-2 z-10 pointer-events-auto">
                   {photos.map((_, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActivePhotoIndex(idx)}
+                      type="button"
+                      onClick={() => jumpToPhoto(idx)}
                       className={`h-2.5 rounded-full transition-all min-w-[20px] ${
                         idx === activePhotoIndex
                           ? "w-6 bg-terracotta"

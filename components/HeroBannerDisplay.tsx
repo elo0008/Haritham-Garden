@@ -1,5 +1,6 @@
 import type { HeroBanner } from "@/lib/types";
 import { motion, useReducedMotion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 interface HeroBannerDisplayProps {
   banner?: HeroBanner | null;
@@ -18,83 +19,113 @@ export function HeroBannerDisplay({ banner }: HeroBannerDisplayProps) {
   // If active but no text fields exist at all, don't render an empty banner
   if (!tagLabel && !title && !description) return null;
 
+  const handleScrollToGrid = () => {
+    const element = document.getElementById("filter-bar");
+    if (element) {
+      const isMobile = window.innerWidth < 640;
+      const headerHeight = isMobile ? 64 : 80;
+      const gapMatchingBottomLine = 20; // Matches pb-5 (20px) gap between tags and separating line
+      const offset = headerHeight + gapMatchingBottomLine;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
-    <motion.div
-      initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.1 }}
-      transition={{ duration: 0.28, ease: "easeOut" }}
-      className="relative rounded-3xl text-white p-8 sm:p-12 mb-10 overflow-hidden shadow-lg bg-stone-900 border border-transparent dark:border-stone-800"
-    >
-      {/* CSS Keyframe Style for Ambient Slow Drift */}
+    <div className="relative w-full h-[100dvh] min-h-[100dvh] text-white p-6 sm:p-12 mb-10 overflow-hidden shadow-lg bg-stone-900 border border-transparent dark:border-stone-800 flex flex-col justify-between pt-20 sm:pt-24 pb-8 sm:pb-12 rounded-none">
+      {/* CSS Keyframe Style for Slow Ken Burns Zoom */}
       <style jsx>{`
-        @keyframes ambientLeafDrift {
+        @keyframes kenBurnsZoom {
           0% {
-            transform: translate3d(0, 0, 0) rotate(0deg);
-          }
-          50% {
-            transform: translate3d(18px, -14px, 0) rotate(6deg);
+            transform: scale(1);
           }
           100% {
-            transform: translate3d(-10px, 8px, 0) rotate(-4deg);
+            transform: scale(1.08);
           }
         }
-        .animate-ambient-leaf {
-          animation: ambientLeafDrift 38s ease-in-out infinite alternate;
+        .animate-ken-burns {
+          animation: kenBurnsZoom 22s ease-in-out infinite alternate;
           will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-ken-burns {
+            animation: none !important;
+            transform: scale(1) !important;
+          }
         }
       `}</style>
 
-      {/* Background Image or Solid Fallback */}
+      {/* Background Image or Solid Fallback with Ken Burns Zoom */}
       {bgImage ? (
         <img
           src={bgImage}
           alt={title || "Haritham Garden Banner"}
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className={`absolute inset-0 w-full h-full object-cover object-center ${
+            shouldReduceMotion ? "" : "animate-ken-burns"
+          }`}
           loading="eager"
         />
       ) : (
-        <div className="absolute inset-0 bg-botanical-900" />
+        <div
+          className={`absolute inset-0 bg-botanical-900 ${
+            shouldReduceMotion ? "" : "animate-ken-burns"
+          }`}
+        />
       )}
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-botanical-900/45 via-botanical-900/40 to-botanical-800/35" />
+      {/* Gradient Overlay for Readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-botanical-950/60 via-botanical-950/45 to-stone-950/70 pointer-events-none" />
 
-      {/* Single Ambient Botanical Leaf Background Accent (Pure CSS 4% opacity, slow drift) */}
-      <div className="absolute -right-8 -bottom-12 z-0 pointer-events-none opacity-[0.05] text-white animate-ambient-leaf select-none hidden sm:block">
-        <svg
-          width="320"
-          height="320"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z" />
-          <path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12" />
-        </svg>
-      </div>
-
-      {/* Content */}
-      <div className="relative z-10 max-w-xl">
+      {/* Content — Centered horizontally & vertically in space below header with staggered on-load entrance */}
+      <div className="relative z-10 my-auto flex flex-col items-center text-center max-w-3xl mx-auto px-4">
         {tagLabel && (
-          <span className="bg-botanical-600/90 text-botanical-50 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider mb-4 inline-block backdrop-blur-xs shadow-2xs">
+          <motion.span
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut", delay: 0.05 }}
+            className="bg-botanical-600/90 text-botanical-50 text-xs font-semibold px-3.5 py-1.5 rounded-full uppercase tracking-wider mb-4 inline-block backdrop-blur-xs shadow-2xs"
+          >
             {tagLabel}
-          </span>
+          </motion.span>
         )}
         {title && (
-          <h1 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4 leading-tight text-white">
+          <motion.h1
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut", delay: 0.15 }}
+            className="font-heading text-4xl sm:text-6xl font-bold tracking-tight mb-4 leading-tight text-white max-w-3xl"
+          >
             {title}
-          </h1>
+          </motion.h1>
         )}
         {description && (
-          <p className="text-botanical-100 text-sm sm:text-base font-normal leading-relaxed">
+          <motion.p
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut", delay: 0.25 }}
+            className="text-botanical-100 text-base sm:text-lg font-normal leading-relaxed max-w-xl mb-6"
+          >
             {description}
-          </p>
+          </motion.p>
         )}
+
+        {/* Explore Button */}
+        <motion.button
+          type="button"
+          onClick={handleScrollToGrid}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut", delay: 0.35 }}
+          className="mt-4 sm:mt-6 group bg-white/90 hover:bg-white text-stone-900 font-bold px-6 py-3 rounded-full border border-white/30 backdrop-blur-md shadow-lg flex items-center gap-2.5 transition-all active:scale-95 cursor-pointer text-sm"
+        >
+          <span>Explore</span>
+          <ChevronDown className="w-4 h-4 text-stone-700 group-hover:translate-y-0.5 transition-transform" />
+        </motion.button>
       </div>
-    </motion.div>
+    </div>
   );
 }

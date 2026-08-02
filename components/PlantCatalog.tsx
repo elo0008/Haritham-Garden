@@ -206,8 +206,8 @@ export function PlantCatalog({
 
   return (
     <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
-      {/* Sticky Header / Navbar */}
-      <header className="sticky top-0 z-40 bg-stone-50/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all">
+      {/* Fixed Header / Navbar */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-stone-50/70 dark:bg-stone-950/70 backdrop-blur-md border-b border-stone-200/40 dark:border-stone-800/40 transition-all w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           {/* Logo Component */}
           <div className="min-w-0 flex-1 max-w-[55%] xs:max-w-[65%] sm:max-w-none">
@@ -224,7 +224,7 @@ export function PlantCatalog({
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               href="/my-orders"
-              className="relative p-2 sm:p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 px-2.5 sm:px-3.5 min-h-[40px] sm:min-h-[44px]"
+              className="relative p-2 sm:p-2.5 rounded-full bg-white/80 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800/80 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 px-2.5 sm:px-3.5 min-h-[40px] sm:min-h-[44px]"
               title="My Orders"
             >
               <PackageCheck className="w-5 h-5 text-botanical-800 dark:text-botanical-100 shrink-0" />
@@ -237,7 +237,7 @@ export function PlantCatalog({
             <button
               type="button"
               onClick={openCart}
-              className="relative p-2 sm:p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 min-h-[40px] sm:min-h-[44px]"
+              className="relative p-2 sm:p-2.5 rounded-full bg-white/80 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800/80 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 min-h-[40px] sm:min-h-[44px]"
               aria-label={`Shopping Bag with ${totalItems} items`}
             >
               <ShoppingBag className="w-5 h-5 text-botanical-800 dark:text-botanical-100 shrink-0" />
@@ -253,11 +253,11 @@ export function PlantCatalog({
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {/* Hero Banner */}
-        {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
+      {/* Hero Banner Section (full 100dvh, starts cleanly at top-0 under fixed header) */}
+      {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
 
+      {/* Main Content Area */}
+      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full ${heroBanner ? "" : "pt-20 sm:pt-24"}`}>
         {/* Filters Section Bar */}
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
