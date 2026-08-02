@@ -65,36 +65,47 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
   }, [isHomePage, carouselTagLabel]);
 
   const handleNavClick = (target: "home" | "catalogue" | "carousel") => {
+    const wasMobileMenuOpen = isMobileMenuOpen;
     setIsMobileMenuOpen(false);
 
-    if (isHomePage) {
-      if (target === "home") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } else if (target === "catalogue") {
-        const el = document.getElementById("filter-bar");
-        if (el) {
-          const isMobile = window.innerWidth < 640;
-          const headerHeight = isMobile ? 64 : 80;
-          const offset = el.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
-          window.scrollTo({ top: offset, behavior: "smooth" });
+    const executeScroll = () => {
+      if (isHomePage) {
+        if (target === "home") {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (target === "catalogue") {
+          const el = document.getElementById("filter-bar");
+          if (el) {
+            const isMobile = window.innerWidth < 640;
+            const headerHeight = isMobile ? 64 : 80;
+            const offset = el.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
+            window.scrollTo({ top: offset, behavior: "smooth" });
+          }
+        } else if (target === "carousel") {
+          const el = document.getElementById("carousel-section");
+          if (el) {
+            const isMobile = window.innerWidth < 640;
+            const headerHeight = isMobile ? 64 : 80;
+            const offset = el.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
+            window.scrollTo({ top: offset, behavior: "smooth" });
+          }
         }
-      } else if (target === "carousel") {
-        const el = document.getElementById("carousel-section");
-        if (el) {
-          const isMobile = window.innerWidth < 640;
-          const headerHeight = isMobile ? 64 : 80;
-          const offset = el.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
-          window.scrollTo({ top: offset, behavior: "smooth" });
+      } else {
+        if (target === "home") {
+          router.push("/?scroll=top");
+        } else if (target === "catalogue") {
+          router.push("/?scroll=filter-bar");
+        } else if (target === "carousel") {
+          router.push("/?scroll=carousel-section");
         }
       }
+    };
+
+    if (wasMobileMenuOpen) {
+      // Delay scroll execution until mobile menu collapse animation completes (~230ms)
+      // and layout reflow stabilizes so getBoundingClientRect() measures post-collapse layout.
+      setTimeout(executeScroll, 230);
     } else {
-      if (target === "home") {
-        router.push("/?scroll=top");
-      } else if (target === "catalogue") {
-        router.push("/?scroll=filter-bar");
-      } else if (target === "carousel") {
-        router.push("/?scroll=carousel-section");
-      }
+      executeScroll();
     }
   };
 
