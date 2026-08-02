@@ -20,7 +20,7 @@ import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
-import { ShoppingBag, PackageCheck, ArrowUpDown, Check } from "lucide-react";
+import { ShoppingBag, PackageCheck, ArrowUpDown, Check, Menu, X, Home, Sprout, Sparkles } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CustomDropdown } from "./CustomDropdown";
 
@@ -59,6 +59,76 @@ export function PlantCatalog({
   const shouldReduceMotion = useReducedMotion();
 
   const { totalItems, openCart, addItem } = useCart();
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState<"home" | "catalogue" | "carousel">("home");
+
+  const carouselTagLabel = carouselSettings?.enabled
+    ? carouselSettings.header_tag?.trim() || "Featured"
+    : null;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const filterEl = document.getElementById("filter-bar");
+      const carouselEl = document.getElementById("carousel-section");
+
+      const isMobile = window.innerWidth < 640;
+      const headerHeight = isMobile ? 64 : 80;
+
+      if (carouselEl && carouselSettings?.enabled) {
+        const carouselTop =
+          carouselEl.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 100);
+        if (scrollY >= carouselTop) {
+          setActiveSection("carousel");
+          return;
+        }
+      }
+
+      if (filterEl) {
+        const filterTop =
+          filterEl.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 100);
+        if (scrollY >= filterTop) {
+          setActiveSection("catalogue");
+          return;
+        }
+      }
+
+      setActiveSection("home");
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [carouselSettings?.enabled]);
+
+  const handleScrollToTarget = (targetId: string) => {
+    setIsMobileMenuOpen(false);
+    if (targetId === "top") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const element = document.getElementById(targetId);
+    if (element) {
+      const isMobile = window.innerWidth < 640;
+      const headerHeight = isMobile ? 64 : 80;
+      const offsetPosition =
+        element.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 20);
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const scrollParam = searchParams.get("scroll");
+    if (scrollParam) {
+      const timer = setTimeout(() => {
+        handleScrollToTarget(scrollParam);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   // Multi-select: set of active tag IDs (empty = show all)
   const [activeTagIds, setActiveTagIds] = useState<Set<string>>(new Set());
@@ -261,8 +331,8 @@ export function PlantCatalog({
       {/* Fixed Header / Navbar */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-stone-50/70 dark:bg-stone-950/70 backdrop-blur-md border-b border-stone-200/40 dark:border-stone-800/40 transition-all w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-          {/* Logo Component */}
-          <div className="min-w-0 flex-1 max-w-[55%] xs:max-w-[65%] sm:max-w-none">
+          {/* Left Block: Logo Component */}
+          <div className="flex-1 flex items-center justify-start min-w-0">
             <Logo
               showTagline={true}
               businessName={siteSettings?.business_name}
@@ -272,17 +342,63 @@ export function PlantCatalog({
             />
           </div>
 
-          {/* Header Actions: Theme Toggle + My Orders + Bag Button */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            <Link
-              href="/my-orders"
-              className="relative p-2 sm:p-2.5 rounded-full bg-white/80 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800/80 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 px-2.5 sm:px-3.5 min-h-[40px] sm:min-h-[44px]"
-              title="My Orders"
-            >
-              <PackageCheck className="w-5 h-5 text-botanical-800 dark:text-botanical-100 shrink-0" />
-              <span className="text-sm font-semibold hidden sm:inline">My Orders</span>
-            </Link>
+          {/* Center Block: Desktop Navigation Links — Centered Admin Pill Tabs */}
+          <div className="hidden lg:flex flex-1 items-center justify-center min-w-0">
+            <nav className="flex items-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
+              <button
+                type="button"
+                onClick={() => handleScrollToTarget("top")}
+                className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  activeSection === "home"
+                    ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+                }`}
+              >
+                <Home className="w-3.5 h-3.5 text-botanical-800 dark:text-botanical-100" />
+                <span>Home</span>
+              </button>
 
+              <button
+                type="button"
+                onClick={() => handleScrollToTarget("filter-bar")}
+                className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+                  activeSection === "catalogue"
+                    ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
+                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+                }`}
+              >
+                <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Catalogue</span>
+              </button>
+
+              {carouselTagLabel && (
+                <button
+                  type="button"
+                  onClick={() => handleScrollToTarget("carousel-section")}
+                  className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 max-w-[180px] ${
+                    activeSection === "carousel"
+                      ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
+                      : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+                  }`}
+                  title={carouselTagLabel}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-terracotta" />
+                  <span className="truncate">{carouselTagLabel}</span>
+                </button>
+              )}
+
+              <Link
+                href="/my-orders"
+                className="px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+              >
+                <PackageCheck className="w-3.5 h-3.5 text-botanical-600 dark:text-botanical-400" />
+                <span>Orders</span>
+              </Link>
+            </nav>
+          </div>
+
+          {/* Right Block: Header Actions (Theme Toggle + Bag Button + Mobile Menu) */}
+          <div className="flex-1 flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
             <ThemeToggle />
 
             {/* Bag Button */}
@@ -301,8 +417,83 @@ export function PlantCatalog({
                 {totalItems}
               </span>
             </button>
+
+            {/* Mobile Hamburger Menu Toggle Button */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="lg:hidden p-2.5 rounded-full bg-white/80 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800/80 text-stone-700 dark:text-stone-200 hover:border-botanical-600 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center active:scale-95 transition-all shadow-2xs"
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              ) : (
+                <Menu className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer / Panel */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="lg:hidden bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 py-3.5 space-y-1.5 overflow-hidden font-sans shadow-xl"
+            >
+              <button
+                type="button"
+                onClick={() => handleScrollToTarget("top")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                  activeSection === "home"
+                    ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <Home className="w-4 h-4 text-botanical-800 dark:text-botanical-100" />
+                <span>Home</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleScrollToTarget("filter-bar")}
+                className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                  activeSection === "catalogue"
+                    ? "bg-emerald-50 dark:bg-stone-800 text-emerald-800 dark:text-emerald-300 font-bold"
+                    : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                }`}
+              >
+                <Sprout className="w-4 h-4 text-emerald-600" />
+                <span>Catalogue</span>
+              </button>
+              {carouselTagLabel && (
+                <button
+                  type="button"
+                  onClick={() => handleScrollToTarget("carousel-section")}
+                  className={`w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 ${
+                    activeSection === "carousel"
+                      ? "bg-stone-100 dark:bg-stone-800 text-terracotta font-bold"
+                      : "text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                  }`}
+                >
+                  <Sparkles className="w-4 h-4 text-terracotta" />
+                  <span className="truncate">{carouselTagLabel}</span>
+                </button>
+              )}
+              <Link
+                href="/my-orders"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+              >
+                <PackageCheck className="w-4 h-4 text-botanical-600 dark:text-botanical-400" />
+                <span>Orders</span>
+              </Link>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
       {/* Hero Banner Section (full 100dvh, starts cleanly at top-0 under fixed header) */}

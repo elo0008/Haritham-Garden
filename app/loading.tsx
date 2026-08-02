@@ -13,12 +13,12 @@ export default function Loading() {
       </div>
 
       {/* Hero Banner Placeholder */}
-      <div className="w-full h-[100svh] bg-stone-900 animate-pulse flex flex-col justify-end p-8 sm:p-12 pb-16">
+      <div className="w-full h-[100svh] bg-stone-200 dark:bg-stone-900 animate-pulse flex flex-col justify-end p-8 sm:p-12 pb-16 transition-colors">
         <div className="max-w-xl space-y-4">
-          <div className="h-6 w-28 bg-stone-800 rounded-full" />
-          <div className="h-10 sm:h-14 w-3/4 bg-stone-800 rounded-2xl" />
-          <div className="h-4 w-full bg-stone-800 rounded-lg" />
-          <div className="h-12 w-40 bg-stone-800 rounded-full mt-4" />
+          <div className="h-6 w-28 bg-stone-300 dark:bg-stone-800 rounded-full" />
+          <div className="h-10 sm:h-14 w-3/4 bg-stone-300 dark:bg-stone-800 rounded-2xl" />
+          <div className="h-4 w-full bg-stone-300 dark:bg-stone-800 rounded-lg" />
+          <div className="h-12 w-40 bg-stone-300 dark:bg-stone-800 rounded-full mt-4" />
         </div>
       </div>
 

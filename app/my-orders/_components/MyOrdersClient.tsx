@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import type { Order, OrderStatus, Plant, SiteSettings } from "@/lib/types";
+import type { Order, OrderStatus, Plant, SiteSettings, CarouselSectionSettings } from "@/lib/types";
 import { formatINR, formatDate } from "@/lib/utils";
 import { getEffectivePrice } from "@/lib/types";
 import { getLocalOrderUuids } from "@/lib/myOrdersStorage";
@@ -10,12 +10,17 @@ import { fetchCustomerOrdersByUuids, updateCustomerOrderItemsByCustomer, updateC
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
+import { CartDrawer } from "@/components/CartDrawer";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
 import { InlineSpinner } from "@/components/Skeletons";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   PackageCheck,
   ShoppingBag,
-  ArrowLeft,
+  Home,
+  Sprout,
+  Sparkles,
+  Menu,
   Pencil,
   Plus,
   Trash2,
@@ -79,6 +84,7 @@ const CUSTOMER_STATUS_MAP: Record<
 
 interface MyOrdersClientProps {
   siteSettings: SiteSettings | null;
+  carouselSettings: CarouselSectionSettings | null;
   plants: Plant[];
 }
 
@@ -89,11 +95,20 @@ type DraftItem = {
   qty: number;
 };
 
-export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
+export function MyOrdersClient({ siteSettings, carouselSettings, plants }: MyOrdersClientProps) {
   const { totalItems, openCart } = useCart();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPending, startTransition] = useTransition();
+
+  // Nav state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const carouselTagLabel = carouselSettings?.enabled
+    ? carouselSettings.header_tag?.trim() || "Featured"
+    : null;
+
+  // Order-editing toast state
+  const [orderEditToast, setOrderEditToast] = useState<string | null>(null);
 
   // Item Editing state
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
@@ -317,6 +332,10 @@ export function MyOrdersClient({ siteSettings, plants }: MyOrdersClientProps) {
     });
     setPlantSearchQuery("");
     setIsSearchOpen(false);
+
+    // Show toast feedback for order-editing context
+    setOrderEditToast(`Added ${plant.name} to order draft`);
+    setTimeout(() => setOrderEditToast(null), 2500);
   };
 
   const handleSaveOrderItems = (orderId: string) => {
@@ -399,10 +418,11 @@ Please update my shipping destination. Thank you!`;
 
   return (
     <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
-      {/* Navbar Header */}
-      <header className="sticky top-0 z-40 bg-stone-50/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all">
+      {/* Navbar Header — matching customer homepage pattern (fixed) */}
+      <header className="fixed top-0 left-0 right-0 z-40 bg-stone-50/70 dark:bg-stone-950/70 backdrop-blur-md border-b border-stone-200/40 dark:border-stone-800/40 transition-all w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-          <div className="min-w-0 flex-1 max-w-[55%] xs:max-w-[65%] sm:max-w-none">
+          {/* Left Block: Logo */}
+          <div className="flex-1 flex items-center justify-start min-w-0">
             <Logo
               showTagline={true}
               businessName={siteSettings?.business_name}
@@ -412,34 +432,156 @@ Please update my shipping destination. Thank you!`;
             />
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-            <Link
-              href="/"
-              className="p-2 sm:p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 transition-all shadow-2xs flex items-center gap-1.5 px-2.5 sm:px-3.5 min-h-[40px] sm:min-h-[44px] text-xs font-semibold"
-            >
-              <ArrowLeft className="w-4 h-4 text-stone-500 shrink-0" />
-              <span className="hidden sm:inline">Back to Shop</span>
-              <span className="inline sm:hidden">Shop</span>
-            </Link>
+          {/* Center Block: Desktop Nav — Centered Admin Pill Tabs */}
+          <div className="hidden lg:flex flex-1 items-center justify-center min-w-0">
+            <nav className="flex items-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
+              <Link
+                href="/?scroll=top"
+                className="px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+              >
+                <Home className="w-3.5 h-3.5 text-botanical-800 dark:text-botanical-100" />
+                <span>Home</span>
+              </Link>
+
+              <Link
+                href="/?scroll=filter-bar"
+                className="px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+              >
+                <Sprout className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Catalogue</span>
+              </Link>
+
+              {carouselTagLabel && (
+                <Link
+                  href="/?scroll=carousel-section"
+                  className="px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 max-w-[180px] text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
+                  title={carouselTagLabel}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-terracotta" />
+                  <span className="truncate">{carouselTagLabel}</span>
+                </Link>
+              )}
+
+              <button
+                type="button"
+                className="px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold cursor-default"
+                aria-current="page"
+              >
+                <PackageCheck className="w-3.5 h-3.5 text-botanical-600 dark:text-botanical-400" />
+                <span>Orders</span>
+              </button>
+            </nav>
+          </div>
+
+          {/* Right Block: Theme Toggle + Bag + Mobile Hamburger */}
+          <div className="flex-1 flex items-center justify-end gap-1.5 sm:gap-3 shrink-0">
             <ThemeToggle />
+
+            {/* Bag Button */}
             <button
               type="button"
               onClick={openCart}
-              className="relative p-2 sm:p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 min-h-[40px] sm:min-h-[44px]"
+              className="relative p-2 sm:p-2.5 rounded-full bg-white/80 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800/80 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 min-h-[40px] sm:min-h-[44px]"
               aria-label={`Shopping Bag with ${totalItems} items`}
             >
               <ShoppingBag className="w-5 h-5 text-botanical-800 dark:text-botanical-100 shrink-0" />
               <span className="text-sm font-semibold hidden sm:inline">Bag</span>
-              <span className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+              <span
+                key={totalItems}
+                className="bg-terracotta text-white font-bold text-xs w-5 h-5 rounded-full flex items-center justify-center animate-badge-bounce shrink-0"
+              >
                 {totalItems}
               </span>
             </button>
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              className="lg:hidden p-2.5 rounded-full bg-white/80 dark:bg-stone-900/80 border border-stone-200/80 dark:border-stone-800/80 text-stone-700 dark:text-stone-200 hover:border-botanical-600 min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center active:scale-95 transition-all shadow-2xs"
+              aria-label="Toggle navigation menu"
+              aria-expanded={isMobileMenuOpen}
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              ) : (
+                <Menu className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="lg:hidden bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 py-3.5 space-y-1.5 overflow-hidden font-sans shadow-xl"
+            >
+              <Link
+                href="/?scroll=top"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+              >
+                <Home className="w-4 h-4 text-botanical-800 dark:text-botanical-100" />
+                <span>Home</span>
+              </Link>
+              <Link
+                href="/?scroll=filter-bar"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+              >
+                <Sprout className="w-4 h-4 text-emerald-600" />
+                <span>Catalogue</span>
+              </Link>
+              {carouselTagLabel && (
+                <Link
+                  href="/?scroll=carousel-section"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 text-stone-700 dark:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800"
+                >
+                  <Sparkles className="w-4 h-4 text-terracotta" />
+                  <span className="truncate">{carouselTagLabel}</span>
+                </Link>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full text-left px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2.5 bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                aria-current="page"
+              >
+                <PackageCheck className="w-4 h-4 text-botanical-600 dark:text-botanical-400" />
+                <span>Orders</span>
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </header>
 
-      {/* Main Body */}
-      <main className="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      {/* Cart Drawer (for new order creation, separate from order editing) */}
+      <CartDrawer whatsappNumber={siteSettings?.whatsapp_number} />
+
+      {/* Order-editing toast */}
+      <AnimatePresence>
+        {orderEditToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-botanical-800 dark:bg-botanical-600 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2"
+          >
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            {orderEditToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Body — top padding offsets fixed header height */}
+      <main className="flex-grow max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-8 w-full">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-stone-200 dark:border-stone-800">
           <div>
             <h1 className="font-heading font-bold text-2xl sm:text-3xl text-stone-900 dark:text-stone-100 flex items-center gap-2.5">

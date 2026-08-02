@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { MyOrdersClient } from "./_components/MyOrdersClient";
-import type { Plant, SiteSettings } from "@/lib/types";
+import type { Plant, SiteSettings, CarouselSectionSettings } from "@/lib/types";
 
 export const metadata = {
   title: "My Orders | Haritham Garden",
@@ -17,7 +17,14 @@ export default async function MyOrdersPage() {
     .limit(1)
     .maybeSingle();
 
-  // 2. Fetch plants catalogue (for plant picker in edit mode)
+  // 2. Fetch carousel section settings (for header nav tag)
+  const { data: carouselSettings } = await supabase
+    .from("carousel_section_settings")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  // 3. Fetch plants catalogue (for plant picker in edit mode)
   const { data: plantsData } = await supabase
     .from("plants")
     .select(`
@@ -40,6 +47,7 @@ export default async function MyOrdersPage() {
   return (
     <MyOrdersClient
       siteSettings={siteSettings as SiteSettings | null}
+      carouselSettings={carouselSettings as CarouselSectionSettings | null}
       plants={plants}
     />
   );

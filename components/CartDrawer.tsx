@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { formatINR } from "@/lib/utils";
 import { createCustomerOrder, type CustomerDetailsInput } from "@/app/actions/orders";
@@ -29,6 +30,7 @@ function formatPhoneDisplay(phone: string): string {
 export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
   const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, subtotal, totalItems } =
     useCart();
+  const router = useRouter();
 
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "interstitial" | "form">("cart");
 
@@ -600,7 +602,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                   </div>
                 </form>
               ) : items.length === 0 ? (
-                /* Empty Cart State matching mockup */
+                /* Empty Cart State */
                 <div className="h-full flex flex-col items-center justify-center text-center py-12">
                   <div className="w-20 h-20 rounded-full bg-botanical-50 dark:bg-stone-800 border border-botanical-100 dark:border-stone-700 flex items-center justify-center text-botanical-800 dark:text-botanical-100 mb-4 shadow-2xs">
                     <ShoppingBag className="w-8 h-8" />
@@ -613,7 +615,12 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                   </p>
                   <button
                     type="button"
-                    onClick={closeCart}
+                    onClick={() => {
+                      closeCart();
+                      // Navigate to homepage catalogue section — reuses same scroll target
+                      // as the Catalogue nav item and hero Explore button
+                      router.push("/?scroll=filter-bar");
+                    }}
                     className="bg-botanical-800 dark:bg-botanical-600 hover:bg-botanical-900 dark:hover:bg-botanical-800 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all shadow-md min-h-[44px] active:scale-95"
                   >
                     Explore Plants

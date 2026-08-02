@@ -3,7 +3,7 @@
 import React from "react";
 
 export function InlineSpinner({
-  className = "w-4 h-4 text-white",
+  className = "w-4 h-4 text-current",
   ariaLabel = "Loading...",
 }: {
   className?: string;
