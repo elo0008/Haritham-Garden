@@ -28,26 +28,8 @@ export default async function TermsPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased">
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-stone-50/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
-          <Logo
-            showTagline={false}
-            businessName={siteSettings?.business_name}
-            logoUrl={siteSettings?.logo_url}
-            href="/"
-          />
-          <Link
-            href="/"
-            className="text-xs font-semibold text-stone-600 dark:text-stone-300 hover:text-botanical-600 border border-stone-300 dark:border-stone-800 rounded-xl px-3 py-1.5 transition-colors"
-          >
-            ← Back to Shop
-          </Link>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="flex-grow max-w-3xl mx-auto px-4 sm:px-6 py-10 w-full">
+      <main className="flex-grow max-w-3xl mx-auto px-4 sm:px-6 pt-24 pb-10 w-full">
         {/* Top Note */}
         <div className="mb-8 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 p-4 text-xs text-amber-900 dark:text-amber-300 font-medium">
           ℹ️ This is a general policy and may be updated. Contact us on WhatsApp with any questions.
