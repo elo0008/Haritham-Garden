@@ -36,7 +36,7 @@ export function HeroBannerDisplay({ banner }: HeroBannerDisplayProps) {
   };
 
   return (
-    <div className="relative w-full h-[100svh] min-h-[100svh] text-white p-6 sm:p-12 mb-10 overflow-hidden shadow-lg bg-stone-900 border border-transparent dark:border-stone-800 flex flex-col justify-between pt-20 sm:pt-24 pb-8 sm:pb-12 rounded-none">
+    <div className="relative w-full h-[100svh] min-h-[100svh] text-white p-6 sm:p-12 mb-0 overflow-hidden shadow-lg bg-stone-900 border border-transparent dark:border-stone-800 flex flex-col justify-between pt-20 sm:pt-24 pb-8 sm:pb-12 rounded-none">
       {/* CSS Keyframe Style for Slow Ken Burns Zoom */}
       <style jsx>{`
         @keyframes kenBurnsZoom {

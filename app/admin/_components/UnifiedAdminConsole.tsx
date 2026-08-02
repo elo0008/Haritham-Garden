@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import { signOut } from "../actions";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import type {
   Plant,
   Tag,
@@ -129,6 +130,96 @@ export function UnifiedAdminConsole({
   // Catalogue Category Filter State
   const [plantCategoryFilter, setPlantCategoryFilter] = useState("all");
 
+  // Reactive Realtime State
+  const [ordersState, setOrdersState] = useState<Order[]>(orders);
+  const [plantsState, setPlantsState] = useState<Plant[]>(plants);
+  const [tagsState, setTagsState] = useState<Tag[]>(allTags);
+  const [heroBannerState, setHeroBannerState] = useState<HeroBanner | null>(heroBanner);
+  const [carouselSettingsState, setCarouselSettingsState] = useState<CarouselSectionSettings | null>(carouselSettings);
+  const [carouselSlidesState, setCarouselSlidesState] = useState<CarouselSlide[]>(carouselSlides);
+  const [siteSettingsState, setSiteSettingsState] = useState<SiteSettings | null>(siteSettings);
+
+  useEffect(() => setOrdersState(orders), [orders]);
+  useEffect(() => setPlantsState(plants), [plants]);
+  useEffect(() => setTagsState(allTags), [allTags]);
+  useEffect(() => setHeroBannerState(heroBanner), [heroBanner]);
+  useEffect(() => setCarouselSettingsState(carouselSettings), [carouselSettings]);
+  useEffect(() => setCarouselSlidesState(carouselSlides), [carouselSlides]);
+  useEffect(() => setSiteSettingsState(siteSettings), [siteSettings]);
+
+  // Supabase Realtime Subscriptions
+  useRealtimeSubscription<Order>({
+    table: "orders",
+    onInsert: (newOrder) => {
+      if (newOrder.deleted) return;
+      setOrdersState((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
+    },
+    onUpdate: (updatedOrder) => {
+      setOrdersState((prev) => {
+        if (updatedOrder.deleted) return prev.filter((o) => o.id !== updatedOrder.id);
+        const exists = prev.some((o) => o.id === updatedOrder.id);
+        if (!exists) return [updatedOrder, ...prev];
+        return prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o));
+      });
+    },
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) setOrdersState((prev) => prev.filter((o) => o.id !== oldRecord.id));
+    },
+    onReconnect: () => router.refresh(),
+  });
+
+  useRealtimeSubscription<Plant>({
+    table: "plants",
+    onInsert: (newPlant) => {
+      if ((newPlant as any).deleted) return;
+      setPlantsState((prev) => [newPlant, ...prev.filter((p) => p.id !== newPlant.id)]);
+    },
+    onUpdate: (updatedPlant) => {
+      setPlantsState((prev) => {
+        if ((updatedPlant as any).deleted) return prev.filter((p) => p.id !== updatedPlant.id);
+        const exists = prev.some((p) => p.id === updatedPlant.id);
+        if (!exists) return [updatedPlant, ...prev];
+        return prev.map((p) => (p.id === updatedPlant.id ? { ...p, ...updatedPlant } : p));
+      });
+    },
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) setPlantsState((prev) => prev.filter((p) => p.id !== oldRecord.id));
+    },
+    onReconnect: () => router.refresh(),
+  });
+
+  useRealtimeSubscription<Tag>({
+    table: "tags",
+    onInsert: (newTag) => setTagsState((prev) => [...prev.filter((t) => t.id !== newTag.id), newTag]),
+    onUpdate: (updatedTag) => setTagsState((prev) => prev.map((t) => (t.id === updatedTag.id ? { ...t, ...updatedTag } : t))),
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) setTagsState((prev) => prev.filter((t) => t.id !== oldRecord.id));
+    },
+    onReconnect: () => router.refresh(),
+  });
+
+  useRealtimeSubscription<HeroBanner>({
+    table: "hero_banner",
+    onUpdate: (banner) => setHeroBannerState(banner),
+    onReconnect: () => router.refresh(),
+  });
+
+  useRealtimeSubscription<CarouselSlide>({
+    table: "carousel_slides",
+    onInsert: (slide) => setCarouselSlidesState((prev) => [...prev.filter((s) => s.id !== slide.id), slide]),
+    onUpdate: (slide) => setCarouselSlidesState((prev) => prev.map((s) => (s.id === slide.id ? slide : s))),
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) setCarouselSlidesState((prev) => prev.filter((s) => s.id !== oldRecord.id));
+    },
+    onReconnect: () => router.refresh(),
+  });
+
+  useRealtimeSubscription<SiteSettings>({
+    table: "site_settings",
+    onUpdate: (settings) => setSiteSettingsState(settings),
+    onReconnect: () => router.refresh(),
+  });
+
   // Sync tab with URL search parameter
   useEffect(() => {
     const tabFromUrl = searchParams.get("tab") as AdminTab;
@@ -147,11 +238,11 @@ export function UnifiedAdminConsole({
   };
 
   // KPI Calculations
-  const activeOrdersCount = orders.filter(
+  const activeOrdersCount = ordersState.filter(
     (o) => (o.status || (o.handled ? "dispatched" : "pending")) !== "dispatched"
   ).length;
 
-  const dispatchedOrders = orders.filter(
+  const dispatchedOrders = ordersState.filter(
     (o) => (o.status || (o.handled ? "dispatched" : "pending")) === "dispatched"
   );
   const completedDispatchesCount = dispatchedOrders.length;
@@ -161,10 +252,10 @@ export function UnifiedAdminConsole({
     0
   );
 
-  const recentOrders = orders.slice(0, 5);
+  const recentOrders = ordersState.slice(0, 5);
 
   // Catalogue Filtered Plants
-  const filteredPlants = plants.filter((plant) => {
+  const filteredPlants = plantsState.filter((plant) => {
     if (plantCategoryFilter === "all") return true;
     const tags = plantTagsMap[plant.id] ?? [];
     return tags.some(
@@ -172,15 +263,15 @@ export function UnifiedAdminConsole({
     );
   });
 
-  const tagsWithUsage: TagWithUsage[] = allTags.map((t) => {
+  const tagsWithUsage: TagWithUsage[] = tagsState.map((t) => {
     const usageCount = Object.values(plantTagsMap).reduce((count, tagList) => {
       return count + (tagList.some((tag) => tag.id === t.id) ? 1 : 0);
     }, 0);
     return { ...t, usage_count: usageCount };
   });
 
-  const businessName = siteSettings?.business_name || "Haritham Garden";
-  const logoUrl = siteSettings?.logo_url;
+  const businessName = siteSettingsState?.business_name || "Haritham Garden";
+  const logoUrl = siteSettingsState?.logo_url;
 
   return (
     <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased transition-colors duration-300 w-full max-w-full overflow-x-hidden">
@@ -800,9 +891,9 @@ export function UnifiedAdminConsole({
         {activeTab === "plants" && (
           <div className="animate-fadeIn">
             <AdminPlantsGrid
-              plants={plants}
+              plants={plantsState}
               plantTagsMap={plantTagsMap}
-              allTags={allTags}
+              allTags={tagsState}
             />
           </div>
         )}
@@ -812,7 +903,7 @@ export function UnifiedAdminConsole({
         {/* =================================================================== */}
         {activeTab === "orders" && (
           <div className="space-y-6 animate-fadeIn">
-            <AdminOrdersList orders={orders} plants={plants} />
+            <AdminOrdersList orders={ordersState} plants={plantsState} />
           </div>
         )}
 
@@ -871,8 +962,8 @@ export function UnifiedAdminConsole({
                 {/* Sub-tab 1: Hero Banner */}
                 {storefrontSubTab === "hero" && (
                   <div>
-                    {heroBanner ? (
-                      <HeroBannerForm banner={heroBanner} />
+                    {heroBannerState ? (
+                      <HeroBannerForm banner={heroBannerState} />
                     ) : (
                       <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
                         Hero banner data not initialized.
@@ -884,10 +975,10 @@ export function UnifiedAdminConsole({
                 {/* Sub-tab 2: Carousel Section */}
                 {storefrontSubTab === "carousel" && (
                   <div>
-                    {carouselSettings ? (
+                    {carouselSettingsState ? (
                       <CarouselAdminClient
-                        settings={carouselSettings}
-                        slides={carouselSlides}
+                        settings={carouselSettingsState}
+                        slides={carouselSlidesState}
                       />
                     ) : (
                       <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
@@ -924,8 +1015,8 @@ export function UnifiedAdminConsole({
               </p>
             </div>
 
-            {siteSettings ? (
-              <SettingsForm settings={siteSettings} />
+            {siteSettingsState ? (
+              <SettingsForm settings={siteSettingsState} />
             ) : (
               <div className="rounded-xl bg-red-50 p-4 text-xs text-red-700">
                 Site settings data not initialized.

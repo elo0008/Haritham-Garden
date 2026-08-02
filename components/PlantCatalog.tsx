@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
 import type {
   Plant,
@@ -20,7 +20,7 @@ import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
-import { ShoppingBag, PackageCheck, ArrowUpDown } from "lucide-react";
+import { ShoppingBag, PackageCheck, ArrowUpDown, Check } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 
 interface PlantCatalogProps {
@@ -82,6 +82,57 @@ export function PlantCatalog({
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
+  // Custom Popover Sort Dropdown State & Refs
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [focusedSortIndex, setFocusedSortIndex] = useState(-1);
+  const sortContainerRef = useRef<HTMLDivElement>(null);
+
+  const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+    { value: "popular_30", label: "Popular (30 days)" },
+    { value: "popular_90", label: "Popular (90 days)" },
+    { value: "popular_all", label: "Popular (All Time)" },
+    { value: "newest", label: "Newest First" },
+  ];
+
+  // Click outside to close sort dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sortContainerRef.current && !sortContainerRef.current.contains(event.target as Node)) {
+        setIsSortOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSortKeyDown = (e: React.KeyboardEvent) => {
+    if (!isSortOpen) {
+      if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setIsSortOpen(true);
+        setFocusedSortIndex(SORT_OPTIONS.findIndex((o) => o.value === selectedSort));
+      }
+      return;
+    }
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      setIsSortOpen(false);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setFocusedSortIndex((prev) => (prev + 1) % SORT_OPTIONS.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusedSortIndex((prev) => (prev - 1 + SORT_OPTIONS.length) % SORT_OPTIONS.length);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (focusedSortIndex >= 0 && focusedSortIndex < SORT_OPTIONS.length) {
+        handleSortChange(SORT_OPTIONS[focusedSortIndex].value);
+        setIsSortOpen(false);
+      }
+    }
   };
 
   // Sync active plant from URL search params or initial prop
@@ -257,7 +308,7 @@ export function PlantCatalog({
       {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
 
       {/* Main Content Area */}
-      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full ${heroBanner ? "" : "pt-20 sm:pt-24"}`}>
+      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 w-full ${heroBanner ? "pt-6 sm:pt-8" : "pt-20 sm:pt-24"}`}>
         {/* Filters Section Bar */}
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
@@ -302,25 +353,67 @@ export function PlantCatalog({
           </div>
 
           <div className="flex items-center gap-3.5 justify-between w-full sm:w-auto">
-            {/* Sort Icon Only Button */}
-            <div className="relative inline-flex items-center">
-              <div
-                className="p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center justify-center min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] relative"
+            {/* Custom Styled Sort Dropdown */}
+            <div className="relative inline-flex items-center" ref={sortContainerRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSortOpen((prev) => !prev);
+                  setFocusedSortIndex(SORT_OPTIONS.findIndex((o) => o.value === selectedSort));
+                }}
+                onKeyDown={handleSortKeyDown}
+                className="p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center justify-center min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px]"
                 title="Sort catalog"
+                aria-haspopup="listbox"
+                aria-expanded={isSortOpen}
+                aria-label="Sort options"
               >
                 <ArrowUpDown className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
-                <select
-                  value={selectedSort}
-                  onChange={(e) => handleSortChange(e.target.value as SortOption)}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full appearance-none"
-                  aria-label="Sort plants"
-                >
-                  <option value="popular_30">Popular (30 days)</option>
-                  <option value="popular_90">Popular (90 days)</option>
-                  <option value="popular_all">Popular (All Time)</option>
-                  <option value="newest">Newest First</option>
-                </select>
-              </div>
+              </button>
+
+              <AnimatePresence>
+                {isSortOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    className="absolute right-0 top-full mt-2 z-50 min-w-[210px] py-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-xl overflow-hidden text-stone-900 dark:text-stone-100 font-sans"
+                    role="listbox"
+                    aria-label="Sort options"
+                  >
+                    {SORT_OPTIONS.map((opt, idx) => {
+                      const isSelected = selectedSort === opt.value;
+                      const isFocused = focusedSortIndex === idx;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            handleSortChange(opt.value);
+                            setIsSortOpen(false);
+                          }}
+                          onMouseEnter={() => setFocusedSortIndex(idx)}
+                          className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm font-semibold flex items-center justify-between transition-colors ${
+                            isSelected
+                              ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
+                              : isFocused
+                              ? "bg-stone-100 dark:bg-stone-800/60 text-stone-900 dark:text-stone-100"
+                              : "text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/40"
+                          }`}
+                        >
+                          <span>{opt.label}</span>
+                          {isSelected && (
+                            <Check className="w-4 h-4 text-botanical-600 dark:text-botanical-400 shrink-0 ml-2" />
+                          )}
+                        </button>
+                      );
+                    })}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">

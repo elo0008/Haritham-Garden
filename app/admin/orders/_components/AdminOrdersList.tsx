@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdminToast } from "@/components/AdminToast";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import type { Order, OrderStatus, Plant } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import {
@@ -110,6 +111,26 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
   const router = useRouter();
   const { showToast } = useAdminToast();
   const [isPending, startTransition] = useTransition();
+
+  // Reactive Orders State & Realtime Highlight State
+  const [ordersList, setOrdersList] = useState<Order[]>(orders);
+  const [highlightedOrderIds, setHighlightedOrderIds] = useState<Set<string>>(new Set());
+  const [activeConflictOrderId, setActiveConflictOrderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOrdersList(orders);
+  }, [orders]);
+
+  const triggerHighlight = (id: string) => {
+    setHighlightedOrderIds((prev) => new Set(prev).add(id));
+    setTimeout(() => {
+      setHighlightedOrderIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 3000);
+  };
 
   // Active Filter Tab
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
@@ -366,19 +387,68 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
     });
   };
 
+  // Supabase Realtime Subscription for Orders
+  useRealtimeSubscription<Order>({
+    table: "orders",
+    onInsert: (newOrder) => {
+      if (newOrder.deleted) return;
+      setOrdersList((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
+      triggerHighlight(newOrder.id);
+      showToast("New Order Received", `Ref #${newOrder.order_ref || newOrder.id.substring(0, 8)}`);
+    },
+    onUpdate: (updatedOrder) => {
+      // Conflict detection for active editing sessions
+      const isEditingCustomer = customerModalOrder && customerModalOrder.id === updatedOrder.id;
+      const isEditingItems = editingItemsOrderId === updatedOrder.id;
+      const isEditingCourier = courierModalOrder && courierModalOrder.id === updatedOrder.id;
+
+      if (isEditingCustomer || isEditingItems || isEditingCourier) {
+        const currentRefUpdatedAt =
+          customerModalOrder?.updated_at || courierModalOrder?.updated_at || editingOrderUpdatedAt;
+        if (updatedOrder.updated_at !== currentRefUpdatedAt) {
+          setActiveConflictOrderId(updatedOrder.id);
+          showToast("Conflict Warning", `Order #${updatedOrder.order_ref || updatedOrder.id.substring(0, 8)} was updated elsewhere.`);
+          return;
+        }
+      }
+
+      setOrdersList((prev) => {
+        if (updatedOrder.deleted) {
+          return prev.filter((o) => o.id !== updatedOrder.id);
+        }
+        const exists = prev.some((o) => o.id === updatedOrder.id);
+        triggerHighlight(updatedOrder.id);
+        if (!exists) {
+          return [updatedOrder, ...prev];
+        }
+        return prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o));
+      });
+
+      if (customerModalOrder && customerModalOrder.id === updatedOrder.id && !isEditingCustomerDetails) {
+        setCustomerModalOrder(updatedOrder);
+      }
+    },
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) {
+        setOrdersList((prev) => prev.filter((o) => o.id !== oldRecord.id));
+      }
+    },
+    onReconnect: () => router.refresh(),
+  });
+
   // Live filter counts
   const counts = {
-    all: orders.length,
-    active: orders.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) !== "dispatched").length,
-    pending: orders.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) === "pending").length,
-    handled: orders.filter((o) => o.status === "handled").length,
-    paid: orders.filter((o) => o.status === "paid").length,
-    packaged: orders.filter((o) => o.status === "packaged").length,
-    dispatched: orders.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) === "dispatched").length,
+    all: ordersList.length,
+    active: ordersList.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) !== "dispatched").length,
+    pending: ordersList.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) === "pending").length,
+    handled: ordersList.filter((o) => o.status === "handled").length,
+    paid: ordersList.filter((o) => o.status === "paid").length,
+    packaged: ordersList.filter((o) => o.status === "packaged").length,
+    dispatched: ordersList.filter((o) => (o.status || (o.handled ? "dispatched" : "pending")) === "dispatched").length,
   };
 
   // Filtered orders list
-  const filteredOrders = orders.filter((order) => {
+  const filteredOrders = ordersList.filter((order) => {
     const status = order.status || (order.handled ? "dispatched" : "pending");
     if (activeFilter === "all") return true;
     if (activeFilter === "active") return status !== "dispatched";

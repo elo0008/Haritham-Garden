@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { createPlant, updatePlant, createTag } from "../actions";
 import { TagPicker } from "@/components/TagPicker";
 import type {
@@ -103,6 +104,21 @@ export function PlantForm({
   // ── UI State ─────────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conflictError, setConflictError] = useState<string | null>(null);
+
+  // Realtime active edit conflict protection
+  useRealtimeSubscription<Plant>({
+    table: "plants",
+    filter: initialData ? `id=eq.${initialData.id}` : undefined,
+    enabled: Boolean(initialData),
+    onUpdate: (updatedPlant) => {
+      if (updatedPlant.updated_at !== initialData?.updated_at) {
+        setConflictError(
+          "This plant record was updated in another session. Please refresh the page to load the latest changes before saving."
+        );
+      }
+    },
+  });
 
   // ── Photo Handlers ───────────────────────────────────────────────────────────
 
@@ -249,6 +265,13 @@ export function PlantForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Conflict error banner */}
+      {conflictError && (
+        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-4 py-3 text-xs font-semibold text-amber-800 dark:text-amber-300">
+          ⚠️ {conflictError}
+        </div>
+      )}
+
       {/* Error banner */}
       {error && (
         <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 px-4 py-3 text-xs text-red-700 dark:text-red-300">
