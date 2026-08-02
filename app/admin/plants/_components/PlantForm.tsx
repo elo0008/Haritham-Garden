@@ -16,6 +16,8 @@ import type {
 } from "@/lib/types";
 
 import { useAdminToast } from "@/components/AdminToast";
+import { CustomDropdown } from "@/components/CustomDropdown";
+import { InlineSpinner } from "@/components/Skeletons";
 
 // ── Option Maps ───────────────────────────────────────────────────────────────
 
@@ -373,35 +375,29 @@ export function PlantForm({
           <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Sunlight Requirement
           </label>
-          <select
+          <CustomDropdown
             value={sunlight}
-            onChange={(e) => setSunlight(e.target.value as PlantSunlight)}
+            options={SUNLIGHT_OPTIONS}
+            onChange={(val) => setSunlight(val as PlantSunlight)}
             disabled={saving}
-            className={inputCls}
-          >
-            {SUNLIGHT_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            className="w-full"
+            buttonClassName="w-full"
+            ariaLabel="Sunlight requirement"
+          />
         </div>
         <div>
           <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Watering Need
           </label>
-          <select
+          <CustomDropdown
             value={watering}
-            onChange={(e) => setWatering(e.target.value as PlantWatering)}
+            options={WATERING_OPTIONS}
+            onChange={(val) => setWatering(val as PlantWatering)}
             disabled={saving}
-            className={inputCls}
-          >
-            {WATERING_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            className="w-full"
+            buttonClassName="w-full"
+            ariaLabel="Watering need"
+          />
         </div>
       </div>
 
@@ -411,20 +407,15 @@ export function PlantForm({
           <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1.5">
             Initial Availability Status
           </label>
-          <select
+          <CustomDropdown
             value={availability}
-            onChange={(e) =>
-              setAvailability(e.target.value as PlantAvailability)
-            }
+            options={AVAILABILITY_OPTIONS}
+            onChange={(val) => setAvailability(val as PlantAvailability)}
             disabled={saving}
-            className={inputCls}
-          >
-            {AVAILABILITY_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
+            className="w-full"
+            buttonClassName="w-full"
+            ariaLabel="Initial availability status"
+          />
         </div>
         <div className="flex items-center gap-2.5 pb-2.5 min-h-[44px]">
           <input
@@ -544,7 +535,10 @@ export function PlantForm({
           className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl text-xs font-bold min-h-[44px] shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
         >
           {saving ? (
-            <span>Saving Plant...</span>
+            <>
+              <InlineSpinner className="w-4 h-4 text-white" />
+              <span>Saving Plant...</span>
+            </>
           ) : (
             <span>{initialData ? "Update Plant" : "Save & Add Plant"}</span>
           )}

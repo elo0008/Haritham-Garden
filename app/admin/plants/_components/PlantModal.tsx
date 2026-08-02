@@ -53,7 +53,7 @@ export function PlantModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="relative z-10 max-w-2xl w-full max-h-[90vh] bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-y-auto flex flex-col p-4 sm:p-8 max-w-[calc(100vw-1.5rem)] min-w-0"
+            className="relative z-10 w-full max-w-2xl max-h-[90vh] bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-y-auto flex flex-col p-4 sm:p-8 min-w-0"
           >
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800 mb-6 shrink-0 min-w-0">

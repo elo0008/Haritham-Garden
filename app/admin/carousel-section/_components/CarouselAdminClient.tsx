@@ -461,7 +461,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               onSubmit={handleSaveSlide}
-              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-4 sm:p-8 shadow-xl space-y-4 text-stone-900 dark:text-stone-100 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 p-4 sm:p-8 shadow-xl space-y-4 text-stone-900 dark:text-stone-100 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <h3 className="text-lg font-bold text-stone-900 dark:text-stone-100">
                 {activeModal === "edit" ? "Edit Slide" : "Add New Slide"}

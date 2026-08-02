@@ -22,6 +22,7 @@ import { useCart } from "@/context/CartContext";
 import Link from "next/link";
 import { ShoppingBag, PackageCheck, ArrowUpDown, Check } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { CustomDropdown } from "./CustomDropdown";
 
 interface PlantCatalogProps {
   plants: Plant[];
@@ -354,67 +355,16 @@ export function PlantCatalog({
 
           <div className="flex items-center gap-3.5 justify-between w-full sm:w-auto">
             {/* Custom Styled Sort Dropdown */}
-            <div className="relative inline-flex items-center" ref={sortContainerRef}>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSortOpen((prev) => !prev);
-                  setFocusedSortIndex(SORT_OPTIONS.findIndex((o) => o.value === selectedSort));
-                }}
-                onKeyDown={handleSortKeyDown}
-                className="p-2.5 rounded-full bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-200 hover:border-botanical-600 dark:hover:border-botanical-600 active:scale-95 transition-all shadow-2xs flex items-center justify-center min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px]"
-                title="Sort catalog"
-                aria-haspopup="listbox"
-                aria-expanded={isSortOpen}
-                aria-label="Sort options"
-              >
+            <CustomDropdown
+              value={selectedSort}
+              options={SORT_OPTIONS}
+              onChange={handleSortChange}
+              ariaLabel="Sort options"
+              buttonClassName="!p-2.5 !rounded-full min-h-[40px] min-w-[40px] sm:min-h-[44px] sm:min-w-[44px] flex items-center justify-center"
+              renderTriggerContent={() => (
                 <ArrowUpDown className="w-5 h-5 text-botanical-800 dark:text-botanical-100" />
-              </button>
-
-              <AnimatePresence>
-                {isSortOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
-                    className="absolute left-0 sm:left-auto sm:right-0 top-full mt-2 z-50 min-w-[200px] w-max max-w-[calc(100vw-32px)] py-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-hidden text-stone-900 dark:text-stone-100 font-sans"
-                    role="listbox"
-                    aria-label="Sort options"
-                  >
-                    {SORT_OPTIONS.map((opt, idx) => {
-                      const isSelected = selectedSort === opt.value;
-                      const isFocused = focusedSortIndex === idx;
-                      return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          role="option"
-                          aria-selected={isSelected}
-                          onClick={() => {
-                            handleSortChange(opt.value);
-                            setIsSortOpen(false);
-                          }}
-                          onMouseEnter={() => setFocusedSortIndex(idx)}
-                          className={`w-full text-left px-4 py-2.5 text-xs sm:text-sm font-semibold flex items-center justify-between transition-colors ${
-                            isSelected
-                              ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
-                              : isFocused
-                              ? "bg-stone-100 dark:bg-stone-800/60 text-stone-900 dark:text-stone-100"
-                              : "text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800/40"
-                          }`}
-                        >
-                          <span className="whitespace-nowrap">{opt.label}</span>
-                          {isSelected && (
-                            <Check className="w-4 h-4 text-botanical-600 dark:text-botanical-400 shrink-0 ml-3" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+              )}
+            />
 
             <div className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
               Showing <span className="text-stone-900 dark:text-stone-100 font-bold">{sortedPlants.length}</span> items

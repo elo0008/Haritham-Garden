@@ -5,7 +5,16 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAdminToast } from "@/components/AdminToast";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { CustomDropdown, type CustomDropdownOption } from "@/components/CustomDropdown";
 import type { Order, OrderStatus, Plant } from "@/lib/types";
+
+const ORDER_STATUS_OPTIONS: CustomDropdownOption<OrderStatus>[] = [
+  { value: "pending", label: "1. Pending Review", badgeBg: "bg-amber-100 dark:bg-amber-950/80", badgeText: "text-amber-800 dark:text-amber-300" },
+  { value: "handled", label: "2. Handled (Quote Sent)", badgeBg: "bg-blue-100 dark:bg-blue-950/80", badgeText: "text-blue-800 dark:text-blue-300" },
+  { value: "paid", label: "3. Payment Received", badgeBg: "bg-purple-100 dark:bg-purple-950/80", badgeText: "text-purple-800 dark:text-purple-300" },
+  { value: "packaged", label: "4. Packaged & Ready", badgeBg: "bg-teal-100 dark:bg-teal-950/80", badgeText: "text-teal-800 dark:text-teal-300" },
+  { value: "dispatched", label: "5. Dispatched (Completed)", badgeBg: "bg-emerald-100 dark:bg-emerald-950/80", badgeText: "text-emerald-800 dark:text-emerald-300" },
+];
 import { formatINR } from "@/lib/utils";
 import {
   updateOrderStatus,
@@ -1200,19 +1209,14 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                   {/* Left: Status Selector & Advance Button */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Direct Stage Select */}
-                    <select
+                    <CustomDropdown
                       value={currentStatus}
-                      onChange={(e) =>
-                        initiateStatusTransition(order, e.target.value as OrderStatus)
-                      }
-                      className="px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-800 dark:text-stone-100 focus:outline-none cursor-pointer"
-                    >
-                      <option value="pending">1. Pending Review</option>
-                      <option value="handled">2. Handled (Quote Sent)</option>
-                      <option value="paid">3. Payment Received</option>
-                      <option value="packaged">4. Packaged & Ready</option>
-                      <option value="dispatched">5. Dispatched (Completed)</option>
-                    </select>
+                      options={ORDER_STATUS_OPTIONS}
+                      onChange={(next) => initiateStatusTransition(order, next)}
+                      align="auto"
+                      ariaLabel="Change order status"
+                      buttonClassName="!px-3 !py-1.5 !min-h-[36px] !rounded-xl"
+                    />
 
                     {/* Step Advance Button */}
                     {nextStatus && (
@@ -1286,7 +1290,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-sm sm:max-w-md rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 w-full max-w-sm sm:max-w-md rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4 min-w-0">
                 <h3 className="font-heading font-bold text-sm sm:text-base flex items-center gap-2 min-w-0 pr-2">
@@ -1443,7 +1447,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <h3 className="font-heading font-bold text-lg mb-1">
                 {courierTargetStatus === "handled"
@@ -1544,7 +1548,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-lg rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 w-full max-w-2xl rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 mb-4">
                 <h3 className="font-heading font-bold text-lg flex items-center gap-2">
@@ -1756,21 +1760,19 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
                       Initial Status
                     </label>
-                    <select
+                    <CustomDropdown
                       value={manualForm.status}
-                      onChange={(e) =>
+                      options={ORDER_STATUS_OPTIONS.filter((o) => o.value !== "dispatched")}
+                      onChange={(nextStatus) =>
                         setManualForm({
                           ...manualForm,
-                          status: e.target.value as OrderStatus,
+                          status: nextStatus,
                         })
                       }
-                      className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2 text-xs text-stone-900 dark:text-stone-100 focus:outline-none focus:ring-2 focus:ring-botanical-600"
-                    >
-                      <option value="pending">1. Pending Review</option>
-                      <option value="handled">2. Handled / Confirmed</option>
-                      <option value="paid">3. Paid (Verified)</option>
-                      <option value="packaged">4. Packaged</option>
-                    </select>
+                      className="w-full"
+                      buttonClassName="w-full"
+                      ariaLabel="Initial status"
+                    />
                   </div>
                 </div>
 
@@ -1906,7 +1908,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 w-full max-w-md rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <h3 className="font-heading font-bold text-base mb-1 truncate">
                 Admin Note — {editingNoteOrder.order_ref}
@@ -1966,7 +1968,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 w-full max-w-sm rounded-3xl bg-white dark:bg-stone-900 p-4 sm:p-6 shadow-xl text-center text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 text-xl">
                 ⚠️

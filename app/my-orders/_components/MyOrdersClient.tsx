@@ -11,6 +11,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
 import { buildWhatsAppUrl } from "@/lib/whatsapp";
+import { InlineSpinner } from "@/components/Skeletons";
 import {
   PackageCheck,
   ShoppingBag,
@@ -1058,7 +1059,7 @@ Please update my shipping destination. Thank you!`;
       {/* Address Editing Modal */}
       {editingAddressOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0">
+          <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl w-full max-w-lg p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto min-w-0">
             <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3 min-w-0">
               <h3 className="font-heading font-bold text-base flex items-center gap-2 min-w-0 pr-2">
                 <MapPin className="w-4 h-4 text-botanical-600 shrink-0" />
@@ -1158,9 +1159,16 @@ Please update my shipping destination. Thank you!`;
                   type="button"
                   onClick={handleSaveAddress}
                   disabled={isPending}
-                  className="px-5 py-2.5 bg-terracotta hover:bg-[#b04a25] text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50 min-h-[44px]"
+                  className="px-5 py-2.5 bg-terracotta hover:bg-[#b04a25] text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95 disabled:opacity-50 min-h-[44px] flex items-center justify-center gap-2"
                 >
-                  {isPending ? "Saving…" : "Save Address"}
+                  {isPending ? (
+                    <>
+                      <InlineSpinner className="w-4 h-4 text-white" />
+                      <span>Saving Address…</span>
+                    </>
+                  ) : (
+                    "Save Address"
+                  )}
                 </button>
               </div>
             </div>

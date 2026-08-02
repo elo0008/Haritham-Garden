@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   GripVertical,
 } from "lucide-react";
+import { InlineSpinner } from "@/components/Skeletons";
 
 interface TagManagementClientProps {
   initialTags: TagWithUsage[];
@@ -349,9 +350,16 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs transition-all active:scale-95 disabled:opacity-50 min-h-[38px]"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs shadow-2xs transition-all active:scale-95 disabled:opacity-50 min-h-[38px] flex items-center justify-center gap-1.5"
             >
-              {isPending ? "Saving…" : "Save Tag"}
+              {isPending ? (
+                <>
+                  <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                  <span>Saving…</span>
+                </>
+              ) : (
+                "Save Tag"
+              )}
             </button>
             <button
               type="button"
@@ -414,7 +422,7 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 8 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
-              className="relative z-10 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl max-w-md w-full p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto max-w-[calc(100vw-1.5rem)] min-w-0"
+              className="relative z-10 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800 shadow-2xl w-full max-w-md p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto min-w-0"
             >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center shrink-0 text-rose-600 dark:text-rose-400">
