@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>You are Offline — Haritham Garden</title>
+  <meta name="theme-color" content="#1C4532" />
+  <style>
+    :root {
+      --bg: #FAF8F5;
+      --card-bg: #FFFFFF;
+      --text-main: #1C1917;
+      --text-sub: #78716C;
+      --botanical-dark: #1C4532;
+      --botanical-medium: #2D6A4F;
+      --botanical-light: #E8F0EC;
+      --terracotta: #EA580C;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0C0A09;
+        --card-bg: #1C1917;
+        --text-main: #F5F5F4;
+        --text-sub: #A8A29E;
+        --botanical-dark: #2D6A4F;
+        --botanical-medium: #52B788;
+        --botanical-light: #1C3328;
+      }
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      text-align: center;
+    }
+    .offline-card {
+      background: var(--card-bg);
+      border: 1px solid rgba(120, 113, 108, 0.2);
+      border-radius: 24px;
+      padding: 40px 28px;
+      max-width: 440px;
+      width: 100%;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .icon-wrapper {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: var(--botanical-light);
+      color: var(--botanical-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(234, 88, 12, 0.1);
+      color: var(--terracotta);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--terracotta);
+    }
+    .description {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-sub);
+      margin-bottom: 28px;
+    }
+    .retry-btn {
+      background-color: var(--botanical-dark);
+      color: #FFFFFF;
+      border: none;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 14px 28px;
+      border-radius: 9999px;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity 0.2s ease, transform 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .retry-btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+    .footer-note {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--text-sub);
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="icon-wrapper">🌿</div>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      <span>No Connection</span>
+    </div>
+    <h1 class="brand-title">Haritham Garden</h1>
+    <p class="description">
+      You are currently offline. Please check your internet connection to browse our nursery and manage your orders.
+    </p>
+    <button type="button" class="retry-btn" onclick="window.location.reload()">
+      <span>Try Reconnecting</span>
+    </button>
+  </div>
+  <div class="footer-note">
+    Haritham Garden — Nursery-Fresh Plants & Greens
+  </div>
+</body>
+</html>

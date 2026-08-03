@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { CartDrawer } from "@/components/CartDrawer";
+import { PWAProvider } from "@/components/PWAProvider";
 import type { SiteSettings, CarouselSectionSettings } from "@/lib/types";
 
 export default async function CustomerLayout({
@@ -27,6 +28,7 @@ export default async function CustomerLayout({
       />
       <div className="flex-1 flex flex-col">{children}</div>
       <CartDrawer whatsappNumber={siteSettings?.whatsapp_number} />
+      <PWAProvider />
     </div>
   );
 }
