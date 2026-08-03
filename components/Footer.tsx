@@ -6,6 +6,7 @@ import type { SiteSettings } from "@/lib/types";
 import { Leaf, MapPin, Phone, Truck, ExternalLink } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FloatingLeaves } from "./FloatingLeaves";
+import { InstallPWAButton } from "./InstallPWAButton";
 
 interface FooterProps {
   settings?: SiteSettings;
@@ -230,6 +231,7 @@ export function Footer({ settings }: FooterProps) {
             >
               Terms of Service
             </Link>
+            <InstallPWAButton />
           </div>
         </div>
       </div>
