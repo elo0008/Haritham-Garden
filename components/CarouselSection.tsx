@@ -44,7 +44,7 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
     triggerSlideChange((prev) => (prev <= 0 ? activeSlides.length - 1 : prev - 1));
   }, [activeSlides.length, triggerSlideChange]);
 
-  // Auto-advance timer (every 5s, loops infinitely, pauses on hover)
+  // Auto-advance timer (every 5s, loops infinitely, resets on manual navigation or hover)
   useEffect(() => {
     if (!settings?.enabled || activeSlides.length <= 1 || isHovered) return;
 
@@ -53,7 +53,7 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [settings?.enabled, activeSlides.length, isHovered, triggerSlideChange]);
+  }, [settings?.enabled, activeSlides.length, isHovered, currentIndex, triggerSlideChange]);
 
   const shouldReduceMotion = useReducedMotion();
 
