@@ -146,7 +146,7 @@ export function Footer({ settings }: FooterProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
-      className="bg-white dark:bg-stone-950 border-t border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 py-10 mt-auto transition-colors duration-300 relative overflow-hidden"
+      className="bg-white dark:bg-stone-950 border-t border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 py-10 mt-auto transition-colors duration-300 relative"
     >
       <FloatingLeaves />
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
