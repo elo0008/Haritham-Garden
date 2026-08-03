@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
-import { Leaf, MapPin, Phone, Truck, ExternalLink, Smartphone } from "lucide-react";
+import { Leaf, MapPin, Phone, Truck, ExternalLink } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FloatingLeaves } from "./FloatingLeaves";
-import { usePWA } from "@/context/PWAContext";
 
 interface FooterProps {
   settings?: SiteSettings;
@@ -123,7 +122,6 @@ function FooterCard({ icon, label, value, href }: FooterCardProps) {
 }
 
 export function Footer({ settings }: FooterProps) {
-  const { canInstall, triggerInstall } = usePWA();
   const businessName = settings?.business_name || "Haritham Garden";
   const locationText = settings?.location_text?.trim();
   const contactPhone = settings?.contact_phone?.trim();
@@ -219,17 +217,7 @@ export function Footer({ settings }: FooterProps) {
             <span>© {new Date().getFullYear()} All rights reserved.</span>
           </div>
 
-          <div className="flex items-center gap-6 flex-wrap justify-center sm:justify-end">
-            {canInstall && (
-              <button
-                type="button"
-                onClick={triggerInstall}
-                className="hover:text-botanical-800 dark:hover:text-botanical-100 transition-colors flex items-center gap-1.5 cursor-pointer font-medium"
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Install App</span>
-              </button>
-            )}
+          <div className="flex items-center gap-6">
             <Link
               href="/privacy"
               className="hover:text-botanical-800 dark:hover:text-botanical-100 transition-colors"
