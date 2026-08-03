@@ -21,15 +21,14 @@ export default async function CustomerLayout({
     : null;
 
   return (
-    <PWAProvider logoUrl={siteSettings?.logo_url}>
-      <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
-        <CustomerHeader
-          siteSettings={siteSettings as SiteSettings | null}
-          carouselTagLabel={carouselTagLabel}
-        />
-        <div className="flex-1 flex flex-col">{children}</div>
-        <CartDrawer whatsappNumber={siteSettings?.whatsapp_number} />
-      </div>
-    </PWAProvider>
+    <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
+      <CustomerHeader
+        siteSettings={siteSettings as SiteSettings | null}
+        carouselTagLabel={carouselTagLabel}
+      />
+      <div className="flex-1 flex flex-col">{children}</div>
+      <CartDrawer whatsappNumber={siteSettings?.whatsapp_number} />
+      <PWAProvider />
+    </div>
   );
 }

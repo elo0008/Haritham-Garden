@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import type { SiteSettings } from "@/lib/types";
-import { Leaf, MapPin, Phone, Truck, ExternalLink, Smartphone } from "lucide-react";
+import { Leaf, MapPin, Phone, Truck, ExternalLink } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import { FloatingLeaves } from "./FloatingLeaves";
-import { usePWA } from "@/context/PWAContext";
 
 interface FooterProps {
   settings?: SiteSettings;
@@ -139,7 +138,6 @@ export function Footer({ settings }: FooterProps) {
     (Boolean(secondaryLabel) && Boolean(secondaryUrl));
 
   const shouldReduceMotion = useReducedMotion();
-  const { isStandalone, promptInstall } = usePWA();
 
   return (
     <motion.footer
@@ -220,16 +218,6 @@ export function Footer({ settings }: FooterProps) {
           </div>
 
           <div className="flex items-center gap-6">
-            {!isStandalone && (
-              <button
-                type="button"
-                onClick={promptInstall}
-                className="hover:text-botanical-800 dark:hover:text-botanical-100 transition-colors flex items-center gap-1.5 cursor-pointer text-xs"
-              >
-                <Smartphone className="w-3.5 h-3.5 text-botanical-600 dark:text-botanical-400 shrink-0" />
-                <span>Install App</span>
-              </button>
-            )}
             <Link
               href="/privacy"
               className="hover:text-botanical-800 dark:hover:text-botanical-100 transition-colors"
