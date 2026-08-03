@@ -1,12 +1,17 @@
-const CACHE_NAME = "haritham-pwa-v1";
+const CACHE_NAME = "haritham-pwa-v2";
 const PRECACHE_ASSETS = [
   "/",
   "/offline.html",
   "/manifest.json",
+  "/favicon.ico",
+  "/favicon-16x16.png",
+  "/favicon-32x32.png",
   "/icons/icon-192x192.png",
   "/icons/icon-512x512.png",
   "/icons/icon-maskable-192x192.png",
   "/icons/icon-maskable-512x512.png",
+  "/icons/icon-monochrome-192x192.png",
+  "/icons/icon-monochrome-512x512.png",
   "/icons/apple-touch-icon.png",
 ];
 
