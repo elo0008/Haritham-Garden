@@ -454,9 +454,10 @@ export function PlantCatalog({
           )}
         </AnimatePresence>
 
-        {/* Dynamic Admin-Manageable Carousel Section */}
-        <CarouselSection settings={carouselSettings} slides={carouselSlides} />
       </main>
+
+      {/* Dynamic Admin-Manageable Carousel Section (Full-bleed edge-to-edge) */}
+      <CarouselSection settings={carouselSettings} slides={carouselSlides} />
 
       {/* Footer */}
       <Footer settings={siteSettings} />

@@ -90,34 +90,58 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="mb-16 pt-8 border-t border-stone-200 dark:border-stone-800"
+      className="w-full mb-16 pt-8 border-t border-stone-200 dark:border-stone-800"
     >
-      {/* ── Section Header ────────────────────────────────────────────────── */}
+      {/* CSS Keyframe Style for Slow Ken Burns Zoom */}
+      <style jsx>{`
+        @keyframes kenBurnsZoom {
+          0% {
+            transform: scale(1);
+          }
+          100% {
+            transform: scale(1.08);
+          }
+        }
+        .animate-ken-burns {
+          animation: kenBurnsZoom 22s ease-in-out infinite alternate;
+          will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-ken-burns {
+            animation: none !important;
+            transform: scale(1) !important;
+          }
+        }
+      `}</style>
+
+      {/* ── Section Header (if configured) ────────────────────────────────── */}
       {(headerTag || headerTitle || headerSubtitle) && (
-        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-10 px-4">
-          {headerTag && (
-            <span className="text-xs font-bold uppercase tracking-wider text-botanical-600 dark:text-botanical-100 bg-botanical-50 dark:bg-stone-900 border border-botanical-100 dark:border-stone-800 px-3 py-1 rounded-full inline-block mb-3">
-              {headerTag}
-            </span>
-          )}
-          {headerTitle && (
-            <h2 className="font-heading font-bold text-3xl sm:text-4xl text-stone-900 dark:text-stone-100">
-              {headerTitle}
-            </h2>
-          )}
-          {headerSubtitle && (
-            <p className="text-stone-500 dark:text-stone-400 text-sm mt-2 leading-relaxed">
-              {headerSubtitle}
-            </p>
-          )}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 sm:mb-10">
+          <div className="text-center max-w-2xl mx-auto">
+            {headerTag && (
+              <span className="text-xs font-bold uppercase tracking-wider text-botanical-600 dark:text-botanical-100 bg-botanical-50 dark:bg-stone-900 border border-botanical-100 dark:border-stone-800 px-3 py-1 rounded-full inline-block mb-3">
+                {headerTag}
+              </span>
+            )}
+            {headerTitle && (
+              <h2 className="font-heading font-bold text-3xl sm:text-4xl text-stone-900 dark:text-stone-100">
+                {headerTitle}
+              </h2>
+            )}
+            {headerSubtitle && (
+              <p className="text-stone-500 dark:text-stone-400 text-sm mt-2 leading-relaxed">
+                {headerSubtitle}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
-      {/* ── Carousel Slide Container ──────────────────────────────────────── */}
+      {/* ── Full-Bleed Carousel Container (Capped at ~50-55vh) ──────────────── */}
       <div
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className="relative rounded-3xl overflow-hidden shadow-xl bg-stone-900 border border-transparent dark:border-stone-800 min-h-[400px] sm:min-h-[440px] flex items-center justify-between group select-none touch-pan-y"
+        className="relative w-full h-[50vh] sm:h-[55vh] min-h-[380px] sm:min-h-[440px] max-h-[540px] text-white overflow-hidden shadow-lg bg-stone-900 border-y border-stone-200/50 dark:border-stone-800/50 flex items-center justify-between group select-none touch-pan-y rounded-none"
       >
         {/* Drag Container */}
         <motion.div
@@ -126,40 +150,41 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="relative w-full h-full min-h-[400px] sm:min-h-[440px] flex flex-col justify-end sm:justify-center cursor-grab active:cursor-grabbing"
+          className="relative w-full h-full flex flex-col justify-center items-center cursor-grab active:cursor-grabbing"
         >
-          {/* Background Image / Solid Fallback */}
+          {/* Background Image with Clean Ken Burns Zoom restarting on slide change */}
           {currentSlide.background_image ? (
             <img
+              key={currentSlide.id}
               src={currentSlide.background_image}
               alt={sanitizeText(currentSlide.title)}
-              className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-500 transform scale-100 group-hover:scale-105 pointer-events-none ${
-                isFading ? "opacity-30" : "opacity-100"
-              }`}
+              className={`absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-opacity duration-500 ${
+                shouldReduceMotion ? "" : "animate-ken-burns"
+              } ${isFading ? "opacity-30" : "opacity-100"}`}
               loading="eager"
             />
           ) : (
             <div className="absolute inset-0 bg-stone-900 pointer-events-none" />
           )}
 
-          {/* Gradient Scrim for Legibility (Combined bottom-up on mobile, left-to-right on desktop) */}
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/60 to-stone-950/20 sm:bg-gradient-to-r sm:from-stone-950/85 sm:via-stone-950/50 sm:to-transparent pointer-events-none" />
+          {/* Gradient Overlay matching Hero design language */}
+          <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/45 to-stone-950/75 pointer-events-none" />
 
-          {/* Slide Content */}
+          {/* Centered Slide Content matching Hero typography scale & badges */}
           <div
-            className={`relative z-10 max-w-xl p-6 sm:p-12 sm:pl-16 text-white transition-opacity duration-300 pointer-events-none ${
+            className={`relative z-10 my-auto flex flex-col items-center text-center max-w-3xl mx-auto px-6 py-8 transition-opacity duration-300 pointer-events-none ${
               isFading ? "opacity-0" : "opacity-100"
             }`}
           >
             {currentSlide.tag_label?.trim() && (
-              <span className="bg-botanical-600 text-botanical-50 font-semibold text-xs px-3 py-1 rounded-full uppercase tracking-wider mb-3 inline-block shadow-sm">
+              <span className="bg-botanical-600/90 text-botanical-50 text-xs font-semibold px-3.5 py-1.5 rounded-full uppercase tracking-wider mb-4 inline-block backdrop-blur-xs shadow-2xs">
                 {sanitizeText(currentSlide.tag_label.trim())}
               </span>
             )}
-            <h3 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight mb-3 leading-tight text-white drop-shadow-sm">
+            <h3 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4 leading-tight text-white max-w-3xl drop-shadow-sm">
               {sanitizeText(currentSlide.title)}
             </h3>
-            <p className="text-stone-200 text-sm sm:text-base font-normal leading-relaxed drop-shadow-sm max-w-lg">
+            <p className="text-stone-200 text-sm sm:text-base font-normal leading-relaxed max-w-xl drop-shadow-sm">
               {sanitizeText(currentSlide.description)}
             </p>
           </div>
@@ -171,7 +196,7 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
             <button
               type="button"
               onClick={handlePrev}
-              className="hidden md:flex absolute left-4 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/90 hover:text-stone-900 text-white items-center justify-center backdrop-blur-md transition-all shadow-md opacity-75 hover:opacity-100 min-h-[44px] min-w-[44px] active:scale-90 cursor-pointer"
+              className="hidden md:flex absolute left-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/90 hover:text-stone-900 text-white items-center justify-center backdrop-blur-md transition-all shadow-md opacity-75 hover:opacity-100 min-h-[44px] min-w-[44px] active:scale-90 cursor-pointer"
               aria-label="Previous slide"
             >
               <ChevronLeft className="w-6 h-6" />
@@ -179,7 +204,7 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
             <button
               type="button"
               onClick={handleNext}
-              className="hidden md:flex absolute right-4 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/90 hover:text-stone-900 text-white items-center justify-center backdrop-blur-md transition-all shadow-md opacity-75 hover:opacity-100 min-h-[44px] min-w-[44px] active:scale-90 cursor-pointer"
+              className="hidden md:flex absolute right-6 z-20 w-11 h-11 rounded-full bg-white/20 hover:bg-white/90 hover:text-stone-900 text-white items-center justify-center backdrop-blur-md transition-all shadow-md opacity-75 hover:opacity-100 min-h-[44px] min-w-[44px] active:scale-90 cursor-pointer"
               aria-label="Next slide"
             >
               <ChevronRight className="w-6 h-6" />
