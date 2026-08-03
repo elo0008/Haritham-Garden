@@ -23,6 +23,7 @@ import Link from "next/link";
 import { ShoppingBag, PackageCheck, ArrowUpDown, Check, Menu, X, Home, Sprout, Sparkles } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CustomDropdown } from "./CustomDropdown";
+import { FloatingLeaves } from "./FloatingLeaves";
 
 interface PlantCatalogProps {
   plants: Plant[];
@@ -332,7 +333,8 @@ export function PlantCatalog({
       {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
 
       {/* Main Content Area */}
-      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 w-full ${heroBanner ? "pt-6 sm:pt-8" : "pt-20 sm:pt-24"}`}>
+      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 w-full relative overflow-hidden ${heroBanner ? "pt-6 sm:pt-8" : "pt-20 sm:pt-24"}`}>
+        <FloatingLeaves />
         {/* Filters Section Bar */}
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}

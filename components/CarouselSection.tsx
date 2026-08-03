@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
+import { FloatingLeaves } from "./FloatingLeaves";
 
 interface CarouselSectionProps {
   settings?: CarouselSectionSettings;
@@ -90,8 +91,9 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.1 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="w-full mb-16 pt-8 border-t border-stone-200 dark:border-stone-800"
+      className="w-full mb-16 pt-8 border-t border-stone-200 dark:border-stone-800 relative overflow-hidden"
     >
+      <FloatingLeaves />
       {/* CSS Keyframe Style for Slow Ken Burns Zoom */}
       <style jsx>{`
         @keyframes kenBurnsZoom {
@@ -150,7 +152,7 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
           dragConstraints={{ left: 0, right: 0 }}
           dragElastic={0.2}
           onDragEnd={handleDragEnd}
-          className="relative w-full h-full flex flex-col justify-center items-center cursor-grab active:cursor-grabbing"
+          className="relative w-full h-full flex flex-col justify-end items-start cursor-grab active:cursor-grabbing"
         >
           {/* Background Image with Clean Ken Burns Zoom restarting on slide change */}
           {currentSlide.background_image ? (
@@ -167,21 +169,21 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
             <div className="absolute inset-0 bg-stone-900 pointer-events-none" />
           )}
 
-          {/* Gradient Overlay matching Hero design language */}
-          <div className="absolute inset-0 bg-gradient-to-b from-stone-950/60 via-stone-950/45 to-stone-950/75 pointer-events-none" />
+          {/* Gradient Scrim Overlay for Legibility (Bottom-left focused) */}
+          <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/50 to-transparent sm:bg-gradient-to-tr sm:from-stone-950/90 sm:via-stone-950/50 sm:to-transparent pointer-events-none" />
 
-          {/* Centered Slide Content matching Hero typography scale & badges */}
+          {/* Bottom-Left Aligned Slide Content matching Hero typography scale & badges */}
           <div
-            className={`relative z-10 my-auto flex flex-col items-center text-center max-w-3xl mx-auto px-6 py-8 transition-opacity duration-300 pointer-events-none ${
+            className={`relative z-10 max-w-2xl px-6 sm:px-12 md:pl-16 pb-14 sm:pb-16 pt-8 text-left flex flex-col items-start transition-opacity duration-300 pointer-events-none ${
               isFading ? "opacity-0" : "opacity-100"
             }`}
           >
             {currentSlide.tag_label?.trim() && (
-              <span className="bg-botanical-600/90 text-botanical-50 text-xs font-semibold px-3.5 py-1.5 rounded-full uppercase tracking-wider mb-4 inline-block backdrop-blur-xs shadow-2xs">
+              <span className="bg-botanical-600/90 text-botanical-50 text-xs font-semibold px-3.5 py-1.5 rounded-full uppercase tracking-wider mb-3.5 inline-block backdrop-blur-xs shadow-2xs">
                 {sanitizeText(currentSlide.tag_label.trim())}
               </span>
             )}
-            <h3 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-4 leading-tight text-white max-w-3xl drop-shadow-sm">
+            <h3 className="font-heading text-3xl sm:text-5xl font-bold tracking-tight mb-3 sm:mb-4 leading-tight text-white max-w-2xl drop-shadow-sm">
               {sanitizeText(currentSlide.title)}
             </h3>
             <p className="text-stone-200 text-sm sm:text-base font-normal leading-relaxed max-w-xl drop-shadow-sm">

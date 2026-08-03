@@ -1,5 +1,8 @@
+"use client";
+
+import { useRef } from "react";
 import type { HeroBanner } from "@/lib/types";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 
 interface HeroBannerDisplayProps {
@@ -7,7 +10,17 @@ interface HeroBannerDisplayProps {
 }
 
 export function HeroBannerDisplay({ banner }: HeroBannerDisplayProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
+
+  // Track scroll position relative to hero container
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Parallax transform: Translate background down slower than foreground (0% -> 30%)
+  const parallaxY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
 
   if (!banner || !banner.active) return null;
 
@@ -36,49 +49,28 @@ export function HeroBannerDisplay({ banner }: HeroBannerDisplayProps) {
   };
 
   return (
-    <div className="relative w-full h-[100svh] min-h-[100svh] text-white p-6 sm:p-12 mb-0 overflow-hidden shadow-lg bg-stone-900 border border-transparent dark:border-stone-800 flex flex-col justify-between pt-20 sm:pt-24 pb-8 sm:pb-12 rounded-none">
-      {/* CSS Keyframe Style for Slow Ken Burns Zoom */}
-      <style jsx>{`
-        @keyframes kenBurnsZoom {
-          0% {
-            transform: scale(1);
-          }
-          100% {
-            transform: scale(1.08);
-          }
-        }
-        .animate-ken-burns {
-          animation: kenBurnsZoom 22s ease-in-out infinite alternate;
-          will-change: transform;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-ken-burns {
-            animation: none !important;
-            transform: scale(1) !important;
-          }
-        }
-      `}</style>
-
-      {/* Background Image or Solid Fallback with Ken Burns Zoom */}
+    <div
+      ref={containerRef}
+      className="relative w-full h-[100svh] min-h-[100svh] text-white p-6 sm:p-12 mb-0 overflow-hidden shadow-lg bg-stone-900 border border-transparent dark:border-stone-800 flex flex-col justify-between pt-20 sm:pt-24 pb-8 sm:pb-12 rounded-none"
+    >
+      {/* Background Image or Solid Fallback with GPU Transform-based Parallax (No Ken Burns zoom) */}
       {bgImage ? (
-        <img
+        <motion.img
           src={bgImage}
           alt={title || "Haritham Garden Banner"}
-          className={`absolute inset-0 w-full h-full object-cover object-center ${
-            shouldReduceMotion ? "" : "animate-ken-burns"
-          }`}
+          style={{ y: shouldReduceMotion ? "0%" : parallaxY, willChange: "transform" }}
+          className="absolute -top-[10%] inset-x-0 w-full h-[120%] object-cover object-center pointer-events-none"
           loading="eager"
         />
       ) : (
-        <div
-          className={`absolute inset-0 bg-botanical-900 ${
-            shouldReduceMotion ? "" : "animate-ken-burns"
-          }`}
+        <motion.div
+          style={{ y: shouldReduceMotion ? "0%" : parallaxY, willChange: "transform" }}
+          className="absolute -top-[10%] inset-x-0 w-full h-[120%] bg-botanical-900 pointer-events-none"
         />
       )}
 
       {/* Gradient Overlay for Readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-botanical-950/60 via-botanical-950/45 to-stone-950/70 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-botanical-950/60 via-botanical-950/45 to-stone-950/70 pointer-events-none z-0" />
 
       {/* Content — Centered horizontally & vertically in space below header with staggered on-load entrance */}
       <div className="relative z-10 my-auto flex flex-col items-center text-center max-w-3xl mx-auto px-4">
