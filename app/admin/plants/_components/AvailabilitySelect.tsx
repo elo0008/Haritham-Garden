@@ -61,7 +61,7 @@ export function AvailabilitySelect({ plantId, current }: Props) {
       onChange={handleChange}
       disabled={isPending}
       align="left"
-      direction="bottom"
+      direction="top"
       ariaLabel="Change plant availability"
       buttonClassName="!px-3 !py-1.5 !min-h-[36px] !rounded-xl"
     />
