@@ -3,11 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { slugify } from "@/lib/utils";
-import type { PlantAvailability, PlantWriteData, Tag } from "@/lib/types";
+import type { PlantAvailability, PlantWriteData, Tag, PhotoInput } from "@/lib/types";
 
 // ── Slug helpers ──────────────────────────────────────────────────────────────
 
-function extractStoragePath(url: string): string {
+function extractStoragePath(photo: PhotoInput): string {
+  const url = typeof photo === "string" ? photo : photo.url;
   const marker = "/plant-photos/";
   const idx = url.indexOf(marker);
   return idx >= 0 ? url.slice(idx + marker.length) : url;
@@ -194,7 +195,7 @@ export async function updatePlant(
 
 export async function deletePlant(
   id: string,
-  photoUrls: string[]
+  photoUrls: PhotoInput[]
 ): Promise<void> {
   const supabase = await createClient();
 

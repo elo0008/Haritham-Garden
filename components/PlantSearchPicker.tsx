@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Plant } from "@/lib/types";
-import { getEffectivePrice } from "@/lib/types";
+import { getEffectivePrice, getPhotoUrl, getPhotoFocalPoint } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { Search, Plus } from "lucide-react";
 
@@ -102,8 +102,11 @@ export function PlantSearchPicker({
                       <div className="flex items-center gap-2.5 min-w-0">
                         {plant.photos && plant.photos[0] ? (
                           <img
-                            src={plant.photos[0]}
+                            src={getPhotoUrl(plant.photos[0])}
                             alt={plant.name}
+                            style={{
+                              objectPosition: `${getPhotoFocalPoint(plant.photos[0]).x}% ${getPhotoFocalPoint(plant.photos[0]).y}%`,
+                            }}
                             className="w-9 h-9 object-cover rounded-lg border border-stone-200 dark:border-stone-700 shrink-0"
                           />
                         ) : (

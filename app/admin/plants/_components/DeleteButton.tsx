@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { deletePlant } from "../actions";
 import { useAdminToast } from "@/components/AdminToast";
 
+import type { PhotoInput } from "@/lib/types";
+
 interface Props {
   plantId: string;
   plantName: string;
-  photoUrls: string[];
+  photoUrls: PhotoInput[];
 }
 
 export function DeleteButton({ plantId, plantName, photoUrls }: Props) {

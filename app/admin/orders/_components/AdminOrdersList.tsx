@@ -7,6 +7,7 @@ import { useAdminToast } from "@/components/AdminToast";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { CustomDropdown, type CustomDropdownOption } from "@/components/CustomDropdown";
 import type { Order, OrderStatus, Plant } from "@/lib/types";
+import { getPhotoUrl } from "@/lib/types";
 
 const ORDER_STATUS_OPTIONS: CustomDropdownOption<OrderStatus>[] = [
   { value: "pending", label: "1. Pending Review", badgeBg: "bg-amber-100 dark:bg-amber-950/80", badgeText: "text-amber-800 dark:text-amber-300" },
@@ -242,7 +243,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
           name: plant.name,
           price: effectivePrice,
           qty: 1,
-          photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
+          photo: plant.photos && plant.photos.length > 0 ? getPhotoUrl(plant.photos[0]) : undefined,
         },
       ];
     });
@@ -358,7 +359,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
           name: plant.name,
           price: effectivePrice,
           qty: 1,
-          photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
+          photo: plant.photos && plant.photos.length > 0 ? getPhotoUrl(plant.photos[0]) : undefined,
         },
       ];
     });

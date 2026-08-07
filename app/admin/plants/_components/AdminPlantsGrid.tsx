@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { Plant, Tag } from "@/lib/types";
-import { getEffectivePrice } from "@/lib/types";
+import { getEffectivePrice, getPhotoUrl, getPhotoFocalPoint } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { AvailabilitySelect } from "./AvailabilitySelect";
 import { DeleteButton } from "./DeleteButton";
@@ -142,7 +142,8 @@ export function AdminPlantsGrid({
           {filteredPlants.map((plant) => {
             const tags = plantTagsMap[plant.id] ?? [];
             const tagIds = tags.map((t) => t.id);
-            const photoUrl = plant.photos[0];
+            const photoUrl = getPhotoUrl(plant.photos[0]);
+            const photoFocalPoint = getPhotoFocalPoint(plant.photos[0]);
             const hasSalePrice =
               plant.sale_price !== null &&
               plant.sale_price !== undefined &&
@@ -161,7 +162,7 @@ export function AdminPlantsGrid({
                       <img
                         src={photoUrl}
                         alt={plant.name}
-                        style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
+                        style={{ objectPosition: `${photoFocalPoint.x}% ${photoFocalPoint.y}%` }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (

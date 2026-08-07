@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { Plant } from "@/lib/types";
-import { getEffectivePrice } from "@/lib/types";
+import { getEffectivePrice, getPhotoUrl, getPhotoFocalPoint } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { Sun, Droplet, Compass, ShoppingBag, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -159,14 +159,16 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
                     <AnimatePresence initial={false} custom={direction} mode="popLayout">
                       <motion.img
                         key={`${plant.id}-${activePhotoIndex}`}
-                        src={photos[activePhotoIndex]}
+                        src={getPhotoUrl(photos[activePhotoIndex])}
                         alt={plant.name}
                         custom={direction}
                         variants={imageSlideVariants}
                         initial="enter"
                         animate="center"
                         exit="exit"
-                        style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
+                        style={{
+                          objectPosition: `${getPhotoFocalPoint(photos[activePhotoIndex]).x}% ${getPhotoFocalPoint(photos[activePhotoIndex]).y}%`,
+                        }}
                         transition={{
                           x: { type: "spring", stiffness: 350, damping: 32 },
                           opacity: { duration: 0.2 },
@@ -190,9 +192,11 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
                   ) : (
                     <img
                       key={`${plant.id}-0`}
-                      src={photos[0]}
+                      src={getPhotoUrl(photos[0])}
                       alt={plant.name}
-                      style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
+                      style={{
+                        objectPosition: `${getPhotoFocalPoint(photos[0]).x}% ${getPhotoFocalPoint(photos[0]).y}%`,
+                      }}
                       onLoad={() => setIsImageLoaded(true)}
                       className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 ${
                         isImageLoaded ? "opacity-100" : "opacity-0"

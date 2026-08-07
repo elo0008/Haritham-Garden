@@ -1,6 +1,7 @@
 "use client";
 
-import { Plant, getEffectivePrice } from "@/lib/types";
+import type { Plant } from "@/lib/types";
+import { getEffectivePrice, getPhotoUrl, getPhotoFocalPoint } from "@/lib/types";
 import { formatINR } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
@@ -14,6 +15,8 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
   const isUnavailable = plant.availability === "unavailable";
   const isLimited = plant.availability === "limited";
   const firstPhoto = plant.photos && plant.photos.length > 0 ? plant.photos[0] : null;
+  const firstPhotoUrl = getPhotoUrl(firstPhoto);
+  const firstPhotoFocalPoint = getPhotoFocalPoint(firstPhoto);
   const primaryTag = plant.tags && plant.tags.length > 0 ? plant.tags[0].name : null;
 
   const hasSalePrice =
@@ -67,11 +70,11 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
           ) : null}
         </div>
 
-        {firstPhoto ? (
+        {firstPhotoUrl ? (
           <img
-            src={firstPhoto}
+            src={firstPhotoUrl}
             alt={plant.name}
-            style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
+            style={{ objectPosition: `${firstPhotoFocalPoint.x}% ${firstPhotoFocalPoint.y}%` }}
             className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
               isUnavailable ? "grayscale-[30%] opacity-80" : ""
             }`}

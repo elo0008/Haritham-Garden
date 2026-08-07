@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
 import type { Plant, CartItem } from "@/lib/types";
-import { getEffectivePrice } from "@/lib/types";
+import { getEffectivePrice, getPhotoUrl } from "@/lib/types";
 import { CartToast, type ToastInfo } from "@/components/CartToast";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { createClient } from "@/lib/supabase/client";
@@ -150,7 +150,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
           price: effectivePrice,
           original_price: hasSale ? plant.price : undefined,
           qty,
-          photo: plant.photos && plant.photos.length > 0 ? plant.photos[0] : undefined,
+          photo: plant.photos && plant.photos.length > 0 ? getPhotoUrl(plant.photos[0]) : undefined,
           slug: plant.slug,
         },
       ];

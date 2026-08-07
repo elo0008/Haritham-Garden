@@ -15,12 +15,36 @@ export type PlantSunlight = 'low' | 'medium' | 'full_sun';
 export type PlantWatering = 'low' | 'medium' | 'high';
 export type PlantAvailability = 'available' | 'limited' | 'unavailable';
 
+export interface PlantPhoto {
+  url: string;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
+}
+
+export type PhotoInput = string | PlantPhoto;
+
+export function getPhotoUrl(photo: PhotoInput | undefined | null): string {
+  if (!photo) return "";
+  if (typeof photo === "string") return photo;
+  return photo.url || "";
+}
+
+export function getPhotoFocalPoint(photo: PhotoInput | undefined | null): { x: number; y: number } {
+  if (!photo || typeof photo === "string") {
+    return { x: 50, y: 50 };
+  }
+  return {
+    x: photo.focal_point_x ?? 50,
+    y: photo.focal_point_y ?? 50,
+  };
+}
+
 export interface Plant {
   id: string;
   name: string;
   local_name: string | null;
   slug: string;
-  photos: string[];
+  photos: PhotoInput[];
   description: string | null;
   sunlight: PlantSunlight;
   watering: PlantWatering;
@@ -28,8 +52,6 @@ export interface Plant {
   sale_price?: number | null;
   availability: PlantAvailability;
   shippable: boolean;
-  focal_point_x?: number | null;
-  focal_point_y?: number | null;
   created_at: string;
   updated_at: string;
   // Joined from plant_tags → tags (populated by queries that join)
@@ -43,7 +65,7 @@ export interface Plant {
 export type PlantWriteData = {
   name: string;
   local_name: string | null;
-  photos: string[];
+  photos: PlantPhoto[];
   description: string | null;
   sunlight: PlantSunlight;
   watering: PlantWatering;
@@ -51,8 +73,6 @@ export type PlantWriteData = {
   sale_price?: number | null;
   availability: PlantAvailability;
   shippable: boolean;
-  focal_point_x?: number | null;
-  focal_point_y?: number | null;
 };
 
 /**

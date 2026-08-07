@@ -15,6 +15,7 @@ import type {
   PlantWatering,
   PlantAvailability,
   PlantWriteData,
+  PlantPhoto,
 } from "@/lib/types";
 
 import { useAdminToast } from "@/components/AdminToast";
@@ -64,7 +65,14 @@ interface PlantFormProps {
   onCancel?: () => void;
 }
 
-type NewFile = { id: string; file: File; preview: string };
+interface FormPhotoItem {
+  id: string;
+  url: string;
+  file?: File;
+  focal_point_x: number;
+  focal_point_y: number;
+  isNew: boolean;
+}
 
 export function PlantForm({
   initialData,
@@ -97,13 +105,6 @@ export function PlantForm({
     initialData?.availability ?? "available"
   );
   const [shippable, setShippable] = useState(initialData?.shippable ?? true);
-  const [focalPointX, setFocalPointX] = useState<number>(
-    initialData?.focal_point_x ?? 50
-  );
-  const [focalPointY, setFocalPointY] = useState<number>(
-    initialData?.focal_point_y ?? 50
-  );
-  const [isFocalPickerOpen, setIsFocalPickerOpen] = useState(false);
 
   // ── Tag State ────────────────────────────────────────────────────────────────
   const [allTags, setAllTags] = useState<Tag[]>(initialAllTags);
@@ -112,11 +113,29 @@ export function PlantForm({
   );
 
   // ── Photo State ──────────────────────────────────────────────────────────────
-  const [existingPhotos, setExistingPhotos] = useState<string[]>(
-    initialData?.photos ?? []
-  );
+  const [photoItems, setPhotoItems] = useState<FormPhotoItem[]>(() => {
+    return (initialData?.photos ?? []).map((p) => {
+      if (typeof p === "string") {
+        return {
+          id: crypto.randomUUID(),
+          url: p,
+          focal_point_x: 50,
+          focal_point_y: 50,
+          isNew: false,
+        };
+      }
+      return {
+        id: crypto.randomUUID(),
+        url: p.url,
+        focal_point_x: p.focal_point_x ?? 50,
+        focal_point_y: p.focal_point_y ?? 50,
+        isNew: false,
+      };
+    });
+  });
   const [removedPhotos, setRemovedPhotos] = useState<string[]>([]);
-  const [newFiles, setNewFiles] = useState<NewFile[]>([]);
+  const [activeFocalPhotoId, setActiveFocalPhotoId] = useState<string | null>(null);
+  const [isFocalPickerOpen, setIsFocalPickerOpen] = useState(false);
 
   // ── UI State ─────────────────────────────────────────────────────────────────
   const [saving, setSaving] = useState(false);
@@ -141,25 +160,29 @@ export function PlantForm({
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    const items: NewFile[] = files.map((file) => ({
+    const items: FormPhotoItem[] = files.map((file) => ({
       id: crypto.randomUUID(),
       file,
-      preview: URL.createObjectURL(file),
+      url: URL.createObjectURL(file),
+      focal_point_x: 50,
+      focal_point_y: 50,
+      isNew: true,
     }));
-    setNewFiles((prev) => [...prev, ...items]);
+    setPhotoItems((prev) => [...prev, ...items]);
     e.target.value = "";
   }
 
-  function removeExistingPhoto(url: string) {
-    setExistingPhotos((prev) => prev.filter((p) => p !== url));
-    setRemovedPhotos((prev) => [...prev, url]);
-  }
-
-  function removeNewFile(id: string) {
-    setNewFiles((prev) => {
-      const item = prev.find((f) => f.id === id);
-      if (item) URL.revokeObjectURL(item.preview);
-      return prev.filter((f) => f.id !== id);
+  function removePhotoItem(id: string) {
+    setPhotoItems((prev) => {
+      const item = prev.find((p) => p.id === id);
+      if (item) {
+        if (item.isNew) {
+          URL.revokeObjectURL(item.url);
+        } else {
+          setRemovedPhotos((rem) => [...rem, item.url]);
+        }
+      }
+      return prev.filter((p) => p.id !== id);
     });
   }
 
@@ -220,32 +243,41 @@ export function PlantForm({
     setSaving(true);
 
     try {
-      // 1. Upload new files to Supabase Storage
+      // 1. Upload new files to Supabase Storage & build final photo objects
       const supabase = createClient();
-      const uploadedUrls: string[] = [];
+      const finalPhotos: PlantPhoto[] = [];
 
-      for (const item of newFiles) {
-        const ext = item.file.name.split(".").pop() ?? "jpg";
-        const path = `${crypto.randomUUID()}.${ext}`;
+      for (const item of photoItems) {
+        if (item.isNew && item.file) {
+          const ext = item.file.name.split(".").pop() ?? "jpg";
+          const path = `${crypto.randomUUID()}.${ext}`;
 
-        const { data: uploadData, error: uploadError } =
-          await supabase.storage
+          const { data: uploadData, error: uploadError } =
+            await supabase.storage
+              .from("plant-photos")
+              .upload(path, item.file, { upsert: false });
+
+          if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
+
+          const { data: urlData } = supabase.storage
             .from("plant-photos")
-            .upload(path, item.file, { upsert: false });
+            .getPublicUrl(uploadData.path);
 
-        if (uploadError) throw new Error(`Upload failed: ${uploadError.message}`);
-
-        const { data: urlData } = supabase.storage
-          .from("plant-photos")
-          .getPublicUrl(uploadData.path);
-
-        uploadedUrls.push(urlData.publicUrl);
+          finalPhotos.push({
+            url: urlData.publicUrl,
+            focal_point_x: item.focal_point_x,
+            focal_point_y: item.focal_point_y,
+          });
+        } else {
+          finalPhotos.push({
+            url: item.url,
+            focal_point_x: item.focal_point_x,
+            focal_point_y: item.focal_point_y,
+          });
+        }
       }
 
-      // 2. Build final photo list
-      const photos = [...existingPhotos, ...uploadedUrls];
-
-      // 3. Save plant write data
+      // 2. Save plant write data
       const plantData: PlantWriteData = {
         name: name.trim(),
         local_name: localName.trim() || null,
@@ -256,9 +288,7 @@ export function PlantForm({
         sale_price: parsedSalePrice,
         availability,
         shippable,
-        photos,
-        focal_point_x: focalPointX,
-        focal_point_y: focalPointY,
+        photos: finalPhotos,
       };
 
       if (initialData) {
@@ -281,6 +311,8 @@ export function PlantForm({
       setSaving(false);
     }
   }
+
+  const activeFocalItem = photoItems.find((p) => p.id === activeFocalPhotoId);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -467,44 +499,48 @@ export function PlantForm({
         />
       </div>
 
-      {/* ── Photos Section ──────────────────────────────────────────────── */}
+      {/* ── Photos Section (Per-Image Focal Point Controls) ──────────────── */}
       <div>
         <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-2">
           Plant Photos
         </label>
 
-        {(existingPhotos.length > 0 || newFiles.length > 0) && (
+        {photoItems.length > 0 && (
           <div className="flex flex-wrap gap-3 mb-3">
-            {existingPhotos.map((url) => (
-              <div key={url} className="relative group">
-                <img
-                  src={url}
-                  alt="Plant photo"
-                  className="w-20 h-20 object-cover rounded-xl border border-stone-200 dark:border-stone-700"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeExistingPhoto(url)}
-                  className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition-colors"
-                  title="Remove photo"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-            {newFiles.map((item) => (
+            {photoItems.map((item) => (
               <div key={item.id} className="relative group">
                 <img
-                  src={item.preview}
-                  alt="New photo"
-                  className="w-20 h-20 object-cover rounded-xl border-2 border-terracotta"
+                  src={item.url}
+                  alt="Plant photo"
+                  style={{ objectPosition: `${item.focal_point_x}% ${item.focal_point_y}%` }}
+                  className={`w-20 h-20 object-cover rounded-xl border ${
+                    item.isNew ? "border-2 border-terracotta" : "border border-stone-200 dark:border-stone-700"
+                  }`}
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-terracotta text-white text-[10px] text-center font-bold rounded-b-xl py-0.5 uppercase">
-                  New
-                </div>
+
+                {item.isNew && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-terracotta text-white text-[9px] text-center font-bold rounded-b-xl py-0.5 uppercase pointer-events-none">
+                    New
+                  </div>
+                )}
+
+                {/* Per-Image Focal Point Adjust Button */}
                 <button
                   type="button"
-                  onClick={() => removeNewFile(item.id)}
+                  onClick={() => {
+                    setActiveFocalPhotoId(item.id);
+                    setIsFocalPickerOpen(true);
+                  }}
+                  className="absolute bottom-1.5 left-1.5 p-1 rounded-md bg-stone-900/75 hover:bg-stone-900 text-white backdrop-blur-xs transition-colors shadow-2xs opacity-80 group-hover:opacity-100"
+                  title={`Adjust Focal Point (${item.focal_point_x}%, ${item.focal_point_y}%)`}
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Remove Photo Button */}
+                <button
+                  type="button"
+                  onClick={() => removePhotoItem(item.id)}
                   className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-xs flex items-center justify-center shadow transition-colors"
                   title="Remove photo"
                 >
@@ -523,7 +559,7 @@ export function PlantForm({
           className="hidden"
           onChange={handleFileChange}
         />
-        <div className="flex items-center gap-3 flex-wrap">
+        <div>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -532,19 +568,9 @@ export function PlantForm({
           >
             + Upload Photos
           </button>
-          {(existingPhotos[0] || newFiles[0]?.preview) && (
-            <button
-              type="button"
-              onClick={() => setIsFocalPickerOpen(true)}
-              className="text-xs font-semibold text-terracotta hover:underline flex items-center gap-1 min-h-[44px] px-2"
-            >
-              <Crosshair className="w-3.5 h-3.5" />
-              <span>Adjust Focal Point ({focalPointX}%, {focalPointY}%)</span>
-            </button>
-          )}
         </div>
         <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
-          Photos are uploaded to Supabase Storage when you save.
+          Photos are uploaded to Supabase Storage when you save. Each photo has its own customizable focal point.
         </p>
       </div>
 
@@ -574,18 +600,23 @@ export function PlantForm({
         </button>
       </div>
 
-      {/* ── Focal Point Picker Modal ───────────────────────────────────────── */}
-      {(existingPhotos[0] || newFiles[0]?.preview) && (
+      {/* ── Per-Image Focal Point Picker Modal ─────────────────────────────── */}
+      {activeFocalItem && (
         <FocalPointPicker
           isOpen={isFocalPickerOpen}
-          imageUrl={existingPhotos[0] || newFiles[0]?.preview}
-          initialX={focalPointX}
-          initialY={focalPointY}
+          imageUrl={activeFocalItem.url}
+          initialX={activeFocalItem.focal_point_x}
+          initialY={activeFocalItem.focal_point_y}
           guides={PLANT_GUIDES}
-          title="Plant Catalogue — Adjust Focal Point"
+          title="Plant Image — Adjust Focal Point"
           onSave={(x, y) => {
-            setFocalPointX(x);
-            setFocalPointY(y);
+            setPhotoItems((prev) =>
+              prev.map((p) =>
+                p.id === activeFocalPhotoId
+                  ? { ...p, focal_point_x: x, focal_point_y: y }
+                  : p
+              )
+            );
             setIsFocalPickerOpen(false);
           }}
           onCancel={() => setIsFocalPickerOpen(false)}
