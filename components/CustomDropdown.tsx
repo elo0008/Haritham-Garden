@@ -22,6 +22,7 @@ interface CustomDropdownProps<T extends string | number> {
   buttonClassName?: string;
   menuClassName?: string;
   align?: "left" | "right" | "auto";
+  direction?: "bottom" | "top";
   renderTriggerContent?: (selectedOption?: CustomDropdownOption<T>) => ReactNode;
   ariaLabel?: string;
 }
@@ -36,6 +37,7 @@ export function CustomDropdown<T extends string | number>({
   buttonClassName = "",
   menuClassName = "",
   align = "auto",
+  direction = "bottom",
   renderTriggerContent,
   ariaLabel = "Select option",
 }: CustomDropdownProps<T>) {
@@ -136,11 +138,13 @@ export function CustomDropdown<T extends string | number>({
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            initial={{ opacity: 0, scale: 0.95, y: direction === "top" ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+            exit={{ opacity: 0, scale: 0.95, y: direction === "top" ? 4 : -4 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute top-full mt-2 z-50 min-w-[190px] w-max max-w-[calc(100vw-32px)] py-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-hidden text-stone-900 dark:text-stone-100 font-sans ${getAlignClass()} ${menuClassName}`}
+            className={`absolute ${
+              direction === "top" ? "bottom-full mb-2" : "top-full mt-2"
+            } z-50 min-w-[190px] w-max max-w-[calc(100vw-32px)] py-1.5 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/90 dark:border-stone-800 shadow-2xl overflow-hidden text-stone-900 dark:text-stone-100 font-sans ${getAlignClass()} ${menuClassName}`}
             role="listbox"
             aria-label={ariaLabel}
           >
