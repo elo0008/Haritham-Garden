@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import type {
   Plant,
   Tag,
@@ -64,8 +65,68 @@ export function PlantCatalog({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<"home" | "catalogue" | "carousel">("home");
 
-  const carouselTagLabel = carouselSettings?.enabled
-    ? carouselSettings.header_tag?.trim() || "Featured"
+  // Customer Realtime States
+  const [plantsState, setPlantsState] = useState<Plant[]>(plants);
+  const [heroBannerState, setHeroBannerState] = useState<HeroBanner | undefined>(heroBanner);
+  const [carouselSettingsState, setCarouselSettingsState] = useState<CarouselSectionSettings | undefined>(carouselSettings);
+  const [carouselSlidesState, setCarouselSlidesState] = useState<CarouselSlide[]>(carouselSlides || []);
+  const [siteSettingsState, setSiteSettingsState] = useState<SiteSettings | undefined>(siteSettings);
+
+  useEffect(() => setPlantsState(plants), [plants]);
+  useEffect(() => setHeroBannerState(heroBanner), [heroBanner]);
+  useEffect(() => setCarouselSettingsState(carouselSettings), [carouselSettings]);
+  useEffect(() => setCarouselSlidesState(carouselSlides || []), [carouselSlides]);
+  useEffect(() => setSiteSettingsState(siteSettings), [siteSettings]);
+
+  // Customer Realtime Subscriptions (Quiet patching live updates)
+  useRealtimeSubscription<Plant>({
+    table: "plants",
+    onInsert: (newPlant) => {
+      if ((newPlant as any).deleted) return;
+      setPlantsState((prev) => [newPlant, ...prev.filter((p) => p.id !== newPlant.id)]);
+    },
+    onUpdate: (updatedPlant) => {
+      setPlantsState((prev) => {
+        if ((updatedPlant as any).deleted) return prev.filter((p) => p.id !== updatedPlant.id);
+        const exists = prev.some((p) => p.id === updatedPlant.id);
+        if (!exists) return [updatedPlant, ...prev];
+        // Quiet patch: update plant properties in-place without altering array index order
+        return prev.map((p) => (p.id === updatedPlant.id ? { ...p, ...updatedPlant } : p));
+      });
+    },
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) {
+        setPlantsState((prev) => prev.filter((p) => p.id !== oldRecord.id));
+      }
+    },
+  });
+
+  useRealtimeSubscription<HeroBanner>({
+    table: "hero_banner",
+    onUpdate: (banner) => setHeroBannerState(banner),
+  });
+
+  useRealtimeSubscription<CarouselSectionSettings>({
+    table: "carousel_section_settings",
+    onUpdate: (settings) => setCarouselSettingsState(settings),
+  });
+
+  useRealtimeSubscription<CarouselSlide>({
+    table: "carousel_slides",
+    onInsert: (slide) => setCarouselSlidesState((prev) => [...prev.filter((s) => s.id !== slide.id), slide]),
+    onUpdate: (slide) => setCarouselSlidesState((prev) => prev.map((s) => (s.id === slide.id ? slide : s))),
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) setCarouselSlidesState((prev) => prev.filter((s) => s.id !== oldRecord.id));
+    },
+  });
+
+  useRealtimeSubscription<SiteSettings>({
+    table: "site_settings",
+    onUpdate: (settings) => setSiteSettingsState(settings),
+  });
+
+  const carouselTagLabel = carouselSettingsState?.enabled
+    ? carouselSettingsState.header_tag?.trim() || "Featured"
     : null;
 
   useEffect(() => {
@@ -77,7 +138,7 @@ export function PlantCatalog({
       const isMobile = window.innerWidth < 640;
       const headerHeight = isMobile ? 64 : 80;
 
-      if (carouselEl && carouselSettings?.enabled) {
+      if (carouselEl && carouselSettingsState?.enabled) {
         const carouselTop =
           carouselEl.getBoundingClientRect().top + window.pageYOffset - (headerHeight + 100);
         if (scrollY >= carouselTop) {
@@ -100,7 +161,7 @@ export function PlantCatalog({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [carouselSettings?.enabled]);
+  }, [carouselSettingsState?.enabled]);
 
   const handleScrollToTarget = (targetId: string) => {
     setIsMobileMenuOpen(false);
@@ -211,21 +272,21 @@ export function PlantCatalog({
   useEffect(() => {
     const slugParam = searchParams.get("plant") || initialPlantSlug;
     if (slugParam) {
-      const match = plants.find((p) => p.slug === slugParam || p.id === slugParam);
+      const match = plantsState.find((p) => p.slug === slugParam || p.id === slugParam);
       if (match) {
         setActivePlant(match);
       }
     } else {
       setActivePlant(null);
     }
-  }, [searchParams, initialPlantSlug, plants]);
+  }, [searchParams, initialPlantSlug, plantsState]);
 
   // ── Filtering (AND logic) ──────────────────────────────────────────────────
 
   const filteredPlants =
     activeTagIds.size === 0
-      ? plants
-      : plants.filter((plant) => {
+      ? plantsState
+      : plantsState.filter((plant) => {
           const plantTagIds = new Set((plant.tags ?? []).map((t) => t.id));
           // Plant must have ALL active tags
           for (const activeId of activeTagIds) {
@@ -330,10 +391,10 @@ export function PlantCatalog({
   return (
     <div className="bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased min-h-screen flex flex-col relative transition-colors duration-300">
       {/* Hero Banner Section (full 100dvh, starts cleanly at top-0 under fixed header) */}
-      {heroBanner && <HeroBannerDisplay banner={heroBanner} />}
+      {heroBannerState && <HeroBannerDisplay banner={heroBannerState} />}
 
       {/* Main Content Area */}
-      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 w-full relative overflow-hidden ${heroBanner ? "pt-6 sm:pt-8" : "pt-20 sm:pt-24"}`}>
+      <main className={`flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 sm:pb-12 w-full relative overflow-hidden ${heroBannerState ? "pt-6 sm:pt-8" : "pt-20 sm:pt-24"}`}>
         <FloatingLeaves />
         {/* Filters Section Bar */}
         <motion.div
@@ -459,10 +520,10 @@ export function PlantCatalog({
       </main>
 
       {/* Dynamic Admin-Manageable Carousel Section (Full-bleed edge-to-edge) */}
-      <CarouselSection settings={carouselSettings} slides={carouselSlides} />
+      <CarouselSection settings={carouselSettingsState} slides={carouselSlidesState} />
 
       {/* Footer */}
-      <Footer settings={siteSettings} />
+      <Footer settings={siteSettingsState} />
 
       {/* Quick-View Bottom Sheet / Modal */}
       <PlantBottomSheet

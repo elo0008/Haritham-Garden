@@ -28,8 +28,18 @@ function formatPhoneDisplay(phone: string): string {
 }
 
 export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
-  const { items, isOpen, closeCart, updateQuantity, removeItem, clearCart, subtotal, totalItems } =
-    useCart();
+  const {
+    items,
+    isOpen,
+    closeCart,
+    updateQuantity,
+    removeItem,
+    clearCart,
+    subtotal,
+    totalItems,
+    unavailablePlantIds,
+    hasUnavailableItems,
+  } = useCart();
   const router = useRouter();
 
   const [checkoutStep, setCheckoutStep] = useState<"cart" | "interstitial" | "form">("cart");
@@ -127,7 +137,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
 
   // Helper to execute order creation and open WhatsApp
   const executeOrder = async (details?: CustomerDetailsInput | null) => {
-    if (items.length === 0 || submittingRef.current || isSubmitting) return;
+    if (items.length === 0 || submittingRef.current || isSubmitting || hasUnavailableItems) return;
 
     submittingRef.current = true;
     setIsSubmitting(true);
@@ -172,7 +182,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
 
   // Triggered when user clicks "Send Order via WhatsApp" in Cart step
   const handleInitiateOrder = () => {
-    if (items.length === 0 || submittingRef.current || isSubmitting) return;
+    if (items.length === 0 || submittingRef.current || isSubmitting || hasUnavailableItems) return;
 
     // Show interstitial step for details view/edit or decision
     setCheckoutStep("interstitial");
@@ -432,7 +442,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                             pincode: custPincode.trim() || null,
                           });
                         }}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || hasUnavailableItems}
                         className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98] disabled:opacity-50"
                       >
                         <MessageCircle className="w-5 h-5 fill-current" />
@@ -493,8 +503,8 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                       <button
                         type="button"
                         onClick={handleSkipDetails}
-                        disabled={isSubmitting}
-                        className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-semibold py-3.5 px-6 rounded-2xl transition-all min-h-[48px] active:scale-[0.98]"
+                        disabled={isSubmitting || hasUnavailableItems}
+                        className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-semibold py-3.5 px-6 rounded-2xl transition-all min-h-[48px] active:scale-[0.98] disabled:opacity-50"
                       >
                         {isSubmitting ? "Sending..." : "Send Without Details →"}
                       </button>
@@ -568,7 +578,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                   <div className="pt-3 space-y-2.5">
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || hasUnavailableItems}
                       className="w-full bg-terracotta hover:bg-[#b04a25] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 min-h-[48px] active:scale-[0.98] disabled:opacity-50"
                     >
                       {isSubmitting ? (
@@ -584,8 +594,8 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                     <button
                       type="button"
                       onClick={handleSkipDetails}
-                      disabled={isSubmitting}
-                      className="w-full py-2 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 transition-colors text-center"
+                      disabled={isSubmitting || hasUnavailableItems}
+                      className="w-full py-2 text-xs font-semibold text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 transition-colors text-center disabled:opacity-50"
                     >
                       Skip & Send Without Details
                     </button>
@@ -630,94 +640,116 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                 /* Cart Item Rows with Framer Motion deletion animation */
                 <div className="space-y-4">
                   <AnimatePresence initial={false}>
-                    {items.map((item) => (
-                      <motion.div
-                        key={item.plant_id}
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
-                        transition={{ duration: 0.25, ease: "easeInOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="flex items-center justify-between p-3.5 bg-white dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/80 rounded-2xl shadow-2xs hover:border-stone-300 dark:hover:border-stone-600 transition-all">
-                          <div className="flex items-center gap-3.5 overflow-hidden">
-                            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-100 dark:bg-stone-800 border border-stone-100 dark:border-stone-700">
-                              {item.photo ? (
-                                <img
-                                  src={item.photo}
-                                  alt={item.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center text-stone-400">
-                                  🌿
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="overflow-hidden">
-                              <h4 className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100 truncate">
-                                {item.name}
-                              </h4>
-                              <div className="flex items-baseline gap-1.5 mt-0.5">
-                                {item.original_price && item.original_price > item.price && (
-                                  <span className="text-[11px] text-stone-400 dark:text-stone-500 line-through">
-                                    {formatINR(item.original_price)}
-                                  </span>
+                    {items.map((item) => {
+                      const isUnavailable = unavailablePlantIds.has(item.plant_id);
+                      return (
+                        <motion.div
+                          key={item.plant_id}
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0, marginTop: 0, marginBottom: 0 }}
+                          transition={{ duration: 0.25, ease: "easeInOut" }}
+                          className="overflow-hidden"
+                        >
+                          <div
+                            className={`flex items-center justify-between p-3.5 rounded-2xl shadow-2xs transition-all border ${
+                              isUnavailable
+                                ? "border-rose-300 dark:border-rose-800 bg-rose-50/60 dark:bg-rose-950/30"
+                                : "bg-white dark:bg-stone-800/60 border-stone-200/80 dark:border-stone-700/80 hover:border-stone-300 dark:hover:border-stone-600"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3.5 overflow-hidden">
+                              <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-stone-100 dark:bg-stone-800 border border-stone-100 dark:border-stone-700 relative">
+                                {item.photo ? (
+                                  <img
+                                    src={item.photo}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-stone-400">
+                                    🌿
+                                  </div>
                                 )}
-                                <span className="text-xs text-terracotta dark:text-terracotta font-semibold">
-                                  {formatINR(item.price)}
-                                </span>
                               </div>
-                              <div className="flex items-center gap-2 mt-2 border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 rounded-lg px-1.5 py-0.5 w-max">
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(item.plant_id, item.qty - 1)}
-                                  className="w-5 h-5 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-bold text-xs active:scale-90 transition-all"
-                                  aria-label="Decrease quantity"
-                                >
-                                  -
-                                </button>
-                                <span className="text-xs font-bold text-stone-800 dark:text-stone-100 w-4 text-center">
-                                  {item.qty}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => updateQuantity(item.plant_id, item.qty + 1)}
-                                  className="w-5 h-5 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-bold text-xs active:scale-90 transition-all"
-                                  aria-label="Increase quantity"
-                                >
-                                  +
-                                </button>
+
+                              <div className="overflow-hidden">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <h4 className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100 truncate">
+                                    {item.name}
+                                  </h4>
+                                  {isUnavailable && (
+                                    <span className="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider shrink-0">
+                                      No longer available
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-baseline gap-1.5 mt-0.5">
+                                  {item.original_price && item.original_price > item.price && (
+                                    <span className="text-[11px] text-stone-400 dark:text-stone-500 line-through">
+                                      {formatINR(item.original_price)}
+                                    </span>
+                                  )}
+                                  <span className="text-xs text-terracotta dark:text-terracotta font-semibold">
+                                    {formatINR(item.price)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2 border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 rounded-lg px-1.5 py-0.5 w-max">
+                                  <button
+                                    type="button"
+                                    onClick={() => updateQuantity(item.plant_id, item.qty - 1)}
+                                    className="w-5 h-5 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-bold text-xs active:scale-90 transition-all"
+                                    aria-label="Decrease quantity"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-xs font-bold text-stone-800 dark:text-stone-100 w-4 text-center">
+                                    {item.qty}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => updateQuantity(item.plant_id, item.qty + 1)}
+                                    className="w-5 h-5 flex items-center justify-center text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-100 font-bold text-xs active:scale-90 transition-all"
+                                    aria-label="Increase quantity"
+                                  >
+                                    +
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="flex flex-col items-end justify-between h-16 pl-2 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => removeItem(item.plant_id)}
-                              className="text-stone-300 dark:text-stone-600 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 active:scale-90"
-                              title="Remove item"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                            <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
-                              {formatINR(item.price * item.qty)}
-                            </span>
+                            <div className="flex flex-col items-end justify-between h-16 pl-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => removeItem(item.plant_id)}
+                                className="text-stone-400 dark:text-stone-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1 active:scale-90"
+                                title="Remove item"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                              <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100">
+                                {formatINR(item.price * item.qty)}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </motion.div>
-                    ))}
+                        </motion.div>
+                      );
+                    })}
                   </AnimatePresence>
                 </div>
               )}
             </div>
 
-            {/* Drawer Footer matching mockup */}
+            {/* Drawer Footer */}
             {!orderSentRef && checkoutStep === "cart" && items.length > 0 && (
-              <div className="p-6 border-t border-stone-100 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-900/80">
-                <div className="space-y-2 mb-6">
+              <div className="p-6 border-t border-stone-100 dark:border-stone-800 bg-stone-50/80 dark:bg-stone-900/80 space-y-3">
+                {hasUnavailableItems && (
+                  <div className="rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 p-3 text-xs font-semibold text-rose-800 dark:text-rose-300 leading-relaxed">
+                    ⚠️ One or more items in your bag are no longer available. Please remove them to proceed with WhatsApp checkout.
+                  </div>
+                )}
+
+                <div className="space-y-1 mb-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-stone-500 dark:text-stone-400 font-medium">Subtotal</span>
                     <span className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100">
@@ -732,7 +764,7 @@ export function CartDrawer({ whatsappNumber }: CartDrawerProps) {
                 <button
                   type="button"
                   onClick={handleInitiateOrder}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || hasUnavailableItems}
                   className="w-full bg-terracotta hover:bg-[#b04a25] active:scale-[0.98] text-white font-semibold py-3.5 px-6 rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
                 >
                   {isSubmitting ? (

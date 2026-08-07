@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, useCallback, ReactNode 
 import type { Plant, CartItem } from "@/lib/types";
 import { getEffectivePrice } from "@/lib/types";
 import { CartToast, type ToastInfo } from "@/components/CartToast";
+import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
+import { createClient } from "@/lib/supabase/client";
 
 interface CartContextType {
   items: CartItem[];
@@ -19,6 +21,8 @@ interface CartContextType {
   toggleCart: () => void;
   toast: ToastInfo | null;
   dismissToast: () => void;
+  unavailablePlantIds: Set<string>;
+  hasUnavailableItems: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -30,6 +34,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const [toast, setToast] = useState<ToastInfo | null>(null);
+  const [unavailablePlantIds, setUnavailablePlantIds] = useState<Set<string>>(new Set());
 
   const dismissToast = useCallback(() => {
     setToast(null);
@@ -57,6 +62,64 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error("Failed to save cart to storage", e);
     }
   }, [items, isHydrated]);
+
+  // Check initial availability for items in cart against database
+  useEffect(() => {
+    if (!isHydrated || items.length === 0) return;
+    const checkAvailability = async () => {
+      try {
+        const supabase = createClient();
+        const itemIds = items.map((i) => i.plant_id);
+        const { data: dbPlants } = await supabase
+          .from("plants")
+          .select("id, availability")
+          .in("id", itemIds);
+
+        const unavail = new Set<string>();
+        const found = new Set((dbPlants || []).map((p) => p.id));
+
+        // Flag items no longer existing in DB (deleted)
+        itemIds.forEach((id) => {
+          if (!found.has(id)) unavail.add(id);
+        });
+
+        // Flag items marked as unavailable
+        (dbPlants || []).forEach((p) => {
+          if (p.availability === "unavailable") unavail.add(p.id);
+        });
+
+        setUnavailablePlantIds((prev) => {
+          const next = new Set(prev);
+          unavail.forEach((id) => next.add(id));
+          return next;
+        });
+      } catch (err) {
+        console.error("Error checking plant availability:", err);
+      }
+    };
+    checkAvailability();
+  }, [items, isHydrated]);
+
+  // Real-time listener for plants table to detect live availability changes / deletes
+  useRealtimeSubscription<Plant>({
+    table: "plants",
+    onUpdate: (updatedPlant) => {
+      if (updatedPlant.availability === "unavailable" || (updatedPlant as any).deleted) {
+        setUnavailablePlantIds((prev) => new Set(prev).add(updatedPlant.id));
+      } else {
+        setUnavailablePlantIds((prev) => {
+          const next = new Set(prev);
+          next.delete(updatedPlant.id);
+          return next;
+        });
+      }
+    },
+    onDelete: (oldRecord) => {
+      if (oldRecord.id) {
+        setUnavailablePlantIds((prev) => new Set(prev).add(oldRecord.id!));
+      }
+    },
+  });
 
   const addItem = (plant: Plant, qty: number) => {
     if (qty <= 0) return;
@@ -126,14 +189,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeItem = (plant_id: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.plant_id !== plant_id));
+    setUnavailablePlantIds((prev) => {
+      const next = new Set(prev);
+      next.delete(plant_id);
+      return next;
+    });
   };
 
   const clearCart = () => {
     setItems([]);
+    setUnavailablePlantIds(new Set());
   };
 
   const totalItems = items.reduce((sum, item) => sum + item.qty, 0);
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  const hasUnavailableItems = items.some((item) => unavailablePlantIds.has(item.plant_id));
 
   const openCart = useCallback(() => {
     setToast(null);
@@ -165,6 +236,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         toggleCart,
         toast,
         dismissToast,
+        unavailablePlantIds,
+        hasUnavailableItems,
       }}
     >
       {children}
@@ -180,3 +253,4 @@ export function useCart() {
   }
   return context;
 }
+

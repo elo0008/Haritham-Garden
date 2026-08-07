@@ -40,6 +40,8 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 
+import { useAdminToast } from "@/components/AdminToast";
+
 // Sub-components
 import { AdminOrdersList } from "../orders/_components/AdminOrdersList";
 import { SalesAnalytics } from "../sales/_components/SalesAnalytics";
@@ -118,6 +120,7 @@ export function UnifiedAdminConsole({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
+  const { showToast } = useAdminToast();
 
   // Tab State
   const initialTab = (searchParams.get("tab") as AdminTab) || "overview";
@@ -147,12 +150,13 @@ export function UnifiedAdminConsole({
   useEffect(() => setCarouselSlidesState(carouselSlides), [carouselSlides]);
   useEffect(() => setSiteSettingsState(siteSettings), [siteSettings]);
 
-  // Supabase Realtime Subscriptions
+  // Supabase Realtime Subscriptions (Syncs state & notifies via toast)
   useRealtimeSubscription<Order>({
     table: "orders",
     onInsert: (newOrder) => {
       if (newOrder.deleted) return;
       setOrdersState((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
+      showToast("New Order Received", `Order #${newOrder.order_ref || newOrder.id.substring(0, 8)}`);
     },
     onUpdate: (updatedOrder) => {
       setOrdersState((prev) => {
@@ -161,9 +165,17 @@ export function UnifiedAdminConsole({
         if (!exists) return [updatedOrder, ...prev];
         return prev.map((o) => (o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o));
       });
+      if (updatedOrder.deleted) {
+        showToast("Order Removed", `Order #${updatedOrder.order_ref || updatedOrder.id.substring(0, 8)}`);
+      } else {
+        showToast("Order Updated", `Order #${updatedOrder.order_ref || updatedOrder.id.substring(0, 8)}`);
+      }
     },
     onDelete: (oldRecord) => {
-      if (oldRecord.id) setOrdersState((prev) => prev.filter((o) => o.id !== oldRecord.id));
+      if (oldRecord.id) {
+        setOrdersState((prev) => prev.filter((o) => o.id !== oldRecord.id));
+        showToast("Order Deleted", "Order record removed");
+      }
     },
     onReconnect: () => router.refresh(),
   });
@@ -173,6 +185,7 @@ export function UnifiedAdminConsole({
     onInsert: (newPlant) => {
       if ((newPlant as any).deleted) return;
       setPlantsState((prev) => [newPlant, ...prev.filter((p) => p.id !== newPlant.id)]);
+      showToast("Plant Added", `'${newPlant.name}' added to catalogue`);
     },
     onUpdate: (updatedPlant) => {
       setPlantsState((prev) => {
@@ -181,42 +194,83 @@ export function UnifiedAdminConsole({
         if (!exists) return [updatedPlant, ...prev];
         return prev.map((p) => (p.id === updatedPlant.id ? { ...p, ...updatedPlant } : p));
       });
+      if ((updatedPlant as any).deleted) {
+        showToast("Plant Removed", `'${updatedPlant.name}' removed from catalogue`);
+      } else {
+        showToast("Catalogue Updated", `'${updatedPlant.name}' updated`);
+      }
     },
     onDelete: (oldRecord) => {
-      if (oldRecord.id) setPlantsState((prev) => prev.filter((p) => p.id !== oldRecord.id));
+      if (oldRecord.id) {
+        setPlantsState((prev) => prev.filter((p) => p.id !== oldRecord.id));
+        showToast("Plant Deleted", "Plant removed from catalogue");
+      }
     },
     onReconnect: () => router.refresh(),
   });
 
   useRealtimeSubscription<Tag>({
     table: "tags",
-    onInsert: (newTag) => setTagsState((prev) => [...prev.filter((t) => t.id !== newTag.id), newTag]),
-    onUpdate: (updatedTag) => setTagsState((prev) => prev.map((t) => (t.id === updatedTag.id ? { ...t, ...updatedTag } : t))),
+    onInsert: (newTag) => {
+      setTagsState((prev) => [...prev.filter((t) => t.id !== newTag.id), newTag]);
+      showToast("Tag Created", `Category tag '${newTag.name}' created`);
+    },
+    onUpdate: (updatedTag) => {
+      setTagsState((prev) => prev.map((t) => (t.id === updatedTag.id ? { ...t, ...updatedTag } : t)));
+      showToast("Tag Updated", `Category tag '${updatedTag.name}' updated`);
+    },
     onDelete: (oldRecord) => {
-      if (oldRecord.id) setTagsState((prev) => prev.filter((t) => t.id !== oldRecord.id));
+      if (oldRecord.id) {
+        setTagsState((prev) => prev.filter((t) => t.id !== oldRecord.id));
+        showToast("Tag Deleted", "Category tag removed");
+      }
     },
     onReconnect: () => router.refresh(),
   });
 
   useRealtimeSubscription<HeroBanner>({
     table: "hero_banner",
-    onUpdate: (banner) => setHeroBannerState(banner),
+    onUpdate: (banner) => {
+      setHeroBannerState(banner);
+      showToast("Hero Banner Updated", "Homepage hero banner settings updated");
+    },
+    onReconnect: () => router.refresh(),
+  });
+
+  useRealtimeSubscription<CarouselSectionSettings>({
+    table: "carousel_section_settings",
+    onUpdate: (settings) => {
+      setCarouselSettingsState(settings);
+      showToast("Carousel Settings Updated", "Carousel section settings updated");
+    },
     onReconnect: () => router.refresh(),
   });
 
   useRealtimeSubscription<CarouselSlide>({
     table: "carousel_slides",
-    onInsert: (slide) => setCarouselSlidesState((prev) => [...prev.filter((s) => s.id !== slide.id), slide]),
-    onUpdate: (slide) => setCarouselSlidesState((prev) => prev.map((s) => (s.id === slide.id ? slide : s))),
+    onInsert: (slide) => {
+      setCarouselSlidesState((prev) => [...prev.filter((s) => s.id !== slide.id), slide]);
+      showToast("Carousel Slide Added", `Slide '${slide.title || "New Slide"}' added`);
+    },
+    onUpdate: (slide) => {
+      setCarouselSlidesState((prev) => prev.map((s) => (s.id === slide.id ? slide : s)));
+      showToast("Carousel Slide Updated", `Slide '${slide.title || "Slide"}' updated`);
+    },
     onDelete: (oldRecord) => {
-      if (oldRecord.id) setCarouselSlidesState((prev) => prev.filter((s) => s.id !== oldRecord.id));
+      if (oldRecord.id) {
+        setCarouselSlidesState((prev) => prev.filter((s) => s.id !== oldRecord.id));
+        showToast("Carousel Slide Deleted", "Slide removed from carousel");
+      }
     },
     onReconnect: () => router.refresh(),
   });
 
   useRealtimeSubscription<SiteSettings>({
     table: "site_settings",
-    onUpdate: (settings) => setSiteSettingsState(settings),
+    onUpdate: (settings) => {
+      setSiteSettingsState(settings);
+      showToast("Site Settings Updated", "Site configuration updated");
+    },
     onReconnect: () => router.refresh(),
   });
 
