@@ -153,7 +153,7 @@ export function AdminPlantsGrid({
             return (
               <div
                 key={plant.id}
-                className="group bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-xl dark:hover:shadow-stone-950/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative z-1 hover:z-30 focus-within:z-30"
+                className="group bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-xl dark:hover:shadow-stone-950/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative z-1 hover:z-20"
               >
                 <div>
                   {/* Photo Container */}
@@ -244,7 +244,7 @@ export function AdminPlantsGrid({
                 </div>
 
                 {/* Card Quick Actions Bar */}
-                <div className="p-4 pt-3 bg-stone-50/70 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
+                <div className="p-4 pt-3 bg-stone-50/70 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2 rounded-b-3xl">
                   {/* Inline Availability Dropdown Select */}
                   <AvailabilitySelect
                     plantId={plant.id}
