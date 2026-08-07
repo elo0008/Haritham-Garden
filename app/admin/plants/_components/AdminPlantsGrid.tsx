@@ -153,7 +153,7 @@ export function AdminPlantsGrid({
             return (
               <div
                 key={plant.id}
-                className="group bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-xl dark:hover:shadow-stone-950/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative z-1 hover:z-20"
+                className="group bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-xl dark:hover:shadow-stone-950/60 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between relative z-1 hover:z-30 focus-within:z-30"
               >
                 <div>
                   {/* Photo Container */}
