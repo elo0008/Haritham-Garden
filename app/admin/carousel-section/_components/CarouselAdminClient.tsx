@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
+import { GripVertical } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   updateCarouselSectionSettings,
@@ -24,10 +25,105 @@ interface Props {
   slides: CarouselSlide[];
 }
 
+interface SlideRowItemProps {
+  slide: CarouselSlide;
+  onEdit: (slide: CarouselSlide) => void;
+  onDelete: (slide: CarouselSlide) => void;
+}
+
+function SlideRowItem({ slide, onEdit, onDelete }: SlideRowItemProps) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      key={slide.id}
+      value={slide}
+      dragControls={dragControls}
+      dragListener={false}
+      className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-2xs select-none hover:bg-stone-50/60 dark:hover:bg-stone-800/40 transition-colors"
+    >
+      {/* Drag Handle Grip Icon */}
+      <div
+        onPointerDown={(e) => dragControls.start(e)}
+        className="p-1.5 cursor-grab active:cursor-grabbing text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 touch-none shrink-0"
+        title="Drag to reorder"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+
+      {/* Thumbnail / Info */}
+      <div className="flex items-center gap-3.5 min-w-0 flex-grow">
+        {slide.background_image ? (
+          <img
+            src={slide.background_image}
+            alt={slide.title}
+            className="w-14 h-14 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
+          />
+        ) : (
+          <div className="w-14 h-14 rounded-xl bg-stone-200/60 dark:bg-stone-800 flex items-center justify-center text-xl shrink-0">
+            🖼️
+          </div>
+        )}
+
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className="font-semibold text-sm text-stone-900 dark:text-stone-100 truncate">
+              {slide.title}
+            </span>
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                slide.active
+                  ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
+                  : "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
+              }`}
+            >
+              {slide.active ? "Active" : "Hidden"}
+            </span>
+          </div>
+          {slide.tag_label && (
+            <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta block">
+              {slide.tag_label}
+            </span>
+          )}
+          <p className="text-xs text-stone-500 dark:text-stone-400 truncate max-w-sm">
+            {slide.description}
+          </p>
+        </div>
+      </div>
+
+      {/* Actions: Edit / Delete */}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={() => onEdit(slide)}
+          className="text-xs font-semibold text-stone-700 dark:text-stone-200 hover:text-terracotta px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-stone-300 min-h-[38px] transition-colors"
+        >
+          Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(slide)}
+          className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 rounded-xl min-h-[38px] transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </Reorder.Item>
+  );
+}
+
 export function CarouselAdminClient({ settings, slides }: Props) {
   const router = useRouter();
   const { showToast } = useAdminToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isPending, startTransition] = useTransition();
+
+  // Slide list state synced with props for drag-and-drop
+  const [slideList, setSlideList] = useState<CarouselSlide[]>(slides);
+
+  useEffect(() => {
+    setSlideList(slides);
+  }, [slides]);
 
   // ── Section Settings State ────────────────────────────────────────────────
   const [enabled, setEnabled] = useState(settings.enabled);
@@ -84,6 +180,27 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     }
   }
 
+  // ── Handlers: Drag and Drop Reordering ────────────────────────────────────
+
+  const handleReorder = (newSlides: CarouselSlide[]) => {
+    setSlideList(newSlides);
+
+    const reordered = newSlides.map((s, idx) => ({
+      id: s.id,
+      display_order: idx + 1,
+    }));
+
+    startTransition(async () => {
+      try {
+        await reorderCarouselSlides(reordered);
+        showToast("Slide Order Saved", "Updated slide display sequence");
+        router.refresh();
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Failed to reorder slides.");
+      }
+    });
+  };
+
   // ── Handlers: Slide Add/Edit Modal ────────────────────────────────────────
 
   function openAddModal() {
@@ -99,8 +216,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
   function openEditModal(slide: CarouselSlide) {
     setEditingSlide(slide);
     setSlideTagLabel(slide.tag_label ?? "");
-    setSlideTitle(slide.title);
-    setSlideDescription(slide.description);
+    setSlideTitle(slide.title ?? "");
+    setSlideDescription(slide.description ?? "");
     setSlideBgImage(slide.background_image ?? null);
     setSlideActive(slide.active);
     setActiveModal("edit");
@@ -192,31 +309,6 @@ export function CarouselAdminClient({ settings, slides }: Props) {
       setErrorMsg(err instanceof Error ? err.message : "Failed to delete slide.");
     } finally {
       setIsDeleting(false);
-    }
-  }
-
-  // ── Handlers: Reorder Slides ──────────────────────────────────────────────
-
-  async function handleMove(index: number, direction: "up" | "down") {
-    const targetIndex = direction === "up" ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= slides.length) return;
-
-    const newSlides = [...slides];
-    const temp = newSlides[index];
-    newSlides[index] = newSlides[targetIndex];
-    newSlides[targetIndex] = temp;
-
-    const reordered = newSlides.map((s, idx) => ({
-      id: s.id,
-      display_order: idx + 1,
-    }));
-
-    try {
-      await reorderCarouselSlides(reordered);
-      showToast("Slide Order Saved", "Updated slide display sequence");
-      router.refresh();
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Failed to reorder slides.");
     }
   }
 
@@ -332,10 +424,10 @@ export function CarouselAdminClient({ settings, slides }: Props) {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-base font-bold text-stone-900 dark:text-stone-100">
-              Carousel Slides ({slides.length})
+              Carousel Slides ({slideList.length})
             </h2>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              Manage the individual slides displayed in the carousel.
+              Drag and drop slides using the grip handle to reorder them across the homepage carousel.
             </p>
           </div>
           <button
@@ -347,99 +439,26 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           </button>
         </div>
 
-        {slides.length === 0 ? (
+        {slideList.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-800 p-8 text-center bg-white dark:bg-stone-900 text-stone-500 dark:text-stone-400 text-xs">
             No slides created yet. Click <strong>+ Add New Slide</strong> to add your first slide.
           </div>
         ) : (
-          <div className="space-y-3">
-            {slides.map((slide, idx) => (
-              <div
+          <Reorder.Group
+            axis="y"
+            values={slideList}
+            onReorder={handleReorder}
+            className="space-y-3"
+          >
+            {slideList.map((slide) => (
+              <SlideRowItem
                 key={slide.id}
-                className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-2xs"
-              >
-                {/* Thumbnail / Info */}
-                <div className="flex items-center gap-3.5 min-w-0">
-                  {slide.background_image ? (
-                    <img
-                      src={slide.background_image}
-                      alt={slide.title}
-                      className="w-14 h-14 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-stone-200/60 dark:bg-stone-800 flex items-center justify-center text-xl shrink-0">
-                      🖼️
-                    </div>
-                  )}
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-semibold text-sm text-stone-900 dark:text-stone-100 truncate">
-                        {slide.title}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                          slide.active
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300"
-                            : "bg-stone-200 text-stone-600 dark:bg-stone-800 dark:text-stone-400"
-                        }`}
-                      >
-                        {slide.active ? "Active" : "Hidden"}
-                      </span>
-                    </div>
-                    {slide.tag_label && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-terracotta block">
-                        {slide.tag_label}
-                      </span>
-                    )}
-                    <p className="text-xs text-stone-500 dark:text-stone-400 truncate max-w-sm">
-                      {slide.description}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions: Reorder & Edit / Delete */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {/* Reorder Buttons */}
-                  <div className="flex flex-col gap-1">
-                    <button
-                      type="button"
-                      onClick={() => handleMove(idx, "up")}
-                      disabled={idx === 0}
-                      className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 disabled:opacity-30 text-xs font-bold"
-                      title="Move up"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleMove(idx, "down")}
-                      disabled={idx === slides.length - 1}
-                      className="p-1 rounded hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-300 disabled:opacity-30 text-xs font-bold"
-                      title="Move down"
-                    >
-                      ▼
-                    </button>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => openEditModal(slide)}
-                    className="text-xs font-semibold text-stone-700 dark:text-stone-200 hover:text-terracotta px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 hover:border-stone-300 min-h-[38px] transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDeletingSlide(slide)}
-                    className="text-xs font-semibold text-red-600 dark:text-red-400 hover:text-red-800 border border-red-200 dark:border-red-900/40 hover:bg-red-50 dark:hover:bg-red-950/40 px-3 py-2 rounded-xl min-h-[38px] transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
+                slide={slide}
+                onEdit={openEditModal}
+                onDelete={setDeletingSlide}
+              />
             ))}
-          </div>
+          </Reorder.Group>
         )}
       </div>
 
