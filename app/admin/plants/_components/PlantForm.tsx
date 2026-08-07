@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRealtimeSubscription } from "@/hooks/useRealtimeSubscription";
 import { createPlant, updatePlant, createTag } from "../actions";
 import { TagPicker } from "@/components/TagPicker";
+import { FocalPointPicker, type BreakpointGuide } from "@/components/FocalPointPicker";
+import { Crosshair } from "lucide-react";
 import type {
   Plant,
   Tag,
@@ -18,6 +20,12 @@ import type {
 import { useAdminToast } from "@/components/AdminToast";
 import { CustomDropdown } from "@/components/CustomDropdown";
 import { InlineSpinner } from "@/components/Skeletons";
+
+const PLANT_GUIDES: BreakpointGuide[] = [
+  { label: "Customer Grid (1:1)", aspectRatio: 1 / 1, icon: "mobile" },
+  { label: "Admin Grid (4:3)", aspectRatio: 4 / 3, icon: "tablet" },
+  { label: "Popup Gallery (4:3)", aspectRatio: 4 / 3, icon: "desktop" },
+];
 
 // ── Option Maps ───────────────────────────────────────────────────────────────
 
@@ -89,6 +97,13 @@ export function PlantForm({
     initialData?.availability ?? "available"
   );
   const [shippable, setShippable] = useState(initialData?.shippable ?? true);
+  const [focalPointX, setFocalPointX] = useState<number>(
+    initialData?.focal_point_x ?? 50
+  );
+  const [focalPointY, setFocalPointY] = useState<number>(
+    initialData?.focal_point_y ?? 50
+  );
+  const [isFocalPickerOpen, setIsFocalPickerOpen] = useState(false);
 
   // ── Tag State ────────────────────────────────────────────────────────────────
   const [allTags, setAllTags] = useState<Tag[]>(initialAllTags);
@@ -242,6 +257,8 @@ export function PlantForm({
         availability,
         shippable,
         photos,
+        focal_point_x: focalPointX,
+        focal_point_y: focalPointY,
       };
 
       if (initialData) {
@@ -506,14 +523,26 @@ export function PlantForm({
           className="hidden"
           onChange={handleFileChange}
         />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={saving}
-          className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-50 transition-colors text-stone-700 dark:text-stone-200"
-        >
-          + Upload Photos
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={saving}
+            className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-50 transition-colors text-stone-700 dark:text-stone-200"
+          >
+            + Upload Photos
+          </button>
+          {(existingPhotos[0] || newFiles[0]?.preview) && (
+            <button
+              type="button"
+              onClick={() => setIsFocalPickerOpen(true)}
+              className="text-xs font-semibold text-terracotta hover:underline flex items-center gap-1 min-h-[44px] px-2"
+            >
+              <Crosshair className="w-3.5 h-3.5" />
+              <span>Adjust Focal Point ({focalPointX}%, {focalPointY}%)</span>
+            </button>
+          )}
+        </div>
         <p className="mt-1.5 text-xs text-stone-400 dark:text-stone-500">
           Photos are uploaded to Supabase Storage when you save.
         </p>
@@ -544,6 +573,24 @@ export function PlantForm({
           )}
         </button>
       </div>
+
+      {/* ── Focal Point Picker Modal ───────────────────────────────────────── */}
+      {(existingPhotos[0] || newFiles[0]?.preview) && (
+        <FocalPointPicker
+          isOpen={isFocalPickerOpen}
+          imageUrl={existingPhotos[0] || newFiles[0]?.preview}
+          initialX={focalPointX}
+          initialY={focalPointY}
+          guides={PLANT_GUIDES}
+          title="Plant Catalogue — Adjust Focal Point"
+          onSave={(x, y) => {
+            setFocalPointX(x);
+            setFocalPointY(y);
+            setIsFocalPickerOpen(false);
+          }}
+          onCancel={() => setIsFocalPickerOpen(false)}
+        />
+      )}
     </form>
   );
 }

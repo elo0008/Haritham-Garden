@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, Reorder, useDragControls } from "framer-motion";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Crosshair } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import {
   updateCarouselSectionSettings,
@@ -14,11 +14,18 @@ import {
 } from "../actions";
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
 import { useAdminToast } from "@/components/AdminToast";
+import { FocalPointPicker, type BreakpointGuide } from "@/components/FocalPointPicker";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
   "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
   "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
+
+const CAROUSEL_GUIDES: BreakpointGuide[] = [
+  { label: "Mobile (1:1)", aspectRatio: 1 / 1, icon: "mobile" },
+  { label: "Tablet (16:9)", aspectRatio: 16 / 9, icon: "tablet" },
+  { label: "Desktop (21:9)", aspectRatio: 21 / 9, icon: "desktop" },
+];
 
 interface Props {
   settings: CarouselSectionSettings;
@@ -57,6 +64,7 @@ function SlideRowItem({ slide, onEdit, onDelete }: SlideRowItemProps) {
           <img
             src={slide.background_image}
             alt={slide.title}
+            style={{ objectPosition: `${slide.focal_point_x ?? 50}% ${slide.focal_point_y ?? 50}%` }}
             className="w-14 h-14 object-cover rounded-xl border border-stone-200 dark:border-stone-700 shrink-0"
           />
         ) : (
@@ -143,6 +151,9 @@ export function CarouselAdminClient({ settings, slides }: Props) {
   const [slideDescription, setSlideDescription] = useState("");
   const [slideBgImage, setSlideBgImage] = useState<string | null>(null);
   const [slideActive, setSlideActive] = useState(true);
+  const [slideFocalX, setSlideFocalX] = useState<number>(50);
+  const [slideFocalY, setSlideFocalY] = useState<number>(50);
+  const [isFocalPickerOpen, setIsFocalPickerOpen] = useState(false);
 
   const [savingSlide, setSavingSlide] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -210,6 +221,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     setSlideDescription("");
     setSlideBgImage(null);
     setSlideActive(true);
+    setSlideFocalX(50);
+    setSlideFocalY(50);
     setActiveModal("add");
   }
 
@@ -220,6 +233,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
     setSlideDescription(slide.description ?? "");
     setSlideBgImage(slide.background_image ?? null);
     setSlideActive(slide.active);
+    setSlideFocalX(slide.focal_point_x ?? 50);
+    setSlideFocalY(slide.focal_point_y ?? 50);
     setActiveModal("edit");
   }
 
@@ -271,6 +286,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           description: slideDescription.trim(),
           background_image: slideBgImage,
           active: slideActive,
+          focal_point_x: slideFocalX,
+          focal_point_y: slideFocalY,
         });
         showToast("Carousel Slide Updated", `'${slideTitle.trim()}' updated successfully`);
       } else {
@@ -280,6 +297,8 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           description: slideDescription.trim(),
           background_image: slideBgImage,
           active: slideActive,
+          focal_point_x: slideFocalX,
+          focal_point_y: slideFocalY,
         });
         showToast("Carousel Slide Created", `'${slideTitle.trim()}' created successfully`);
       }
@@ -563,7 +582,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   className="hidden"
                   onChange={handleImageUpload}
                 />
-                <div>
+                <div className="flex items-center gap-2 flex-wrap">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -572,6 +591,16 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   >
                     {uploadingImage ? "Uploading…" : slideBgImage ? "Replace Image" : "+ Upload Image"}
                   </button>
+                  {slideBgImage && (
+                    <button
+                      type="button"
+                      onClick={() => setIsFocalPickerOpen(true)}
+                      className="text-xs font-semibold text-terracotta hover:underline flex items-center gap-1 min-h-[44px] px-2"
+                    >
+                      <Crosshair className="w-3.5 h-3.5" />
+                      <span>Adjust Focal Point ({slideFocalX}%, {slideFocalY}%)</span>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -670,6 +699,24 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           </div>
         )}
       </AnimatePresence>
+
+      {/* ── Focal Point Picker Modal ───────────────────────────────────────── */}
+      {slideBgImage && (
+        <FocalPointPicker
+          isOpen={isFocalPickerOpen}
+          imageUrl={slideBgImage}
+          initialX={slideFocalX}
+          initialY={slideFocalY}
+          guides={CAROUSEL_GUIDES}
+          title="Carousel Slide — Adjust Focal Point"
+          onSave={(x, y) => {
+            setSlideFocalX(x);
+            setSlideFocalY(y);
+            setIsFocalPickerOpen(false);
+          }}
+          onCancel={() => setIsFocalPickerOpen(false)}
+        />
+      )}
     </div>
   );
 }

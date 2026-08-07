@@ -9,6 +9,8 @@ interface HeroBannerUpdate {
   description: string | null;
   background_image: string | null;
   active: boolean;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
 }
 
 export async function updateHeroBanner(data: HeroBannerUpdate): Promise<void> {

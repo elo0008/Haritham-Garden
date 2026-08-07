@@ -160,7 +160,10 @@ export function CarouselSection({ settings, slides }: CarouselSectionProps) {
               key={currentSlide.id}
               src={currentSlide.background_image}
               alt={sanitizeText(currentSlide.title)}
-              className={`absolute inset-0 w-full h-full object-cover object-center pointer-events-none transition-opacity duration-500 ${
+              style={{
+                objectPosition: `${currentSlide.focal_point_x ?? 50}% ${currentSlide.focal_point_y ?? 50}%`,
+              }}
+              className={`absolute inset-0 w-full h-full object-cover pointer-events-none transition-opacity duration-500 ${
                 shouldReduceMotion ? "" : "animate-ken-burns"
               } ${isFading ? "opacity-30" : "opacity-100"}`}
               loading="eager"

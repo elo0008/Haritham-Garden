@@ -166,6 +166,7 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
                         initial="enter"
                         animate="center"
                         exit="exit"
+                        style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
                         transition={{
                           x: { type: "spring", stiffness: 350, damping: 32 },
                           opacity: { duration: 0.2 },
@@ -191,6 +192,7 @@ export function PlantBottomSheet({ plant, isOpen = Boolean(plant), onClose, onAd
                       key={`${plant.id}-0`}
                       src={photos[0]}
                       alt={plant.name}
+                      style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
                       onLoad={() => setIsImageLoaded(true)}
                       className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 ${
                         isImageLoaded ? "opacity-100" : "opacity-0"

@@ -58,8 +58,12 @@ export function HeroBannerDisplay({ banner }: HeroBannerDisplayProps) {
         <motion.img
           src={bgImage}
           alt={title || "Haritham Garden Banner"}
-          style={{ y: shouldReduceMotion ? "0%" : parallaxY, willChange: "transform" }}
-          className="absolute -top-[10%] inset-x-0 w-full h-[120%] object-cover object-center pointer-events-none"
+          style={{
+            y: shouldReduceMotion ? "0%" : parallaxY,
+            objectPosition: `${banner.focal_point_x ?? 50}% ${banner.focal_point_y ?? 50}%`,
+            willChange: "transform",
+          }}
+          className="absolute -top-[10%] inset-x-0 w-full h-[120%] object-cover pointer-events-none"
           loading="eager"
         />
       ) : (

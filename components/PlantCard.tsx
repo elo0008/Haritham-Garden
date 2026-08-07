@@ -71,7 +71,8 @@ export function PlantCard({ plant, onSelect, onQuickAdd }: PlantCardProps) {
           <img
             src={firstPhoto}
             alt={plant.name}
-            className={`w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 ${
+            style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
+            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${
               isUnavailable ? "grayscale-[30%] opacity-80" : ""
             }`}
             loading="lazy"

@@ -28,6 +28,8 @@ export interface Plant {
   sale_price?: number | null;
   availability: PlantAvailability;
   shippable: boolean;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
   created_at: string;
   updated_at: string;
   // Joined from plant_tags → tags (populated by queries that join)
@@ -49,6 +51,8 @@ export type PlantWriteData = {
   sale_price?: number | null;
   availability: PlantAvailability;
   shippable: boolean;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
 };
 
 /**
@@ -136,6 +140,8 @@ export interface HeroBanner {
   description: string | null;
   background_image: string | null;
   active: boolean;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
   updated_at: string;
 }
 
@@ -175,6 +181,8 @@ export interface CarouselSlide {
   background_image: string | null;
   display_order: number;
   active: boolean;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
   created_at: string;
 }
 

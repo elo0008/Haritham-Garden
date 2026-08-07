@@ -6,11 +6,19 @@ import { createClient } from "@/lib/supabase/client";
 import { updateHeroBanner } from "../actions";
 import type { HeroBanner } from "@/lib/types";
 import { useAdminToast } from "@/components/AdminToast";
+import { FocalPointPicker, type BreakpointGuide } from "@/components/FocalPointPicker";
+import { Crosshair } from "lucide-react";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
   "focus:outline-none focus:ring-2 focus:ring-terracotta focus:border-transparent " +
   "disabled:bg-stone-100 dark:disabled:bg-stone-900 disabled:text-stone-400 min-h-[44px]";
+
+const HERO_GUIDES: BreakpointGuide[] = [
+  { label: "Mobile (9:16)", aspectRatio: 9 / 16, icon: "mobile" },
+  { label: "Tablet (4:3)", aspectRatio: 4 / 3, icon: "tablet" },
+  { label: "Desktop (16:9)", aspectRatio: 16 / 9, icon: "desktop" },
+];
 
 interface Props {
   banner: HeroBanner;
@@ -26,6 +34,9 @@ export function HeroBannerForm({ banner }: Props) {
   const [description, setDescription] = useState(banner.description ?? "");
   const [backgroundImage, setBackgroundImage] = useState(banner.background_image ?? "");
   const [active, setActive] = useState(banner.active);
+  const [focalPointX, setFocalPointX] = useState<number>(banner.focal_point_x ?? 50);
+  const [focalPointY, setFocalPointY] = useState<number>(banner.focal_point_y ?? 50);
+  const [isFocalPickerOpen, setIsFocalPickerOpen] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -80,6 +91,8 @@ export function HeroBannerForm({ banner }: Props) {
         description: description.trim() || null,
         background_image: backgroundImage.trim() || null,
         active,
+        focal_point_x: focalPointX,
+        focal_point_y: focalPointY,
       });
 
       setSuccess(true);
@@ -110,6 +123,7 @@ export function HeroBannerForm({ banner }: Props) {
             <img
               src={backgroundImage}
               alt=""
+              style={{ objectPosition: `${focalPointX}% ${focalPointY}%` }}
               className="absolute inset-0 w-full h-full object-cover"
             />
           ) : (
@@ -284,9 +298,21 @@ export function HeroBannerForm({ banner }: Props) {
               {uploading ? "Uploading…" : "Upload"}
             </button>
           </div>
-          <p className="mt-1.5 text-[11px] text-stone-400 dark:text-stone-500">
-            Enter an image URL or upload a file directly to Supabase storage.
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
+            <p className="text-[11px] text-stone-400 dark:text-stone-500">
+              Enter an image URL or upload a file directly to Supabase storage.
+            </p>
+            {backgroundImage.trim() && (
+              <button
+                type="button"
+                onClick={() => setIsFocalPickerOpen(true)}
+                className="text-xs font-semibold text-terracotta hover:underline flex items-center gap-1 min-h-[32px]"
+              >
+                <Crosshair className="w-3.5 h-3.5" />
+                <span>Adjust Focal Point ({focalPointX}%, {focalPointY}%)</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Save button */}
@@ -300,6 +326,24 @@ export function HeroBannerForm({ banner }: Props) {
           </button>
         </div>
       </form>
+
+      {/* ── Focal Point Picker Modal ───────────────────────────────────────── */}
+      {backgroundImage.trim() && (
+        <FocalPointPicker
+          isOpen={isFocalPickerOpen}
+          imageUrl={backgroundImage.trim()}
+          initialX={focalPointX}
+          initialY={focalPointY}
+          guides={HERO_GUIDES}
+          title="Hero Banner — Adjust Focal Point"
+          onSave={(x, y) => {
+            setFocalPointX(x);
+            setFocalPointY(y);
+            setIsFocalPickerOpen(false);
+          }}
+          onCancel={() => setIsFocalPickerOpen(false)}
+        />
+      )}
     </div>
   );
 }

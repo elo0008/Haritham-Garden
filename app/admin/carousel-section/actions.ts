@@ -47,6 +47,8 @@ interface SlideWriteData {
   description: string;
   background_image: string | null;
   active: boolean;
+  focal_point_x?: number | null;
+  focal_point_y?: number | null;
 }
 
 export async function createCarouselSlide(
@@ -71,6 +73,8 @@ export async function createCarouselSlide(
     background_image: data.background_image?.trim() || null,
     active: data.active,
     display_order: nextOrder,
+    focal_point_x: data.focal_point_x ?? 50,
+    focal_point_y: data.focal_point_y ?? 50,
   });
 
   if (error) throw new Error(error.message);
@@ -93,6 +97,8 @@ export async function updateCarouselSlide(
       description: data.description.trim(),
       background_image: data.background_image?.trim() || null,
       active: data.active,
+      focal_point_x: data.focal_point_x ?? 50,
+      focal_point_y: data.focal_point_y ?? 50,
     })
     .eq("id", id);
 

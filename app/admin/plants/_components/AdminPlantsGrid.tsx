@@ -161,6 +161,7 @@ export function AdminPlantsGrid({
                       <img
                         src={photoUrl}
                         alt={plant.name}
+                        style={{ objectPosition: `${plant.focal_point_x ?? 50}% ${plant.focal_point_y ?? 50}%` }}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
