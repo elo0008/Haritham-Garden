@@ -38,6 +38,7 @@ import {
   XCircle,
   MapPin,
   X,
+  PackageSearch,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 
@@ -583,7 +584,7 @@ Please update my shipping destination. Thank you!`;
           /* Empty State */
           <div className="py-16 text-center space-y-5 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 p-8 shadow-2xs">
             <div className="w-16 h-16 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-400 flex items-center justify-center mx-auto text-3xl">
-              🌿
+              <PackageSearch className="w-8 h-8 text-botanical-800 dark:text-botanical-100" />
             </div>
             <div className="space-y-1.5">
               <h3 className="font-heading font-bold text-xl text-stone-900 dark:text-stone-100">

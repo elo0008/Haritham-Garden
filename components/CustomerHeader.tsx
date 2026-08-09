@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { useCart } from "@/context/CartContext";
@@ -18,7 +18,6 @@ interface CustomerHeaderProps {
 export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { totalItems, openCart } = useCart();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<"home" | "catalogue" | "carousel">("home");
@@ -64,12 +63,16 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isHomePage, carouselTagLabel]);
 
-  const handleNavClick = (target: "home" | "catalogue" | "carousel") => {
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    target: "home" | "catalogue" | "carousel"
+  ) => {
     const wasMobileMenuOpen = isMobileMenuOpen;
     setIsMobileMenuOpen(false);
 
-    const executeScroll = () => {
-      if (isHomePage) {
+    if (isHomePage) {
+      e.preventDefault();
+      const executeScroll = () => {
         if (target === "home") {
           window.scrollTo({ top: 0, behavior: "smooth" });
         } else if (target === "catalogue") {
@@ -89,23 +92,15 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             window.scrollTo({ top: offset, behavior: "smooth" });
           }
         }
-      } else {
-        if (target === "home") {
-          router.push("/?scroll=top");
-        } else if (target === "catalogue") {
-          router.push("/?scroll=filter-bar");
-        } else if (target === "carousel") {
-          router.push("/?scroll=carousel-section");
-        }
-      }
-    };
+      };
 
-    if (wasMobileMenuOpen) {
-      // Delay scroll execution until mobile menu collapse animation completes (~230ms)
-      // and layout reflow stabilizes so getBoundingClientRect() measures post-collapse layout.
-      setTimeout(executeScroll, 230);
-    } else {
-      executeScroll();
+      if (wasMobileMenuOpen) {
+        // Delay scroll execution until mobile menu collapse animation completes (~230ms)
+        // and layout reflow stabilizes so getBoundingClientRect() measures post-collapse layout.
+        setTimeout(executeScroll, 230);
+      } else {
+        executeScroll();
+      }
     }
   };
 
@@ -126,9 +121,9 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
         {/* Center Block: Desktop Navigation Links — Centered Admin Pill Tabs */}
         <div className="hidden lg:flex flex-1 items-center justify-center min-w-0">
           <nav className="flex items-center h-11 gap-1 bg-stone-100/90 dark:bg-stone-800/90 p-1 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 shadow-inner">
-            <button
-              type="button"
-              onClick={() => handleNavClick("home")}
+            <Link
+              href="/"
+              onClick={(e) => handleNavClick(e, "home")}
               className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 isHomePage && activeSection === "home"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
@@ -137,11 +132,11 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             >
               <Home className="w-3.5 h-3.5 text-botanical-800 dark:text-botanical-100" />
               <span>Home</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => handleNavClick("catalogue")}
+            <Link
+              href="/?scroll=filter-bar"
+              onClick={(e) => handleNavClick(e, "catalogue")}
               className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 ${
                 isHomePage && activeSection === "catalogue"
                   ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
@@ -150,12 +145,12 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             >
               <Sprout className="w-3.5 h-3.5 text-emerald-600" />
               <span>Catalogue</span>
-            </button>
+            </Link>
 
             {carouselTagLabel && (
-              <button
-                type="button"
-                onClick={() => handleNavClick("carousel")}
+              <Link
+                href="/?scroll=carousel-section"
+                onClick={(e) => handleNavClick(e, "carousel")}
                 className={`px-3.5 h-9 rounded-xl text-xs font-semibold whitespace-nowrap transition-all flex items-center gap-1.5 max-w-[180px] ${
                   isHomePage && activeSection === "carousel"
                     ? "bg-white dark:bg-stone-700 text-stone-900 dark:text-white shadow-xs font-bold"
@@ -165,7 +160,7 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
               >
                 <Sparkles className="w-3.5 h-3.5 text-terracotta" />
                 <span className="truncate">{carouselTagLabel}</span>
-              </button>
+              </Link>
             )}
 
             <Link
@@ -231,9 +226,9 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="lg:hidden bg-white/95 dark:bg-stone-900/95 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 px-4 py-3.5 space-y-1.5 overflow-hidden font-sans shadow-xl"
           >
-            <button
-              type="button"
-              onClick={() => handleNavClick("home")}
+            <Link
+              href="/"
+              onClick={(e) => handleNavClick(e, "home")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 isHomePage && activeSection === "home"
                   ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
@@ -242,11 +237,11 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             >
               <Home className="w-4 h-4 text-botanical-800 dark:text-botanical-100" />
               <span>Home</span>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => handleNavClick("catalogue")}
+            <Link
+              href="/?scroll=filter-bar"
+              onClick={(e) => handleNavClick(e, "catalogue")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                 isHomePage && activeSection === "catalogue"
                   ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
@@ -255,12 +250,12 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
             >
               <Sprout className="w-4 h-4 text-emerald-600" />
               <span>Catalogue</span>
-            </button>
+            </Link>
 
             {carouselTagLabel && (
-              <button
-                type="button"
-                onClick={() => handleNavClick("carousel")}
+              <Link
+                href="/?scroll=carousel-section"
+                onClick={(e) => handleNavClick(e, "carousel")}
                 className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                   isHomePage && activeSection === "carousel"
                     ? "bg-botanical-50 dark:bg-stone-800 text-botanical-800 dark:text-botanical-100 font-bold"
@@ -269,7 +264,7 @@ export function CustomerHeader({ siteSettings, carouselTagLabel }: CustomerHeade
               >
                 <Sparkles className="w-4 h-4 text-terracotta" />
                 <span className="truncate">{carouselTagLabel}</span>
-              </button>
+              </Link>
             )}
 
             <Link

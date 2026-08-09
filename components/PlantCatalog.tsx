@@ -21,7 +21,7 @@ import { Footer } from "./Footer";
 import { CartDrawer } from "./CartDrawer";
 import { useCart } from "@/context/CartContext";
 import Link from "next/link";
-import { ShoppingBag, PackageCheck, ArrowUpDown, Check, Menu, X, Home, Sprout, Sparkles } from "lucide-react";
+import { ShoppingBag, PackageCheck, ArrowUpDown, Check, Menu, X, Home, Sprout, Sparkles, SearchX } from "lucide-react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { CustomDropdown } from "./CustomDropdown";
 import { FloatingLeaves } from "./FloatingLeaves";
@@ -182,7 +182,11 @@ export function PlantCatalog({
     }
   };
 
+  const hasHandledInitialScrollRef = useRef(false);
+
   useEffect(() => {
+    if (hasHandledInitialScrollRef.current) return;
+    hasHandledInitialScrollRef.current = true;
     const scrollParam = searchParams.get("scroll");
     if (scrollParam) {
       const timer = setTimeout(() => {
@@ -469,8 +473,8 @@ export function PlantCatalog({
               transition={{ duration: 0.15 }}
               className="flex flex-col items-center justify-center py-20 text-center"
             >
-              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-botanical-50 dark:bg-stone-900 border border-botanical-100 dark:border-stone-800 text-2xl">
-                🌱
+              <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-botanical-50 dark:bg-stone-900 border border-botanical-100 dark:border-stone-800">
+                <SearchX className="w-8 h-8 text-botanical-800 dark:text-botanical-100" />
               </div>
               <h2 className="font-heading text-lg font-bold text-stone-900 dark:text-stone-100">
                 No plants match these filters
