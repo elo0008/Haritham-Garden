@@ -427,9 +427,9 @@ Please update my shipping destination. Thank you!`;
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 40 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-botanical-800 dark:bg-botanical-600 text-white text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2"
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 text-xs font-bold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 transition-colors"
           >
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-botanical-700 dark:text-botanical-400" />
             {orderEditToast}
           </motion.div>
         )}

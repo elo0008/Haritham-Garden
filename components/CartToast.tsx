@@ -45,7 +45,7 @@ export function CartToast({ toast, onDismiss, onOpenBag }: CartToastProps) {
             exit={{ opacity: 0, x: 50, scale: 0.95 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             onClick={handleToastClick}
-            className="pointer-events-auto bg-stone-900 dark:bg-stone-800 text-stone-100 border border-stone-800 dark:border-stone-700 shadow-2xl rounded-2xl p-4 flex items-center gap-3.5 max-w-xs sm:max-w-sm cursor-pointer hover:border-stone-700 dark:hover:border-stone-600 transition-colors"
+            className="pointer-events-auto bg-white dark:bg-stone-900 text-stone-900 dark:text-stone-100 border border-stone-200 dark:border-stone-800 shadow-2xl rounded-2xl p-4 flex items-center gap-3.5 max-w-xs sm:max-w-sm cursor-pointer hover:border-stone-300 dark:hover:border-stone-700 transition-colors"
           >
             {/* Bag Icon in Terracotta Rounded Square */}
             <div className="w-10 h-10 rounded-xl bg-terracotta text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -54,10 +54,10 @@ export function CartToast({ toast, onDismiss, onOpenBag }: CartToastProps) {
 
             {/* Content Text */}
             <div className="overflow-hidden min-w-0 flex-1">
-              <span className="font-heading font-bold text-sm text-stone-100 block leading-tight">
+              <span className="font-heading font-bold text-sm text-stone-900 dark:text-stone-100 block leading-tight">
                 Added to your bag!
               </span>
-              <span className="text-xs text-stone-300 dark:text-stone-400 font-medium block mt-0.5 truncate">
+              <span className="text-xs text-stone-600 dark:text-stone-400 font-medium block mt-0.5 truncate">
                 {toast.qty}x {toast.plantName}
               </span>
             </div>
@@ -69,7 +69,7 @@ export function CartToast({ toast, onDismiss, onOpenBag }: CartToastProps) {
                 e.stopPropagation();
                 onDismiss();
               }}
-              className="p-1.5 rounded-lg text-stone-400 hover:text-stone-100 hover:bg-stone-800 dark:hover:bg-stone-700 transition-colors ml-auto shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center active:scale-90"
+              className="p-1.5 rounded-lg text-stone-400 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors ml-auto shrink-0 min-h-[36px] min-w-[36px] flex items-center justify-center active:scale-90"
               aria-label="Close notification"
             >
               <X className="w-4 h-4" />
