@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
@@ -49,6 +48,7 @@ import { HeroBannerForm } from "../hero-banner/_components/HeroBannerForm";
 import { CarouselAdminClient } from "../carousel-section/_components/CarouselAdminClient";
 import { SettingsForm } from "../settings/_components/SettingsForm";
 import { AdminPlantsGrid } from "../plants/_components/AdminPlantsGrid";
+import { PlantModal } from "../plants/_components/PlantModal";
 import { TagManagementClient } from "../tags/_components/TagManagementClient";
 import type { TagWithUsage } from "../tags/actions";
 import { AvailabilitySelect } from "../plants/_components/AvailabilitySelect";
@@ -126,6 +126,9 @@ export function UnifiedAdminConsole({
   const initialTab = (searchParams.get("tab") as AdminTab) || "overview";
   const [activeTab, setActiveTab] = useState<AdminTab>(initialTab);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Add Plant Modal State (used from Overview and any other entry point)
+  const [isAddPlantModalOpen, setIsAddPlantModalOpen] = useState(false);
 
   // Storefront Sub-tab State
   const [storefrontSubTab, setStorefrontSubTab] = useState<"hero" | "carousel">("hero");
@@ -637,13 +640,14 @@ export function UnifiedAdminConsole({
                   Select a core nursery module to manage your inventory, customer orders, or storefront promotional banners.
                 </p>
               </div>
-              <Link
-                href="/admin/plants/new"
+              <button
+                type="button"
+                onClick={() => setIsAddPlantModalOpen(true)}
                 className="bg-terracotta hover:bg-[#b04a25] text-white px-5 py-2.5 rounded-xl font-semibold text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 shrink-0 min-h-[44px]"
               >
                 <Plus className="w-4 h-4" />
                 <span>Add New Plant</span>
-              </Link>
+              </button>
             </div>
 
             {/* KPI Ribbon */}
@@ -1076,6 +1080,13 @@ export function UnifiedAdminConsole({
           </motion.div>
         </AnimatePresence>
       </main>
+
+      {/* ── Global Add Plant Modal (shared across Overview, Catalogue, and all entry points) ── */}
+      <PlantModal
+        isOpen={isAddPlantModalOpen}
+        onClose={() => setIsAddPlantModalOpen(false)}
+        allTags={tagsState}
+      />
     </div>
   );
 }
