@@ -74,6 +74,7 @@ export function PWAProvider() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      (window as any).__pwaHintVisible = showHint;
       window.dispatchEvent(
         new CustomEvent("pwa-hint-visibility-change", { detail: { visible: showHint } })
       );

@@ -16,10 +16,21 @@ export function CreatorCreditBadge() {
     const isDismissed = localStorage.getItem(DISMISS_KEY) === "true";
     setDismissed(isDismissed);
 
+    const checkPwa = () => {
+      if (typeof window !== "undefined") {
+        setIsPwaHintVisible(Boolean((window as any).__pwaHintVisible));
+      }
+    };
+
+    // Initial check on mount
+    checkPwa();
+
     const handlePwaVisibility = (e: Event) => {
       const customEvent = e as CustomEvent<{ visible?: boolean }>;
       if (typeof customEvent.detail?.visible === "boolean") {
         setIsPwaHintVisible(customEvent.detail.visible);
+      } else {
+        checkPwa();
       }
     };
 
@@ -36,18 +47,19 @@ export function CreatorCreditBadge() {
     }
   };
 
-  if (!mounted || dismissed) return null;
+  if (!mounted) return null;
 
   return (
     <AnimatePresence>
       {!dismissed && (
         <motion.div
-          initial={{ opacity: 0, y: 15, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 15, scale: 0.95 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className={`fixed right-4 sm:right-6 z-40 transition-all duration-300 ${
-            isPwaHintVisible ? "bottom-24 sm:bottom-20" : "bottom-4"
+          key="creator-credit-badge"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 15 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className={`fixed right-4 sm:right-6 z-40 transition-all duration-300 ease-out ${
+            isPwaHintVisible ? "bottom-[100px]" : "bottom-4"
           }`}
         >
           <div className="group flex items-center gap-1.5 bg-white/90 dark:bg-stone-900/90 text-stone-700 dark:text-stone-300 border border-stone-200/80 dark:border-stone-800 backdrop-blur-md px-3 py-1.5 rounded-full shadow-lg hover:shadow-xl hover:border-terracotta/40 dark:hover:border-terracotta/40 opacity-85 hover:opacity-100 transition-all text-xs font-medium">
