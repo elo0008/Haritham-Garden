@@ -72,6 +72,14 @@ export function PWAProvider() {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("pwa-hint-visibility-change", { detail: { visible: showHint } })
+      );
+    }
+  }, [showHint]);
+
   const handleDismiss = () => {
     setShowHint(false);
     if (typeof window !== "undefined") {
