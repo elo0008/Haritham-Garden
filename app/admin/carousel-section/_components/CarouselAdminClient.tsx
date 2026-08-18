@@ -15,6 +15,7 @@ import {
 import type { CarouselSectionSettings, CarouselSlide } from "@/lib/types";
 import { useAdminToast } from "@/components/AdminToast";
 import { FocalPointPicker, type BreakpointGuide } from "@/components/FocalPointPicker";
+import { InlineSpinner } from "@/components/Skeletons";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
@@ -431,9 +432,16 @@ export function CarouselAdminClient({ settings, slides }: Props) {
           <button
             type="submit"
             disabled={savingSettings}
-            className="bg-terracotta hover:bg-[#b04a25] text-white px-5 py-2.5 rounded-xl text-xs font-semibold min-h-[44px] shadow-md disabled:opacity-50 transition-all"
+            className="bg-terracotta hover:bg-[#b04a25] text-white px-5 py-2.5 rounded-xl text-xs font-semibold min-h-[44px] shadow-md disabled:opacity-50 transition-all flex items-center gap-2"
           >
-            {savingSettings ? "Saving Settings…" : "Save Section Settings"}
+            {savingSettings ? (
+              <>
+                <InlineSpinner className="w-4 h-4 text-white" />
+                <span>Saving Settings…</span>
+              </>
+            ) : (
+              <span>Save Section Settings</span>
+            )}
           </button>
         </div>
       </form>
@@ -587,9 +595,18 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={savingSlide || uploadingImage}
-                    className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200"
+                    className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200 disabled:opacity-50 flex items-center gap-1.5"
                   >
-                    {uploadingImage ? "Uploading…" : slideBgImage ? "Replace Image" : "+ Upload Image"}
+                    {uploadingImage ? (
+                      <>
+                        <InlineSpinner className="w-3.5 h-3.5 text-stone-700 dark:text-stone-200" />
+                        <span>Uploading…</span>
+                      </>
+                    ) : slideBgImage ? (
+                      "Replace Image"
+                    ) : (
+                      "+ Upload Image"
+                    )}
                   </button>
                   {slideBgImage && (
                     <button
@@ -631,16 +648,23 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   type="button"
                   onClick={closeModal}
                   disabled={savingSlide}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={savingSlide || uploadingImage}
-                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-md disabled:opacity-50"
+                  className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-md disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {savingSlide ? "Saving..." : activeModal === "edit" ? "Update Slide" : "Add Slide"}
+                  {savingSlide ? (
+                    <>
+                      <InlineSpinner className="w-4 h-4 text-white" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>{activeModal === "edit" ? "Update Slide" : "Add Slide"}</span>
+                  )}
                 </button>
               </div>
             </motion.form>
@@ -682,7 +706,7 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   type="button"
                   onClick={() => setDeletingSlide(null)}
                   disabled={isDeleting}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800"
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -690,9 +714,16 @@ export function CarouselAdminClient({ settings, slides }: Props) {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={isDeleting}
-                  className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50 shadow-md"
+                  className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50 shadow-md flex items-center justify-center gap-1.5"
                 >
-                  {isDeleting ? "Deleting..." : "Confirm Delete"}
+                  {isDeleting ? (
+                    <>
+                      <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Confirm Delete</span>
+                  )}
                 </button>
               </div>
             </motion.div>

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { updateHeroBanner } from "../actions";
 import type { HeroBanner } from "@/lib/types";
 import { useAdminToast } from "@/components/AdminToast";
+import { InlineSpinner } from "@/components/Skeletons";
 import { FocalPointPicker, type BreakpointGuide } from "@/components/FocalPointPicker";
 import { Crosshair } from "lucide-react";
 
@@ -293,9 +294,16 @@ export function HeroBannerForm({ banner }: Props) {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={saving || uploading}
-              className="border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold px-4 rounded-xl shrink-0 disabled:opacity-50 transition-colors min-h-[44px]"
+              className="border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold px-4 rounded-xl shrink-0 disabled:opacity-50 transition-colors min-h-[44px] flex items-center gap-1.5"
             >
-              {uploading ? "Uploading…" : "Upload"}
+              {uploading ? (
+                <>
+                  <InlineSpinner className="w-3.5 h-3.5 text-stone-700 dark:text-stone-200" />
+                  <span>Uploading…</span>
+                </>
+              ) : (
+                "Upload"
+              )}
             </button>
           </div>
           <div className="mt-2 flex items-center justify-between gap-2 flex-wrap">
@@ -320,9 +328,16 @@ export function HeroBannerForm({ banner }: Props) {
           <button
             type="submit"
             disabled={saving || uploading}
-            className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all min-h-[44px]"
+            className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all min-h-[44px] flex items-center gap-2"
           >
-            {saving ? "Saving…" : "Save Hero Banner"}
+            {saving ? (
+              <>
+                <InlineSpinner className="w-4 h-4 text-white" />
+                <span>Saving…</span>
+              </>
+            ) : (
+              <span>Save Hero Banner</span>
+            )}
           </button>
         </div>
       </form>

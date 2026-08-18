@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { updateSiteSettings } from "../actions";
 import type { SiteSettings } from "@/lib/types";
 import { useAdminToast } from "@/components/AdminToast";
+import { InlineSpinner } from "@/components/Skeletons";
 
 const inputCls =
   "w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 px-3.5 py-2.5 text-sm text-stone-900 dark:text-stone-100 " +
@@ -166,9 +167,18 @@ export function SettingsForm({ settings }: Props) {
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={saving || uploading}
-                className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200"
+                className="text-xs font-semibold border border-stone-300 dark:border-stone-700 rounded-xl px-4 py-2.5 min-h-[44px] hover:bg-stone-50 dark:hover:bg-stone-800 transition-colors text-stone-700 dark:text-stone-200 disabled:opacity-50 flex items-center gap-1.5"
               >
-                {uploading ? "Uploading…" : logoUrl ? "Replace Logo Image" : "+ Upload Logo Image"}
+                {uploading ? (
+                  <>
+                    <InlineSpinner className="w-3.5 h-3.5 text-stone-700 dark:text-stone-200" />
+                    <span>Uploading…</span>
+                  </>
+                ) : logoUrl ? (
+                  "Replace Logo Image"
+                ) : (
+                  "+ Upload Logo Image"
+                )}
               </button>
             </div>
           </div>
@@ -329,9 +339,16 @@ export function SettingsForm({ settings }: Props) {
         <button
           type="submit"
           disabled={saving}
-          className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all min-h-[44px]"
+          className="bg-terracotta hover:bg-[#b04a25] text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-md disabled:opacity-50 transition-all min-h-[44px] flex items-center gap-2"
         >
-          {saving ? "Saving Settings…" : "Save Settings"}
+          {saving ? (
+            <>
+              <InlineSpinner className="w-4 h-4 text-white" />
+              <span>Saving Settings…</span>
+            </>
+          ) : (
+            <span>Save Settings</span>
+          )}
         </button>
       </div>
     </form>

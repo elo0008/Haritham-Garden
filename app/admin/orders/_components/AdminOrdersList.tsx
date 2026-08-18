@@ -31,6 +31,7 @@ import {
 } from "../actions";
 import { getEffectivePrice } from "@/lib/types";
 import { PlantSearchPicker } from "@/components/PlantSearchPicker";
+import { InlineSpinner } from "@/components/Skeletons";
 import {
   Package,
   CheckCircle2,
@@ -144,6 +145,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
 
   // Active Filter Tab
   const [activeFilter, setActiveFilter] = useState<FilterTab>("all");
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   // Customer Details Modal State
   const [customerModalOrder, setCustomerModalOrder] = useState<Order | null>(null);
@@ -492,6 +494,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
       setCourierModalError(null);
     } else {
       // Direct update for paid or packaged or pending
+      setPendingOrderId(order.id);
       startTransition(async () => {
         try {
           await updateOrderStatus(order.id, nextStatus, undefined, undefined, order.updated_at);
@@ -499,6 +502,8 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
           router.refresh();
         } catch (err) {
           alert(err instanceof Error ? err.message : "Failed to update status");
+        } finally {
+          setPendingOrderId(null);
         }
       });
     }
@@ -807,10 +812,10 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
             return (
               <div
                 key={order.id}
-                className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-md transition-all overflow-hidden"
+                className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/90 dark:border-stone-800 shadow-2xs hover:shadow-md transition-all relative"
               >
                 {/* 1. Order Card Header */}
-                <div className="p-6 pb-4 flex items-center justify-between border-b border-stone-100 dark:border-stone-800 flex-wrap gap-3 bg-stone-50/50 dark:bg-stone-900/50">
+                <div className="p-6 pb-4 flex items-center justify-between border-b border-stone-100 dark:border-stone-800 flex-wrap gap-3 bg-stone-50/50 dark:bg-stone-900/50 rounded-t-3xl">
                   <div className="flex items-center gap-3 flex-wrap">
                     <span className="font-heading font-bold text-lg text-stone-900 dark:text-stone-100 tracking-tight">
                       {order.order_ref}
@@ -959,14 +964,22 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                           type="button"
                           onClick={() => handleSaveOrderItems(order.id)}
                           disabled={isPending}
-                          className="px-3.5 py-1.5 bg-botanical-800 dark:bg-botanical-600 text-white rounded-xl font-bold text-xs hover:bg-botanical-900 transition-colors shadow-2xs"
+                          className="px-3.5 py-1.5 bg-botanical-800 dark:bg-botanical-600 text-white rounded-xl font-bold text-xs hover:bg-botanical-900 transition-colors shadow-2xs flex items-center gap-1.5 min-h-[32px] disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Save Item Changes
+                          {isPending ? (
+                            <>
+                              <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                              <span>Saving Items...</span>
+                            </>
+                          ) : (
+                            <span>Save Item Changes</span>
+                          )}
                         </button>
                         <button
                           type="button"
                           onClick={cancelEditingItems}
-                          className="px-3.5 py-1.5 bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl font-semibold text-xs hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors"
+                          disabled={isPending}
+                          className="px-3.5 py-1.5 bg-stone-200 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl font-semibold text-xs hover:bg-stone-300 dark:hover:bg-stone-700 transition-colors disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -1052,7 +1065,8 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                           <button
                             type="button"
                             onClick={() => handleRemoveDiscount(order.id)}
-                            className="text-stone-400 hover:text-red-500 p-0.5"
+                            disabled={isPending}
+                            className="text-stone-400 hover:text-red-500 p-0.5 disabled:opacity-40"
                             title="Remove discount"
                           >
                             <X className="w-3 h-3" />
@@ -1138,9 +1152,16 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                             type="button"
                             onClick={() => handleApplyDiscount(order.id)}
                             disabled={isPending}
-                            className="bg-terracotta hover:bg-[#b04a25] text-white px-3 py-1 rounded-lg text-[11px] font-bold disabled:opacity-50"
+                            className="bg-terracotta hover:bg-[#b04a25] text-white px-3 py-1 rounded-lg text-[11px] font-bold disabled:opacity-50 flex items-center gap-1 min-h-[28px]"
                           >
-                            {isPending ? 'Applying…' : 'Apply'}
+                            {isPending ? (
+                              <>
+                                <InlineSpinner className="w-3 h-3 text-white" />
+                                <span>Applying…</span>
+                              </>
+                            ) : (
+                              <span>Apply</span>
+                            )}
                           </button>
                           <button
                             type="button"
@@ -1206,7 +1227,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                 )}
 
                 {/* 4. Order Card Footer Controls */}
-                <div className="px-6 py-4 bg-stone-50/60 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between flex-wrap gap-3">
+                <div className="px-6 py-4 bg-stone-50/60 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between flex-wrap gap-3 rounded-b-3xl">
                   {/* Left: Status Selector & Advance Button */}
                   <div className="flex items-center gap-2 flex-wrap">
                     {/* Direct Stage Select */}
@@ -1214,20 +1235,32 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       value={currentStatus}
                       options={ORDER_STATUS_OPTIONS}
                       onChange={(next) => initiateStatusTransition(order, next)}
-                      align="auto"
+                      align="left"
+                      direction="top"
                       ariaLabel="Change order status"
                       buttonClassName="!px-3 !py-1.5 !min-h-[36px] !rounded-xl"
+                      disabled={isPending && pendingOrderId === order.id}
                     />
 
                     {/* Step Advance Button */}
                     {nextStatus && (
                       <button
                         type="button"
-                        onClick={() => initiateStatusTransition(order, nextStatus)}
+                        onClick={() => {
+                          setPendingOrderId(order.id);
+                          initiateStatusTransition(order, nextStatus);
+                        }}
                         disabled={isPending}
-                        className="bg-botanical-800 hover:bg-botanical-900 dark:bg-botanical-600 dark:hover:bg-botanical-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 min-h-[36px]"
+                        className="bg-botanical-800 hover:bg-botanical-900 dark:bg-botanical-600 dark:hover:bg-botanical-700 text-white px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition-all flex items-center gap-1.5 min-h-[36px] disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        <span>{STATUS_CONFIG[currentStatus].nextActionLabel}</span>
+                        {isPending && pendingOrderId === order.id ? (
+                          <>
+                            <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                            <span>Updating...</span>
+                          </>
+                        ) : (
+                          <span>{STATUS_CONFIG[currentStatus].nextActionLabel}</span>
+                        )}
                       </button>
                     )}
                   </div>
@@ -1411,7 +1444,8 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     <button
                       type="button"
                       onClick={() => setIsEditingCustomerDetails(false)}
-                      className="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-semibold"
+                      disabled={isPending}
+                      className="px-3 py-1.5 bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-xl text-xs font-semibold disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -1419,9 +1453,16 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       type="button"
                       onClick={handleSaveCustomerDetails}
                       disabled={isPending}
-                      className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md disabled:opacity-50"
+                      className="bg-terracotta hover:bg-[#b04a25] text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md disabled:opacity-50 flex items-center gap-1.5 min-h-[38px]"
                     >
-                      {isPending ? "Saving..." : "Save Details"}
+                      {isPending ? (
+                        <>
+                          <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <span>Save Details</span>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1492,9 +1533,17 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                       const est = courierModalOrder.estimated_courier_price ?? 0;
                       handleSaveCourierModal(est);
                     }}
-                    className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 py-2 rounded-xl text-xs font-semibold transition-colors"
+                    disabled={isPending}
+                    className="w-full bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 py-2 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 min-h-[36px]"
                   >
-                    ⚡ No Change (Reuse Estimated: {formatINR(courierModalOrder.estimated_courier_price ?? 0)})
+                    {isPending ? (
+                      <>
+                        <InlineSpinner className="w-3.5 h-3.5 text-stone-700 dark:text-stone-200" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>⚡ No Change (Reuse Estimated: {formatINR(courierModalOrder.estimated_courier_price ?? 0)})</span>
+                    )}
                   </button>
                 )}
 
@@ -1513,7 +1562,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     type="button"
                     onClick={() => setCourierModalOrder(null)}
                     disabled={isPending}
-                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -1521,9 +1570,16 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     type="button"
                     onClick={() => handleSaveCourierModal()}
                     disabled={isPending}
-                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
-                    {isPending ? "Saving..." : "Save & Update Stage"}
+                    {isPending ? (
+                      <>
+                        <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save & Update Stage</span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1874,16 +1930,23 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     type="button"
                     onClick={() => setShowManualModal(false)}
                     disabled={isPending}
-                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 disabled:opacity-50"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isPending}
-                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
-                    {isPending ? "Creating..." : "Create Order"}
+                    {isPending ? (
+                      <>
+                        <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                        <span>Creating...</span>
+                      </>
+                    ) : (
+                      <span>Create Order</span>
+                    )}
                   </button>
                 </div>
               </form>
@@ -1933,7 +1996,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     type="button"
                     onClick={() => setEditingNoteOrder(null)}
                     disabled={isPending}
-                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                    className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -1941,9 +2004,16 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                     type="button"
                     onClick={handleSaveNote}
                     disabled={isPending}
-                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50"
+                    className="flex-1 min-h-[44px] rounded-xl bg-terracotta hover:bg-[#b04a25] py-2.5 text-xs font-semibold text-white shadow-xs disabled:opacity-50 flex items-center justify-center gap-1.5"
                   >
-                    {isPending ? "Saving..." : "Save Note"}
+                    {isPending ? (
+                      <>
+                        <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Save Note</span>
+                    )}
                   </button>
                 </div>
               </div>
@@ -1986,7 +2056,7 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                   type="button"
                   onClick={() => setDeletingOrder(null)}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50"
+                  className="flex-1 min-h-[44px] rounded-xl border border-stone-300 dark:border-stone-700 py-2.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1994,9 +2064,16 @@ export function AdminOrdersList({ orders, plants = [] }: AdminOrdersListProps) {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={isPending}
-                  className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50"
+                  className="flex-1 min-h-[44px] rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-xs font-semibold text-white disabled:opacity-50 flex items-center justify-center gap-1.5"
                 >
-                  {isPending ? "Deleting..." : "Confirm Delete"}
+                  {isPending ? (
+                    <>
+                      <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    <span>Confirm Delete</span>
+                  )}
                 </button>
               </div>
             </motion.div>

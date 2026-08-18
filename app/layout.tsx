@@ -60,7 +60,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Haritham" />
         <meta name="theme-color" content="#1c382b" />
       </head>
-      <body className="min-h-full flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300 overflow-x-hidden w-full max-w-full">
+      <body className="min-h-full flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans transition-colors duration-300 overflow-x-clip w-full max-w-full">
         <ThemeProvider>
           <DisableNumberInputScroll />
           <CartProvider>{children}</CartProvider>

@@ -92,10 +92,14 @@ function TagRowItem({
                 type="button"
                 onClick={() => onSaveRename(tag.id)}
                 disabled={isPending}
-                className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center min-w-[28px] min-h-[28px]"
                 title="Save"
               >
-                <Check className="w-4 h-4" />
+                {isPending ? (
+                  <InlineSpinner className="w-4 h-4 text-white" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
               </button>
               <button
                 type="button"
@@ -470,9 +474,16 @@ export function TagManagementClient({ initialTags }: TagManagementClientProps) {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={isPending}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px]"
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs shadow-md transition-all active:scale-95 min-h-[38px] disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  {isPending ? "Deleting…" : "Confirm Delete"}
+                  {isPending ? (
+                    <>
+                      <InlineSpinner className="w-3.5 h-3.5 text-white" />
+                      <span>Deleting…</span>
+                    </>
+                  ) : (
+                    <span>Confirm Delete</span>
+                  )}
                 </button>
               </div>
             </motion.div>

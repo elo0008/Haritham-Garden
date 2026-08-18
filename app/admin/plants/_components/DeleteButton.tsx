@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deletePlant } from "../actions";
 import { useAdminToast } from "@/components/AdminToast";
+import { InlineSpinner } from "@/components/Skeletons";
 
 import type { PhotoInput } from "@/lib/types";
 
@@ -43,7 +44,14 @@ export function DeleteButton({ plantId, plantName, photoUrls }: Props) {
       className="min-h-[44px] flex items-center text-xs text-red-600 hover:text-red-800 font-medium
                  disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
     >
-      {isPending ? "Deleting…" : "Delete"}
+      {isPending ? (
+        <>
+          <InlineSpinner className="w-3.5 h-3.5 text-red-600 mr-1.5" />
+          <span>Deleting…</span>
+        </>
+      ) : (
+        <span>Delete</span>
+      )}
     </button>
   );
 }

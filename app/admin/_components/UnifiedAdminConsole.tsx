@@ -331,11 +331,11 @@ export function UnifiedAdminConsole({
   const logoUrl = siteSettingsState?.logo_url;
 
   return (
-    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased transition-colors duration-300 w-full max-w-full overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-stone-50 dark:bg-stone-950 text-stone-800 dark:text-stone-100 font-sans antialiased transition-colors duration-300 w-full max-w-full overflow-x-clip">
       {/* ========================================== */}
       {/* STICKY TOP NAVIGATION (3-ZONE ARCHITECTURE) */}
       {/* ========================================== */}
-      <header className="sticky top-0 z-40 bg-white/85 dark:bg-stone-900/85 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all shadow-2xs">
+      <header className="sticky top-0 z-40 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800/80 transition-all shadow-2xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
           {/* ZONE 1: LEFT BRAND & ADMIN BADGE */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">

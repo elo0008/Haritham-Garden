@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Tag } from "@/lib/types";
 import { useAdminToast } from "@/components/AdminToast";
+import { InlineSpinner } from "@/components/Skeletons";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -220,10 +221,17 @@ export function TagPicker({
                          transition-colors flex items-center gap-2 min-h-[40px] font-semibold
                          border-t border-stone-100 dark:border-stone-800 disabled:opacity-50"
             >
-              <span className="text-base leading-none">+</span>
-              {creating
-                ? "Creating…"
-                : `Add new tag: "${trimmedQuery}"`}
+              {creating ? (
+                <>
+                  <InlineSpinner className="w-3.5 h-3.5 text-terracotta" />
+                  <span>Creating…</span>
+                </>
+              ) : (
+                <>
+                  <span className="text-base leading-none">+</span>
+                  <span>Add new tag: &quot;{trimmedQuery}&quot;</span>
+                </>
+              )}
             </button>
           )}
         </div>
